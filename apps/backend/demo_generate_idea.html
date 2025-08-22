@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Generate Idea - HospUp</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #fff, #f0f8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+        }
+        
+        .test-query {
+            margin: 15px 0;
+        }
+        
+        .test-button {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            border-left: 4px solid #4ECDC4;
+        }
+        
+        .template-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #4ECDC4;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .success { background: rgba(76, 175, 80, 0.3); }
+        .error { background: rgba(244, 67, 54, 0.3); }
+        
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', monospace;
+        }
+        
+        .viral-emoji {
+            font-size: 1.2em;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Demo Generate Idea</h1>
+        
+        <div class="demo-section">
+            <h2>📊 Système AI de Matching Viral</h2>
+            <p>Système intelligent qui analyse les templates d'Airtable et trouve les meilleurs matchs pour vos descriptions.</p>
+            
+            <div class="status" id="system-status">
+                <div class="loading">🔄 Vérification du système...</div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🧪 Tests de Matching</h2>
+            <p>Cliquez sur les boutons pour tester différentes descriptions:</p>
+            
+            <div class="test-query">
+                <strong>Cuisine Française:</strong>
+                <button class="test-button" onclick="testQuery('petit dejeuner francais croissant cuisine')">
+                    🥐 Petit Déjeuner Français
+                </button>
+            </div>
+            
+            <div class="test-query">
+                <strong>Villa Italienne:</strong>
+                <button class="test-button" onclick="testQuery('Italian villa tuscany sunset')">
+                    🏛️ Villa Toscane
+                </button>
+            </div>
+            
+            <div class="test-query">
+                <strong>Beach Resort:</strong>
+                <button class="test-button" onclick="testQuery('PLAGE SOLEIL MER paradis turquoise')">
+                    🏖️ Plage Paradise
+                </button>
+            </div>
+            
+            <div class="test-query">
+                <strong>Breakfast English:</strong>
+                <button class="test-button" onclick="testQuery('breakfast croissant french cuisine')">
+                    ☕ English Breakfast
+                </button>
+            </div>
+            
+            <div id="test-results"></div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>📋 Templates Disponibles</h2>
+            <div id="available-templates">
+                <div class="loading">Chargement des templates...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulate the AI system since we can't directly call the backend
+        const mockTemplates = [
+            {
+                hotel_name: "Les Oliviers du Taulisson",
+                country: "France", 
+                views: 965844,
+                likes: 113620,
+                username: "lesoliviersdutaulisson",
+                script_content: "Petit déjeuner français avec croissants...",
+                title: "Rustic French breakfast setting"
+            },
+            {
+                hotel_name: "Tenuta di Murlo",
+                country: "Italy",
+                views: 2680570,
+                likes: 80722,
+                username: "tenutadimurlo", 
+                script_content: "Villa toscane avec piscine...",
+                title: "Italian Villa Tour"
+            },
+            {
+                hotel_name: "Tenuta di Murlo",
+                country: "Italy",
+                views: 786322,
+                likes: 24600,
+                username: "tenutadimurlo",
+                script_content: "Vue panoramique villa toscane...",
+                title: "Tranquil Tuscan Escape"
+            }
+        ];
+        
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+        
+        function simulateAIMatching(query) {
+            // Simple simulation of our AI logic
+            const queryLower = query.toLowerCase();
+            const results = [];
+            
+            mockTemplates.forEach(template => {
+                let score = 0.5; // Base score
+                
+                // French cuisine keywords
+                if (queryLower.includes('francais') || queryLower.includes('french') || 
+                    queryLower.includes('croissant') || queryLower.includes('dejeuner')) {
+                    if (template.country === 'France') score += 0.35;
+                    else score += 0.1;
+                }
+                
+                // Italian keywords
+                if (queryLower.includes('italian') || queryLower.includes('villa') || 
+                    queryLower.includes('tuscany') || queryLower.includes('toscane')) {
+                    if (template.country === 'Italy') score += 0.35;
+                    else score += 0.1;
+                }
+                
+                // Beach keywords
+                if (queryLower.includes('plage') || queryLower.includes('beach') || 
+                    queryLower.includes('mer') || queryLower.includes('soleil')) {
+                    score += 0.15; // All templates get some score
+                }
+                
+                results.push({
+                    template: template,
+                    score: Math.min(1.0, score),
+                    reasoning: `Match ${template.country} - ${(score * 100).toFixed(0)}% confidence`
+                });
+            });
+            
+            return results.sort((a, b) => b.score - a.score).slice(0, 3);
+        }
+        
+        function testQuery(query) {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = `
+                <div class="result">
+                    <h3>🔍 Requête: "${query}"</h3>
+                    <div class="loading">Analyse AI en cours...</div>
+                </div>
+            `;
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                const matches = simulateAIMatching(query);
+                
+                let resultHTML = `
+                    <div class="result">
+                        <h3>🔍 Requête: "${query}"</h3>
+                        <p><strong>✅ ${matches.length} matches trouvés:</strong></p>
+                `;
+                
+                matches.forEach((match, i) => {
+                    const template = match.template;
+                    resultHTML += `
+                        <div class="template-card">
+                            <h4>${i + 1}. ${template.hotel_name} (${template.country})</h4>
+                            <p><strong>Titre:</strong> ${template.title}</p>
+                            <div class="stats">
+                                <div class="stat">Score: ${(match.score * 100).toFixed(0)}%</div>
+                                <div class="stat">Vues: ${formatNumber(template.views)}</div>
+                                <div class="stat">Likes: ${formatNumber(template.likes)}</div>
+                                <div class="stat">@${template.username}</div>
+                            </div>
+                            <p><small>${match.reasoning}</small></p>
+                        </div>
+                    `;
+                });
+                
+                resultHTML += '</div>';
+                resultsDiv.innerHTML = resultHTML;
+            }, 1000);
+        }
+        
+        function loadSystemStatus() {
+            document.getElementById('system-status').innerHTML = `
+                <div class="status success">
+                    ✅ Système AI opérationnel - ${mockTemplates.length} templates synchronisés d'Airtable
+                </div>
+            `;
+        }
+        
+        function loadAvailableTemplates() {
+            let templatesHTML = '<h3>📊 Templates Airtable Synchronisés:</h3>';
+            
+            mockTemplates.forEach((template, i) => {
+                templatesHTML += `
+                    <div class="template-card">
+                        <h4><span class="viral-emoji">🎬</span>${template.hotel_name}</h4>
+                        <div class="stats">
+                            <div class="stat">🌍 ${template.country}</div>
+                            <div class="stat">👁️ ${formatNumber(template.views)}</div>
+                            <div class="stat">❤️ ${formatNumber(template.likes)}</div>
+                            <div class="stat">📺 @${template.username}</div>
+                        </div>
+                        <p><code>${template.script_content}</code></p>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('available-templates').innerHTML = templatesHTML;
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSystemStatus();
+            loadAvailableTemplates();
+        });
+    </script>
+</body>
+</html>

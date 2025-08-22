@@ -1,0 +1,30 @@
+{
+  "clips": [
+    {
+      "order": 1,
+      "duration": 8.0,
+      "description": "Vue panoramique époustouflante depuis la pointe de Lervilly - océan Atlantique à perte de vue, architecture traditionnelle bretonne avec pierres grises et toits d'ardoise, ciel breton dramatique"
+    },
+    {
+      "order": 2, 
+      "duration": 7.0,
+      "description": "Intérieur chaleureux de l'hôtel de charme - poutres apparentes, cheminée en pierre, décoration maritime authentique, grandes baies vitrées avec vue mer"
+    },
+    {
+      "order": 3,
+      "duration": 9.0,
+      "description": "Restaurant gastronomique avec spécialités bretonnes - plateaux de fruits de mer frais, homard breton, vue directe sur l'océan depuis la salle à manger"
+    },
+    {
+      "order": 4,
+      "duration": 8.0,
+      "description": "Accès direct à la plage privée - sentier côtier, rochers granitiques typiques de Bretagne, coucher de soleil doré sur l'Atlantique, spa avec vue mer"
+    }
+  ],
+  "texts": [
+    {"content": "Bretagne Secrète 🌊", "start_time": 0},
+    {"content": "Vue Océan Panoramique", "start_time": 8},
+    {"content": "Gastronomie & Bien-être", "start_time": 15},
+    {"content": "Réservez Votre Évasion Bretonne", "start_time": 25}
+  ]
+}
