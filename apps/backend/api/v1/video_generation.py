@@ -649,8 +649,28 @@ async def generate_video_from_viral_template(
         # Use new Celery task for video generation
         
         # Prepare timeline data from request
+        slot_assignments = request.source_data.get("slot_assignments", [])
+        
+        # Utilise toujours le matching intelligent pour optimiser les assignations
+        if template_id:
+            logger.info(f"🧠 Utilisation du matching intelligent pour template {template_id}")
+            try:
+                from services.smart_video_matching_service import smart_matching_service
+                matching_result = smart_matching_service.find_best_matches(
+                    property_id=request.property_id,
+                    template_id=template_id
+                )
+                # Remplace les slot assignments par ceux du matching intelligent
+                slot_assignments = matching_result.get("slot_assignments", [])
+                logger.info(f"✅ Matching intelligent terminé: {len(slot_assignments)} assignations avec score moyen {matching_result.get('matching_scores', {}).get('average_score', 0):.2f}")
+            except Exception as e:
+                logger.error(f"❌ Erreur lors du matching intelligent: {e}")
+                # Fallback vers assignation basique si erreur
+                if not slot_assignments:
+                    slot_assignments = []
+        
         timeline_data = {
-            "slot_assignments": request.source_data.get("slot_assignments", []),
+            "slot_assignments": slot_assignments,
             "text_overlays": request.source_data.get("text_overlays", []),
             "total_duration": request.source_data.get("total_duration", 30),
             "style_settings": {
@@ -905,3 +925,45 @@ async def delete_video(
     except Exception as e:
         logger.error(f"Error deleting video: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+class SmartMatchRequest(BaseModel):
+    property_id: str
+    template_id: str
+
+@router.post("/smart-match")
+async def get_smart_video_matching(
+    request: SmartMatchRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get smart video matching assignments for a template and property
+    """
+    try:
+        logger.info(f"🧠 Smart matching request: property={request.property_id}, template={request.template_id}")
+        
+        # Verify property belongs to current user
+        property = db.query(Property).filter(
+            Property.id == request.property_id,
+            Property.user_id == current_user.id
+        ).first()
+        
+        if not property:
+            raise HTTPException(status_code=404, detail="Property not found")
+        
+        # Use the smart matching service
+        from services.smart_video_matching_service import smart_matching_service
+        
+        result = smart_matching_service.find_best_matches(
+            property_id=request.property_id,
+            template_id=request.template_id
+        )
+        
+        logger.info(f"✅ Smart matching completed: {len(result.get('slot_assignments', []))} assignments")
+        logger.info(f"📊 Average score: {result.get('matching_scores', {}).get('average_score', 0):.3f}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Error in smart matching: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error in smart matching: {str(e)}")

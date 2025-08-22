@@ -314,6 +314,8 @@ export default function ComposePage() {
       templateSlots={templateSlots}
       contentVideos={contentVideos}
       onGenerate={handleGenerate}
+      propertyId={selectedProperty}
+      templateId={templateId}
     />
   )
 }
