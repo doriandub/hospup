@@ -29,6 +29,10 @@ class Video(Base):
     viral_video_id = Column(String, nullable=True)  # reference to matched viral video
     generation_job_id = Column(String, nullable=True)  # Celery job ID
     
+    # AI enhancements
+    ai_description = Column(Text, nullable=True)  # AI-generated Instagram description
+    instagram_audio_url = Column(String, nullable=True)  # Instagram audio link from viral template
+    
     # Relationships
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
     property_id = Column(String, ForeignKey("properties.id"), nullable=False)

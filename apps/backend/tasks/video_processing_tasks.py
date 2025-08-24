@@ -486,14 +486,17 @@ def _generate_video_thumbnail(video_path: str, video_id: str, temp_dir: str) -> 
         thumbnail_filename = f"{video_id}_thumbnail.jpg"
         thumbnail_path = os.path.join(temp_dir, thumbnail_filename)
         
-        # Use FFmpeg to extract a frame at 2 seconds (or middle of video)
+        # First try: Standard FFmpeg command with enhanced error handling for HEVC/iPhone videos
         ffmpeg_cmd = [
             "ffmpeg", "-y",
+            "-hwaccel", "auto",  # Use hardware acceleration if available
             "-i", video_path,
             "-ss", "2",  # Extract frame at 2 seconds
             "-vframes", "1",  # Extract only 1 frame
             "-vf", "scale=640:1138:force_original_aspect_ratio=decrease,pad=640:1138:(ow-iw)/2:(oh-ih)/2:black",  # 9:16 aspect ratio
             "-q:v", "2",  # High quality
+            "-pix_fmt", "yuv420p",  # Ensure compatible pixel format
+            "-avoid_negative_ts", "make_zero",  # Handle timestamp issues
             thumbnail_path
         ]
         
@@ -501,8 +504,67 @@ def _generate_video_thumbnail(video_path: str, video_id: str, temp_dir: str) -> 
         
         result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=30)
         
+        # If first attempt fails, try fallback methods for iPhone HEVC videos
         if result.returncode != 0:
-            logger.error(f"❌ FFmpeg failed to generate thumbnail: {result.stderr}")
+            logger.warning(f"⚠️ First attempt failed: {result.stderr}")
+            
+            # Fallback 1: Handle HDR/iPhone videos with strict compliance and color space conversion
+            fallback_cmd = [
+                "ffmpeg", "-y",
+                "-strict", "unofficial",  # Allow non-standard compliance for HDR content
+                "-i", video_path,
+                "-ss", "1",  # Try earlier in video
+                "-vframes", "1",
+                "-vf", "scale=640:1138:force_original_aspect_ratio=decrease,pad=640:1138:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p",  # Force color format conversion
+                "-q:v", "2",
+                "-pix_fmt", "yuv420p",
+                "-f", "image2",  # Force image output format
+                "-map", "0:v:0",  # Map only the first video stream
+                "-color_range", "pc",  # Force full range
+                thumbnail_path
+            ]
+            
+            logger.info(f"🔄 Trying HDR-compatible method: {' '.join(fallback_cmd)}")
+            result = subprocess.run(fallback_cmd, capture_output=True, text=True, timeout=30)
+            
+            # Fallback 2: If still failing, try PNG output (more compatible than JPEG)
+            if result.returncode != 0:
+                logger.warning(f"⚠️ Second attempt failed: {result.stderr}")
+                
+                # Try PNG output which is more compatible with HDR content
+                png_path = thumbnail_path.replace('.jpg', '.png')
+                minimal_cmd = [
+                    "ffmpeg", "-y",
+                    "-strict", "unofficial",
+                    "-i", video_path,
+                    "-vframes", "1",  # Just get first frame
+                    "-vf", "scale=640:1138:force_original_aspect_ratio=decrease,format=rgb24",  # RGB for PNG
+                    "-f", "png",
+                    png_path
+                ]
+                
+                logger.info(f"🔄 Trying PNG method: {' '.join(minimal_cmd)}")
+                result = subprocess.run(minimal_cmd, capture_output=True, text=True, timeout=30)
+                
+                # If PNG worked, convert to JPEG for consistency
+                if result.returncode == 0 and os.path.exists(png_path):
+                    convert_cmd = [
+                        "ffmpeg", "-y",
+                        "-i", png_path,
+                        "-q:v", "2",
+                        thumbnail_path
+                    ]
+                    convert_result = subprocess.run(convert_cmd, capture_output=True, text=True, timeout=10)
+                    if convert_result.returncode == 0:
+                        os.remove(png_path)  # Clean up PNG file
+                        logger.info("✅ Successfully converted PNG to JPEG thumbnail")
+                    else:
+                        # Keep PNG if conversion fails
+                        thumbnail_path = png_path
+                        logger.info("✅ Using PNG thumbnail (JPEG conversion failed)")
+        
+        if result.returncode != 0:
+            logger.error(f"❌ All FFmpeg attempts failed to generate thumbnail: {result.stderr}")
             return None
             
         if not os.path.exists(thumbnail_path):

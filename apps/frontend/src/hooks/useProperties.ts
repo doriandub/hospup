@@ -22,7 +22,7 @@ export function useProperties() {
       
       // If authentication error, redirect to login
       if (err.response?.status === 401) {
-        window.location.href = '/auth/signin'
+        window.location.href = '/auth/login'
       }
     } finally {
       setLoading(false)

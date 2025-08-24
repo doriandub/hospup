@@ -76,3 +76,82 @@
     @apply bg-background text-foreground font-inter;
   }
 }
+
+/* Custom Scrollbar Styling - Premium White Theme */
+@layer utilities {
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(17, 84, 70, 0.15) rgba(255, 255, 255, 0.1);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(248, 250, 252, 0.5);
+    border-radius: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(17, 84, 70, 0.2);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background-clip: content-box;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(17, 84, 70, 0.3);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-corner {
+    background: rgba(248, 250, 252, 0.5);
+  }
+
+  /* Smooth transitions and animations */
+  .glass-effect {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .subtle-glow {
+    box-shadow: 0 2px 8px rgba(17, 84, 70, 0.05);
+  }
+
+  .subtle-glow:hover {
+    box-shadow: 0 4px 12px rgba(17, 84, 70, 0.1);
+  }
+
+  /* Selection styling */
+  ::selection {
+    background: rgba(17, 84, 70, 0.15);
+    color: rgb(17, 84, 70);
+  }
+
+  ::-moz-selection {
+    background: rgba(17, 84, 70, 0.15);
+    color: rgb(17, 84, 70);
+  }
+
+  /* Focus styles for accessibility */
+  .focus-visible:focus {
+    outline: 1px solid rgba(17, 84, 70, 0.3);
+    outline-offset: 2px;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

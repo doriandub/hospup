@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     AWS_REGION: str = "eu-west-1"
     
     # Storage backend configuration
-    STORAGE_BACKEND: str = "local"  # 'local' or 's3'
+    STORAGE_BACKEND: str = "s3"  # 'local' or 's3'
     
     # External APIs
     OPENAI_API_KEY: str = ""

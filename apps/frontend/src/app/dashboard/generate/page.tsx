@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useProperties } from '@/hooks/useProperties'
@@ -25,10 +25,12 @@ import {
   Play,
   Copy,
   Type,
-  ArrowRight
+  ArrowRight,
+  Video
 } from 'lucide-react'
 import Link from 'next/link'
 import { TextGenerator } from '@/components/text-generator'
+import { InstagramEmbed } from '@/components/social/InstagramEmbed'
 
 interface InstagramTemplate {
   id: string
@@ -55,6 +57,9 @@ interface InstagramTemplate {
   has_music: boolean
   has_text_overlay: boolean
   language: string
+  hotel_name?: string
+  country?: string
+  thumbnail_url?: string
 }
 
 interface Property {
@@ -85,9 +90,10 @@ interface ViralTemplate {
 
 export default function GenerateVideoPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { properties } = useProperties()
   const [selectedProperty, setSelectedProperty] = useState<string>('')
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('fr')
   const [prompt, setPrompt] = useState('')
   const [template, setTemplate] = useState<InstagramTemplate | null>(null)
   const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null)
@@ -99,6 +105,8 @@ export default function GenerateVideoPage() {
   const [reconstructionPlan, setReconstructionPlan] = useState<any>(null)
   const [customTexts, setCustomTexts] = useState<any[]>([])
   const [showInstagramEmbed, setShowInstagramEmbed] = useState(false)
+  const [templatePool, setTemplatePool] = useState<InstagramTemplate[]>([])
+  const [currentTemplateIndex, setCurrentTemplateIndex] = useState(0)
 
   // Comprehensive language list
   const languages = [
@@ -191,6 +199,19 @@ export default function GenerateVideoPage() {
     return 'text-red-600 bg-red-50 border-red-200'
   }
 
+  // Record template view and add to Viral Inspiration
+  const recordTemplateView = async (templateId: string, context: string) => {
+    try {
+      await api.post('/api/v1/viral-matching/record-template-view', {
+        template_id: templateId,
+        context: context
+      })
+      console.log(`✅ Template view recorded: ${templateId} (${context})`)
+    } catch (error) {
+      console.error('Failed to record template view:', error)
+    }
+  }
+
   // Load viral templates from database
   useEffect(() => {
     const loadViralTemplates = async () => {
@@ -208,21 +229,55 @@ export default function GenerateVideoPage() {
     loadViralTemplates()
   }, [])
 
-  // Auto-select property language when property is selected
+  // Handle URL parameters for pre-selecting a viral template
   useEffect(() => {
-    if (selectedProperty) {
-      const property = properties.find(p => p.id === selectedProperty)
-      if (property && property.language) {
-        setSelectedLanguage(property.language)
+    const templateId = searchParams.get('template_id')
+    const templateTitle = searchParams.get('template_title')
+    
+    if (templateId && viralTemplates.length > 0) {
+      // Find the template in our loaded templates
+      const foundTemplate = viralTemplates.find(t => t.id === templateId)
+      if (foundTemplate) {
+        // Set prompt based on template title or description
+        setPrompt(templateTitle || foundTemplate.title || foundTemplate.description)
+        // Auto-navigate to template generation
+        setStep('template')
       }
     }
-  }, [selectedProperty, properties])
+  }, [searchParams, viralTemplates])
+
+  // Auto-select French language for all properties
+  useEffect(() => {
+    setSelectedLanguage('fr')
+  }, [])
+
+  // Reset template pool when prompt changes (new description = new pool needed)
+  useEffect(() => {
+    setTemplatePool([])
+    setCurrentTemplateIndex(0)
+  }, [prompt])
 
   const generateRandomPrompt = () => {
-    if (viralTemplates.length > 0) {
-      const randomTemplate = viralTemplates[Math.floor(Math.random() * viralTemplates.length)]
-      setPrompt(randomTemplate.description)
-    }
+    const postIdeas = [
+      "Faites découvrir votre piscine avec vue panoramique au coucher du soleil",
+      "Montrez le petit-déjeuner servi sur votre terrasse privée",
+      "Présentez votre suite avec jacuzzi et sa décoration unique",
+      "Filmez l'arrivée des clients dans votre hall d'entrée élégant",
+      "Capturez l'ambiance de votre restaurant gastronomique en soirée",
+      "Montrez les détails luxueux de votre chambre signature",
+      "Présentez votre spa et ses soins relaxants",
+      "Filmez la préparation d'un cocktail au bar avec vue",
+      "Montrez l'expérience complète d'une journée dans votre établissement",
+      "Présentez vos jardins secrets et espaces extérieurs",
+      "Capturez l'art de la table dans votre restaurant",
+      "Montrez la vue depuis votre rooftop ou terrasse panoramique",
+      "Présentez l'accueil VIP que vous réservez à vos clients",
+      "Filmez les coulisses de votre cuisine avec le chef",
+      "Montrez l'évolution de la lumière dans vos espaces selon l'heure"
+    ]
+    
+    const randomIdea = postIdeas[Math.floor(Math.random() * postIdeas.length)]
+    setPrompt(randomIdea)
   }
 
   const handleGenerateIdea = async (excludeCurrentTemplate = false) => {
@@ -231,8 +286,33 @@ export default function GenerateVideoPage() {
       return
     }
 
+    // If we have a template pool and user wants a new template, just cycle through the pool
+    if (excludeCurrentTemplate && templatePool.length > 0) {
+      const nextIndex = (currentTemplateIndex + 1) % templatePool.length
+      setCurrentTemplateIndex(nextIndex)
+      setTemplate(templatePool[nextIndex])
+      
+      // Record template view when cycling through pool
+      recordTemplateView(templatePool[nextIndex].id, `new_idea_${nextIndex + 1}`)
+      
+      // Preload reconstruction plan for the new template
+      try {
+        const reconstructionResponse = await api.post('/api/v1/video-reconstruction/reconstruct-video', {
+          template_id: templatePool[nextIndex].id,
+          property_id: selectedProperty
+        })
+        setReconstructionPlan(reconstructionResponse.data.reconstruction_plan)
+      } catch (error) {
+        console.log('Could not preload reconstruction plan')
+      }
+      
+      setStep('template')
+      return
+    }
+
     setLoading(true)
     try {
+      const newTemplatePool: InstagramTemplate[] = []
       // Use our intelligent smart-match endpoint
       const smartMatchResponse = await api.post('/api/v1/viral-matching/smart-match', {
         property_id: selectedProperty,
@@ -268,29 +348,17 @@ export default function GenerateVideoPage() {
           aspect_ratio: '9:16',
           has_music: true,
           has_text_overlay: true,
-          language: selectedLanguage
+          language: selectedLanguage,
+          hotel_name: smartMatch.hotel_name,
+          country: smartMatch.country,
+          thumbnail_url: smartMatch.thumbnail_url
         }
         
-        setTemplate(convertedTemplate)
-        
-        // Preload reconstruction plan for immediate display
-        try {
-          const reconstructionResponse = await api.post('/api/v1/video-reconstruction/reconstruct-video', {
-            template_id: smartMatch.id,
-            property_id: selectedProperty
-          })
-          
-          setReconstructionPlan(reconstructionResponse.data.reconstruction_plan)
-          console.log('🎬 Reconstruction plan preloaded:', reconstructionResponse.data.message)
-        } catch (error) {
-          console.log('Could not preload reconstruction plan')
-        }
-        
-        setStep('template')
-        return
+        // Add smart match template to the pool
+        newTemplatePool.push(convertedTemplate)
       }
       
-      // Fallback to random viral template from database if smart match fails
+      // Add more templates from viral templates to complete the pool (up to 5 total)
       if (viralTemplates.length > 0) {
         let availableTemplates = viralTemplates
         
@@ -304,37 +372,69 @@ export default function GenerateVideoPage() {
           availableTemplates = viralTemplates
         }
         
-        const randomViralTemplate = availableTemplates[Math.floor(Math.random() * availableTemplates.length)]
+        // Shuffle the templates and take up to 4 more to complete our pool of 5
+        const shuffledTemplates = [...availableTemplates].sort(() => Math.random() - 0.5)
+        const templatesNeeded = Math.min(4, shuffledTemplates.length)
         
-        // Convert viral template to InstagramTemplate format
-        const convertedTemplate: InstagramTemplate = {
-          id: randomViralTemplate.id,
-          instagram_url: '#viral-template-fallback',
-          instagram_id: randomViralTemplate.id,
-          title: randomViralTemplate.title,
-          description: randomViralTemplate.description,
-          view_count: Math.floor(Math.random() * 1000000) + 100000,
-          like_count: Math.floor(Math.random() * 50000) + 5000,
-          comment_count: Math.floor(Math.random() * 2000) + 200,
-          follower_count: Math.floor(Math.random() * 500000) + 50000,
-          viral_score: randomViralTemplate.popularity_score / 2,
-          engagement_rate: 0.75, // Default good engagement
-          hashtags: randomViralTemplate.tags || [],
-          category: randomViralTemplate.category,
-          scene_types: [],
-          prompt_suggestion: prompt,
-          difficulty_level: 'Medium',
-          author_username: 'viral_creator',
-          author_follower_count: Math.floor(Math.random() * 1000000) + 100000,
-          author_verified: true,
-          duration_seconds: Math.floor(randomViralTemplate.total_duration_max || 30),
-          aspect_ratio: '9:16',
-          has_music: true,
-          has_text_overlay: true,
-          language: selectedLanguage
+        for (let i = 0; i < templatesNeeded; i++) {
+          const randomViralTemplate = shuffledTemplates[i]
+          
+          // Convert viral template to InstagramTemplate format
+          const convertedTemplate: InstagramTemplate = {
+            id: randomViralTemplate.id,
+            instagram_url: randomViralTemplate.video_link || '#viral-template-fallback',
+            instagram_id: randomViralTemplate.id,
+            title: randomViralTemplate.title,
+            description: randomViralTemplate.description,
+            view_count: Math.floor(Math.random() * 1000000) + 100000,
+            like_count: Math.floor(Math.random() * 50000) + 5000,
+            comment_count: Math.floor(Math.random() * 2000) + 200,
+            follower_count: Math.floor(Math.random() * 500000) + 50000,
+            viral_score: randomViralTemplate.popularity_score / 2,
+            engagement_rate: 0.75, // Default good engagement
+            hashtags: randomViralTemplate.tags || [],
+            category: randomViralTemplate.category,
+            scene_types: [],
+            prompt_suggestion: prompt,
+            difficulty_level: 'Medium',
+            author_username: 'viral_creator',
+            author_follower_count: Math.floor(Math.random() * 1000000) + 100000,
+            author_verified: true,
+            duration_seconds: Math.floor(randomViralTemplate.total_duration_max || 30),
+            aspect_ratio: '9:16',
+            has_music: true,
+            has_text_overlay: true,
+            language: selectedLanguage,
+            hotel_name: randomViralTemplate.hotel_name,
+            country: randomViralTemplate.country,
+            thumbnail_url: randomViralTemplate.thumbnail_url
+          }
+          
+          newTemplatePool.push(convertedTemplate)
+        }
+      }
+      
+      // If we have templates in the pool, set it up
+      if (newTemplatePool.length > 0) {
+        setTemplatePool(newTemplatePool)
+        setCurrentTemplateIndex(0)
+        setTemplate(newTemplatePool[0])
+        
+        // Record template view for the initial template shown
+        recordTemplateView(newTemplatePool[0].id, 'initial_search')
+        
+        // Preload reconstruction plan for the first template
+        try {
+          const reconstructionResponse = await api.post('/api/v1/video-reconstruction/reconstruct-video', {
+            template_id: newTemplatePool[0].id,
+            property_id: selectedProperty
+          })
+          setReconstructionPlan(reconstructionResponse.data.reconstruction_plan)
+          console.log('🎬 Reconstruction plan preloaded:', reconstructionResponse.data.message)
+        } catch (error) {
+          console.log('Could not preload reconstruction plan')
         }
         
-        setTemplate(convertedTemplate)
         setStep('template')
       } else {
         alert('No viral templates available. Please try again later.')
@@ -552,20 +652,20 @@ export default function GenerateVideoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="p-6">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <Sparkles className="w-8 h-8 text-primary mr-3" />
-              Generate Viral Video
+            <h1 className="text-2xl font-semibold text-gray-900 flex items-center">
+              <Sparkles className="w-6 h-6 text-[#115446] mr-2" />
+              Générateur de vidéos IA
             </h1>
-            <p className="text-gray-600 mt-2">
-              {step === 'input' && 'Select property, language, and describe what you want to create'}
-              {step === 'template' && 'Template matched! Preview and customize'}
-              {step === 'texts' && 'Customize your texts and positioning'}
-              {step === 'generated' && 'Your viral video is ready!'}
+            <p className="text-gray-600 mt-1">
+              {step === 'input' && 'Sélectionnez votre propriété et décrivez votre vidéo'}
+              {step === 'template' && 'Template trouvé, prévisualisez le résultat'}
+              {step === 'texts' && 'Personnalisez les textes de votre vidéo'}
+              {step === 'generated' && 'Votre vidéo est prête !'}
             </p>
           </div>
           <Button
@@ -579,66 +679,52 @@ export default function GenerateVideoPage() {
 
         {/* Step 1: Input */}
         {step === 'input' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6">Generate Video</h2>
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Configuration</h2>
             
-            {/* Property and Language Selection */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {/* Property Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Select Property
-                </label>
-                <div className="space-y-2">
-                  {properties.map((property) => (
-                    <div
-                      key={property.id}
-                      onClick={() => setSelectedProperty(property.id)}
-                      className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+            {/* Property Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-4">
+                Sélectionnez votre propriété
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {properties.map((property) => (
+                  <button
+                    key={property.id}
+                    onClick={() => setSelectedProperty(property.id)}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all text-left ${
+                      selectedProperty === property.id
+                        ? 'border-primary bg-primary/10 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                         selectedProperty === property.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-gray-200 hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="flex items-center">
-                        <Building className="w-4 h-4 text-gray-400 mr-2" />
-                        <h3 className="font-medium text-gray-900">{property.name}</h3>
+                          ? 'bg-primary text-white'
+                          : 'bg-gray-100 text-gray-400'
+                      }`}>
+                        <Building className="w-4 h-4" />
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{property.location}</p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 truncate">{property.name}</h3>
+                        <p className="text-sm text-gray-600 truncate">{property.location}</p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Language Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Language
-                </label>
-                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {languages.map((language) => (
-                      <SelectItem key={language.code} value={language.code}>
-                        {language.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Description Input */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Description
+                Décrivez votre idée de vidéo
               </label>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="What do you want to highlight? (e.g., 'Romantic sunset dinner on the rooftop terrace')"
+                placeholder="Que voulez-vous mettre en avant ? (ex: 'Dîner romantique au coucher du soleil sur notre terrasse')"
                 className="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                 rows={4}
               />
@@ -648,13 +734,12 @@ export default function GenerateVideoPage() {
                   variant="outline"
                   onClick={generateRandomPrompt}
                   className="flex items-center"
-                  disabled={loadingTemplates || viralTemplates.length === 0}
                 >
                   <Shuffle className="w-4 h-4 mr-2" />
-                  {loadingTemplates ? 'Loading...' : `Random Idea (${viralTemplates.length} available)`}
+                  Idée aléatoire
                 </Button>
                 <span className="text-sm text-gray-500">
-                  Click below to generate template
+                  Cliquez ensuite sur "Générer une idée"
                 </span>
               </div>
             </div>
@@ -663,15 +748,19 @@ export default function GenerateVideoPage() {
             <Button
               onClick={handleGenerateIdea}
               disabled={!selectedProperty || !prompt.trim() || loading}
-              className="w-full bg-primary text-white hover:bg-primary/90 py-4 text-lg"
+              size="lg"
+              className="w-full"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Generating Template...
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Recherche en cours...
                 </>
               ) : (
-                'Generate Idea'
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Générer la vidéo
+                </>
               )}
             </Button>
           </div>
@@ -693,6 +782,11 @@ export default function GenerateVideoPage() {
                     <>
                       <Shuffle className="w-4 h-4 mr-2" />
                       Nouvelle idée
+                      {templatePool.length > 1 && (
+                        <span className="ml-1 text-xs opacity-75">
+                          ({currentTemplateIndex + 1}/{templatePool.length})
+                        </span>
+                      )}
                     </>
                   )}
                 </Button>
@@ -703,164 +797,65 @@ export default function GenerateVideoPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Instagram Embed Preview */}
-              <div>
-{showInstagramEmbed ? (
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4">
-                    {/* Instagram-like embed header */}
-                    <div className="flex items-center p-3 border-b border-gray-100">
-                      <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full mr-3 flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">{template.author_username.charAt(0)}</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center">
-                          <span className="font-medium text-gray-900 text-sm">@{template.author_username}</span>
-                          {template.author_verified && <CheckCircle className="w-3 h-3 ml-1 text-blue-500" />}
-                        </div>
-                        <div className="text-xs text-gray-500">Original video</div>
-                      </div>
+              {/* Video Thumbnail (style comme Viral Inspiration) */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Video Thumbnail/Preview */}
+                <div className="aspect-[9/16] bg-gray-100 relative overflow-hidden">
+                  {template.instagram_url && template.instagram_url.includes('instagram.com') ? (
+                    <div className="w-full h-full">
+                      <InstagramEmbed 
+                        postUrl={template.instagram_url}
+                        className="w-full h-full"
+                      />
                     </div>
-
-                    {/* Video preview area */}
-                    <div className="aspect-[9/16] max-h-96 bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-500 relative flex items-center justify-center">
-                      <div className="text-white text-center">
-                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                          <Play className="w-6 h-6" />
-                        </div>
-                        <p className="text-sm font-medium">{template.title}</p>
-                        <p className="text-xs opacity-75">{template.duration_seconds}s</p>
-                      </div>
-                      
-                      {/* Metrics Overlay */}
-                      <div className="absolute top-3 left-3 bg-black/80 text-white px-2 py-1 rounded-full text-xs font-medium">
-                        {formatNumber(template.view_count)} views
-                      </div>
-                      <div className="absolute top-3 right-3 bg-black/80 text-white px-2 py-1 rounded-full text-xs font-medium">
-                        Ratio: {template.follower_count > 0 ? (template.view_count / template.follower_count).toFixed(1) : 'N/A'}
-                      </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Video className="w-12 h-12 text-gray-300" />
                     </div>
-
-                    {/* Instagram-like footer */}
-                    <div className="p-3 space-y-2">
-                      <div className="flex items-center space-x-4 text-gray-900">
-                        <Heart className="w-5 h-5" />
-                        <MessageSquare className="w-5 h-5" />
-                        <ExternalLink className="w-5 h-5" />
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium">{formatNumber(template.like_count)} likes</span>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">@{template.author_username}</span> {template.description?.slice(0, 100)}...
-                      </div>
+                  )}
+                  
+                  {/* Play overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-sm">
+                      <Play className="w-5 h-5 text-gray-900 ml-0.5" />
                     </div>
                   </div>
-                ) : (
-                  <div className="aspect-video bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-500 rounded-lg flex items-center justify-center relative mb-4 overflow-hidden cursor-pointer"
-                       onClick={() => setShowInstagramEmbed(true)}>
-                    {/* Instagram-like embedded content */}
-                    <div className="absolute inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                      <div className="text-white text-center">
-                        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Play className="w-8 h-8" />
-                        </div>
-                        <p className="text-lg font-medium mb-1">Instagram Post Preview</p>
-                        <p className="text-sm opacity-90">Click to view embedded version</p>
-                      </div>
+                </div>
+                
+                {/* Template Header */}
+                <div className="p-6">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
+                      {template.hotel_name || template.title}
+                      {template.country && `, ${template.country}`}
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                    <div className="flex items-center">
+                      <Eye className="w-3 h-3 mr-1 text-[#115446]" />
+                      <span>{formatNumber(template.view_count)}</span>
                     </div>
-                    
-                    {/* Metrics Overlay */}
-                    <div className="absolute top-4 left-4 bg-black/80 text-white px-3 py-1 rounded-full text-sm font-medium">
-                      {formatNumber(template.view_count)} views
-                    </div>
-                    <div className="absolute top-4 right-4 bg-black/80 text-white px-3 py-1 rounded-full text-sm font-medium">
-                      Ratio: {template.follower_count > 0 ? (template.view_count / template.follower_count).toFixed(1) : 'N/A'}
+                    <div className="flex items-center">
+                      <Users className="w-3 h-3 mr-1 text-[#ff914d]" />
+                      <span>{formatNumber(template.author_follower_count)}</span>
                     </div>
                   </div>
-                )}
-
-                {/* Toggle and View Original Buttons */}
-                <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setShowInstagramEmbed(!showInstagramEmbed)}
-                  >
-                    {showInstagramEmbed ? (
-                      <>
-                        <Eye className="w-4 h-4 mr-2" />
-                        Show Simple Preview
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-2" />
-                        Show Instagram Embed
-                      </>
-                    )}
-                  </Button>
+                  
+                  {/* View Original Button */}
                   <Button
                     variant="outline"
                     className="w-full"
                     onClick={() => window.open(template.instagram_url, '_blank')}
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
-                    View Original on Instagram
+                    Voir l'original
                   </Button>
-                </div>
-                
-                {/* Template Stats */}
-                <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 rounded-lg">
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-gray-900">{formatNumber(template.view_count)}</div>
-                    <div className="text-xs text-gray-500">Views</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-gray-900">{formatNumber(template.like_count)}</div>
-                    <div className="text-xs text-gray-500">Likes</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-gray-900">{formatNumber(template.author_follower_count)}</div>
-                    <div className="text-xs text-gray-500">Followers</div>
-                  </div>
                 </div>
               </div>
 
               {/* Template Details */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">{template.title}</h3>
-                <p className="text-gray-600 mb-4">{template.description}</p>
-
-                {/* Author Info */}
-                <div className="flex items-center mb-6 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full mr-3 flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">{template.author_username.charAt(0)}</span>
-                  </div>
-                  <div>
-                    <div className="flex items-center">
-                      <span className="font-medium text-gray-900">@{template.author_username}</span>
-                      {template.author_verified && <CheckCircle className="w-4 h-4 ml-1 text-blue-500" />}
-                    </div>
-                    <div className="text-sm text-gray-500">{formatNumber(template.author_follower_count)} followers</div>
-                  </div>
-                </div>
-
-                {/* Matching Info */}
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-2">
-                      <span className="text-white text-xs font-bold">✓</span>
-                    </div>
-                    <span className="font-medium text-green-900">Template trouvé !</span>
-                  </div>
-                  <p className="text-sm text-green-700 mb-2">
-                    Cette vidéo correspond à votre description et a un bon ratio vues/abonnés ({template.follower_count > 0 ? (template.view_count / template.follower_count).toFixed(1) : 'N/A'})
-                  </p>
-                  <div className="text-xs text-green-600 space-y-1">
-                    <div>✅ Catégorie: {template.category}</div>
-                    <div>✅ Auteur: @{template.author_username}</div>
-                    <div>✅ Durée: ~{template.duration_seconds}s</div>
-                  </div>
-                </div>
 
                 {/* Reconstruction Plan Preview */}
                 {reconstructionPlan && (
@@ -890,14 +885,6 @@ export default function GenerateVideoPage() {
                   >
                     <ArrowRight className="w-5 h-5 mr-2" />
                     Composer la Vidéo
-                  </Button>
-                  <Button
-                    onClick={() => setStep('texts')}
-                    variant="outline"
-                    className="w-full py-3"
-                  >
-                    <Type className="w-4 h-4 mr-2" />
-                    Mode Rapide (Textes seulement)
                   </Button>
                 </div>
               </div>

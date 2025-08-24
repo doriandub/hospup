@@ -20,6 +20,7 @@ import {
   Upload,
   Video
 } from 'lucide-react'
+import Image from 'next/image'
 
 export default function PropertiesPage() {
   const router = useRouter()
@@ -30,6 +31,7 @@ export default function PropertiesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [videoCounts, setVideoCounts] = useState<Record<string, number>>({})
+  const [propertyThumbnails, setPropertyThumbnails] = useState<Record<string, string>>({})
 
   const handleCreate = async (data: any) => {
     setIsSubmitting(true)
@@ -81,7 +83,8 @@ export default function PropertiesPage() {
   const fetchVideoCount = async (propertyId: string) => {
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/v1/videos/?property_id=${propertyId}`, {
+      // Only count uploaded videos, not generated ones
+      const response = await fetch(`http://localhost:8000/api/v1/videos/?property_id=${propertyId}&video_type=uploaded`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -90,6 +93,20 @@ export default function PropertiesPage() {
       if (response.ok) {
         const videos = await response.json()
         setVideoCounts(prev => ({ ...prev, [propertyId]: videos.length }))
+        
+        // Get thumbnail from the most recent video if available
+        if (videos.length > 0) {
+          const mostRecentVideo = videos.sort((a: any, b: any) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )[0]
+          
+          if (mostRecentVideo.thumbnail_url) {
+            setPropertyThumbnails(prev => ({ 
+              ...prev, 
+              [propertyId]: mostRecentVideo.thumbnail_url 
+            }))
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching video count:', error)
@@ -117,18 +134,6 @@ export default function PropertiesPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Properties</h1>
-          <p className="text-gray-600 mt-1">Manage your hotels, Airbnb, restaurants and vacation rentals</p>
-        </div>
-        <Button onClick={() => router.push('/dashboard/properties/new')}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Property
-        </Button>
-      </div>
-
       {/* Error State */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
@@ -150,96 +155,136 @@ export default function PropertiesPage() {
       )}
 
       {/* Properties Grid */}
-      {properties.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {properties.map((property) => (
-            <div key={property.id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{property.name}</h3>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
-                      {property.property_type?.replace('_', ' ') || 'Property'}
-                    </span>
-                  </div>
-                  <div className="flex space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditModal(property)}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(property)}
-                      disabled={isDeleting === property.id}
-                      className="text-gray-500 hover:text-red-600"
-                    >
-                      {isDeleting === property.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Add Property Card - Always first */}
+        <div 
+          className="bg-[#115446]/5 border border-[#115446]/30 rounded-xl shadow-sm p-6 cursor-pointer hover:bg-[#115446]/10 hover:shadow-md transition-all duration-200 group"
+          onClick={() => router.push('/dashboard/properties/new')}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold mb-2 text-[#115446]" style={{ fontFamily: 'Inter' }}>Add Property</h1>
+              <p className="text-base font-medium text-[#115446]/80" style={{ fontFamily: 'Inter' }}>Create new property</p>
+            </div>
+            <div className="bg-[#115446]/10 rounded-full p-3 group-hover:bg-[#115446]/20 transition-all">
+              <Plus className="w-5 h-5 text-[#115446]" />
+            </div>
+          </div>
+        </div>
 
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+        {/* Property Cards */}
+        {properties.map((property) => (
+          <div key={property.id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 overflow-hidden">
+            {/* Thumbnail */}
+            {propertyThumbnails[property.id] ? (
+              <div className="relative aspect-[16/9] bg-gray-100">
+                <Image 
+                  src={propertyThumbnails[property.id]} 
+                  alt={property.name}
+                  fill
+                  className="object-cover"
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  priority={false}
+                  unoptimized={propertyThumbnails[property.id].includes('amazonaws.com')}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute bottom-3 left-3 right-3">
+                  <h3 className="text-white font-semibold text-lg mb-1 drop-shadow-sm">{property.name}</h3>
+                  <div className="flex items-center text-white/90 text-sm">
+                    <MapPin className="w-3 h-3 mr-1" />
                     <span>{property.city}, {property.country}</span>
                   </div>
-                  
-                  {property.website_url && (
-                    <div className="flex items-center">
-                      <Globe className="w-4 h-4 mr-2 text-gray-400" />
-                      <a 
-                        href={property.website_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:text-primary/80 truncate"
-                      >
-                        {property.website_url.replace(/^https?:\/\//, '')}
-                      </a>
-                    </div>
-                  )}
-                  
-                  {property.phone && (
-                    <div className="flex items-center">
-                      <Phone className="w-4 h-4 mr-2 text-gray-400" />
-                      <span>{property.phone}</span>
-                    </div>
-                  )}
-                  
-                  {property.instagram_handle && (
-                    <div className="flex items-center">
-                      <Instagram className="w-4 h-4 mr-2 text-gray-400" />
-                      <span>{property.instagram_handle}</span>
-                    </div>
-                  )}
                 </div>
+              </div>
+            ) : (
+              <div className="relative aspect-[16/9] bg-gradient-to-br from-[#115446]/10 to-[#ff914d]/10 flex items-center justify-center">
+                <div className="text-center">
+                  <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm">No videos yet</p>
+                </div>
+                <div className="absolute bottom-3 left-3 right-3">
+                  <h3 className="text-gray-900 font-semibold text-lg mb-1">{property.name}</h3>
+                  <div className="flex items-center text-gray-600 text-sm">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    <span>{property.city}, {property.country}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#115446]/10 text-[#115446] capitalize mb-2">
+                    {property.property_type?.replace('_', ' ') || 'Property'}
+                  </span>
+                </div>
+                <div className="flex space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openEditModal(property)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(property)}
+                    disabled={isDeleting === property.id}
+                    className="text-gray-500 hover:text-red-600"
+                  >
+                    {isDeleting === property.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
 
-                {property.description && (
-                  <p className="text-sm text-gray-600 mt-4 line-clamp-3">
-                    {property.description}
-                  </p>
+              <div className="space-y-2 text-sm text-gray-600">
+                {property.website_url && (
+                  <div className="flex items-center">
+                    <Globe className="w-4 h-4 mr-2 text-gray-400" />
+                    <a 
+                      href={property.website_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[#115446] hover:text-[#115446]/80 truncate"
+                    >
+                      {property.website_url.replace(/^https?:\/\//, '')}
+                    </a>
+                  </div>
                 )}
+                
+                {property.phone && (
+                  <div className="flex items-center">
+                    <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                    <span>{property.phone}</span>
+                  </div>
+                )}
+                
+                {property.instagram_handle && (
+                  <div className="flex items-center">
+                    <Instagram className="w-4 h-4 mr-2 text-gray-400" />
+                    <span>{property.instagram_handle}</span>
+                  </div>
+                )}
+              </div>
 
-                <div className="mt-6 pt-4 border-t border-gray-100">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs text-gray-500">Created {new Date(property.created_at).toLocaleDateString()}</span>
-                    <div className="flex items-center text-xs text-gray-500">
-                      <Video className="w-3 h-3 mr-1" />
-                      {videoCounts[property.id] || 0} videos
-                    </div>
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <Video className="w-3 h-3 mr-1" />
+                    {videoCounts[property.id] || 0} videos
                   </div>
                   <Button 
                     variant="outline" 
-                    size="sm" 
-                    className="w-full"
+                    size="sm"
                     onClick={() => router.push(`/dashboard/properties/${property.id}/content`)}
                   >
                     <Upload className="w-4 h-4 mr-2" />
@@ -248,9 +293,9 @@ export default function PropertiesPage() {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
 
       {/* Create Property Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>

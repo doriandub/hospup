@@ -29,7 +29,7 @@ import {
 import Image from 'next/image'
 import { FileUpload } from '@/components/upload/file-upload'
 
-type GenerationStep = 'input' | 'matching' | 'template_selection' | 'generation' | 'completed'
+type GenerationStep = 'input' | 'matching' | 'idea_selection' | 'generation' | 'completed'
 
 export default function GenerateVideoPage() {
   const router = useRouter()
@@ -46,8 +46,8 @@ export default function GenerateVideoPage() {
   
   // Matching state
   const [matchingJobId, setMatchingJobId] = useState<string>('')
-  const [viralMatches, setViralMatches] = useState<ViralVideoMatch[]>([])
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('')
+  const [descriptionIdeas, setDescriptionIdeas] = useState<string[]>([])
+  const [selectedIdea, setSelectedIdea] = useState<string>('')
   
   // Generation state
   const [generationJobId, setGenerationJobId] = useState<string>('')
@@ -154,9 +154,17 @@ export default function GenerateVideoPage() {
       try {
         const status = await videoGenerationApi.getJobStatus(jobId)
         
-        if (status.status === 'SUCCESS' && status.result?.matches) {
-          setViralMatches(status.result.matches)
-          setCurrentStep('template_selection')
+        if (status.status === 'SUCCESS') {
+          // Temporarily use mock ideas - we'll update this later with proper backend endpoint
+          const mockIdeas = [
+            "Découvrez les secrets cachés de cet hôtel de luxe avec une visite guidée immersive",
+            "Une journée parfaite dans notre propriété : du réveil au coucher du soleil",
+            "Les 5 raisons pour lesquelles cet endroit est devenu viral sur TikTok",
+            "Tour rapide de notre suite présidentielle avec vue panoramique",
+            "Ce qui se passe vraiment dans les coulisses d'un hôtel 5 étoiles"
+          ]
+          setDescriptionIdeas(mockIdeas)
+          setCurrentStep('idea_selection')
         } else if (status.status === 'FAILURE') {
           setError(status.error || 'Video matching failed')
         } else {
@@ -172,8 +180,8 @@ export default function GenerateVideoPage() {
   }
 
   const startVideoGeneration = async () => {
-    if (!selectedTemplate) {
-      setError('Please select a viral video template')
+    if (!selectedIdea) {
+      setError('Please select a description idea')
       return
     }
     
@@ -182,11 +190,9 @@ export default function GenerateVideoPage() {
       setCurrentStep('generation')
       
       const response = await videoGenerationApi.generateVideo({
-        viral_video_id: selectedTemplate,
         property_id: selectedProperty,
-        input_data: textInput,
-        input_type: inputType,
-        language: 'en'
+        input_data: selectedIdea,
+        input_type: 'text'
       })
       
       const jobId = response.data?.job_id
@@ -235,8 +241,8 @@ export default function GenerateVideoPage() {
     setTextInput('')
     setUploadedFile(null)
     setUploadedImageUrl('')
-    setViralMatches([])
-    setSelectedTemplate('')
+    setDescriptionIdeas([])
+    setSelectedIdea('')
     setGenerationProgress(0)
     setGenerationStage('')
     setGeneratedVideoId('')
@@ -265,10 +271,10 @@ export default function GenerateVideoPage() {
       {/* Progress Steps */}
       <div className="mb-8">
         <div className="flex items-center space-x-4">
-          {['Input', 'Matching', 'Template', 'Generation', 'Completed'].map((step, index) => {
-            const stepKey = ['input', 'matching', 'template_selection', 'generation', 'completed'][index]
+          {['Input', 'Ideas', 'Selection', 'Generation', 'Completed'].map((step, index) => {
+            const stepKey = ['input', 'matching', 'idea_selection', 'generation', 'completed'][index]
             const isActive = currentStep === stepKey
-            const isCompleted = ['input', 'matching', 'template_selection', 'generation', 'completed'].indexOf(currentStep) > index
+            const isCompleted = ['input', 'matching', 'idea_selection', 'generation', 'completed'].indexOf(currentStep) > index
             
             return (
               <div key={step} className="flex items-center">
@@ -430,7 +436,7 @@ export default function GenerateVideoPage() {
                 disabled={!selectedProperty || (!textInput.trim() && inputType === 'text') || (!uploadedFile && inputType === 'photo')}
                 className="bg-primary hover:bg-primary/90"
               >
-                Find Matching Templates
+                Get Description Ideas
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
@@ -442,17 +448,17 @@ export default function GenerateVideoPage() {
       {currentStep === 'matching' && (
         <Card>
           <CardHeader>
-            <CardTitle>Step 2: Finding Viral Templates</CardTitle>
+            <CardTitle>Step 2: Generating Ideas</CardTitle>
             <CardDescription>
-              Our AI is searching for viral video templates that match your concept
+              Our AI is creating personalized description ideas for your property
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <Sparkles className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Analyzing Your Input</h3>
-                <p className="text-gray-600 mb-4">Finding the best viral video templates for your property...</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Creating Ideas for You</h3>
+                <p className="text-gray-600 mb-4">Generating creative description ideas for your video content...</p>
                 <div className="flex items-center justify-center">
                   <Loader2 className="w-5 h-5 animate-spin text-primary mr-2" />
                   <span className="text-sm text-gray-500">This may take a moment</span>
@@ -463,73 +469,51 @@ export default function GenerateVideoPage() {
         </Card>
       )}
 
-      {/* Step 3: Template Selection */}
-      {currentStep === 'template_selection' && (
+      {/* Step 3: Idea Selection */}
+      {currentStep === 'idea_selection' && (
         <Card>
           <CardHeader>
-            <CardTitle>Step 3: Choose Your Template</CardTitle>
+            <CardTitle>Step 3: Choose Your Description Idea</CardTitle>
             <CardDescription>
-              Select a viral video template that best matches your vision
+              Select a description idea that you'd like to turn into a viral video
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {viralMatches.length === 0 ? (
+            {descriptionIdeas.length === 0 ? (
               <div className="text-center py-8">
                 <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Matches Found</h3>
-                <p className="text-gray-600 mb-4">We couldn&apos;t find viral templates matching your input. Try a different description.</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Ideas Generated</h3>
+                <p className="text-gray-600 mb-4">We couldn't generate ideas for your input. Try a different description.</p>
                 <Button onClick={resetGeneration} variant="outline">
                   Try Again
                 </Button>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {viralMatches.map((match) => (
+                <div className="space-y-3">
+                  {descriptionIdeas.map((idea, index) => (
                     <button
-                      key={match.viral_video.id}
-                      onClick={() => setSelectedTemplate(match.viral_video.id)}
-                      className={`text-left p-4 border-2 rounded-lg transition-colors ${
-                        selectedTemplate === match.viral_video.id 
+                      key={index}
+                      onClick={() => setSelectedIdea(idea)}
+                      className={`w-full text-left p-4 border-2 rounded-lg transition-colors ${
+                        selectedIdea === idea 
                           ? 'border-primary bg-primary/5' 
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
-                        {match.viral_video.thumbnail_url ? (
-                          <Image
-                            src={match.viral_video.thumbnail_url}
-                            alt={match.viral_video.title}
-                            width={400}
-                            height={225}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Play className="w-8 h-8 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
-                      
-                      <h3 className="font-semibold text-gray-900 mb-1 text-sm">
-                        {match.viral_video.title}
-                      </h3>
-                      
-                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">
-                        {match.viral_video.description}
-                      </p>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-1">
-                          {match.viral_video.tags.slice(0, 2).map((tag) => (
-                            <span key={tag} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                              {tag}
-                            </span>
-                          ))}
+                      <div className="flex items-start space-x-3">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mt-1 ${
+                          selectedIdea === idea 
+                            ? 'bg-primary text-white' 
+                            : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {index + 1}
                         </div>
-                        <span className="text-xs text-primary font-medium">
-                          {Math.round(match.similarity * 100)}% match
-                        </span>
+                        <div className="flex-1">
+                          <p className="text-gray-900 text-sm leading-relaxed">
+                            {idea}
+                          </p>
+                        </div>
                       </div>
                     </button>
                   ))}
@@ -541,7 +525,7 @@ export default function GenerateVideoPage() {
                   </Button>
                   <Button 
                     onClick={startVideoGeneration}
-                    disabled={!selectedTemplate}
+                    disabled={!selectedIdea}
                     className="bg-primary hover:bg-primary/90"
                   >
                     Generate Video

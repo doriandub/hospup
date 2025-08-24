@@ -368,8 +368,16 @@ def _upload_to_s3(video_path: str, video_id: str, property_id: str) -> tuple[str
     if not upload_result.get('success'):
         raise Exception("S3 upload failed")
     
+    # Generate real thumbnail from video before we cleanup the temp file
+    from tasks.video_processing_tasks import _generate_video_thumbnail
+    
+    try:
+        thumbnail_url = _generate_video_thumbnail(video_path, video_id, os.path.dirname(video_path))
+    except Exception as e:
+        logger.warning(f"Failed to generate thumbnail: {e}")
+        thumbnail_url = "https://picsum.photos/640/1138"  # Fallback
+    
     # Generate presigned URLs
     video_url = s3_service.generate_presigned_download_url(s3_key, expires_in=86400)
-    thumbnail_url = "https://picsum.photos/640/1138"  # Placeholder for now
     
     return video_url, thumbnail_url

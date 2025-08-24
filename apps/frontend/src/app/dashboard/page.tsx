@@ -5,13 +5,15 @@ import Link from 'next/link'
 import {
   Building2,
   Video,
-  BarChart3,
   Play,
   Plus,
   Upload,
   Activity,
-  Download,
-  TrendingUp
+  BarChart3,
+  Headphones,
+  ArrowRight,
+  Wand2,
+  Youtube
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
@@ -58,216 +60,260 @@ export default function DashboardPage() {
     fetchStats()
   }, [])
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#115446] mx-auto mb-4"></div>
+          <p className="text-[#115446]">Loading metrics...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Welcome Banner */}
-      <Link
-        href="/dashboard/generate"
-        className="block bg-gradient-to-r from-primary via-primary/90 to-primary/80 p-8 rounded-xl shadow-lg border border-primary/20 hover:shadow-xl transition-all duration-200 cursor-pointer"
-      >
-        <div className="flex items-center justify-between">
-          <div className="space-y-3">
-            <h1 className="text-3xl font-semibold text-white">
-              Welcome back, {user?.name}!
-            </h1>
-            <p className="text-white/90 font-medium">
-              Ready to create your next viral video?
-            </p>
-          </div>
-          <div className="p-4 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 shadow-sm">
-            <Play className="w-6 h-6 text-white" />
-          </div>
-        </div>
-      </Link>
-
-      {/* Action Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/dashboard/generate">
-          <Button 
-            className="w-full bg-white border border-gray-200 text-gray-700 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-primary hover:text-primary transition-all duration-200 h-auto justify-start"
-            variant="ghost"
-          >
-            <Video className="w-5 h-5 mr-3" />
-            <span className="font-medium">Generate Video</span>
-          </Button>
-        </Link>
+    <div className="min-h-screen bg-gray-50 font-inter">
+      <div className="grid grid-cols-1 gap-3 p-8">
         
-        <Link href="/dashboard/properties">
-          <Button 
-            className="w-full bg-white border border-gray-200 text-gray-700 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-primary hover:text-primary transition-all duration-200 h-auto justify-start"
-            variant="ghost"
-          >
-            <Upload className="w-5 h-5 mr-3" />
-            <span className="font-medium">Upload Content</span>
-          </Button>
-        </Link>
-        
-        <Link href="/dashboard/properties">
-          <Button 
-            className="w-full bg-white border border-gray-200 text-gray-700 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-primary hover:text-primary transition-all duration-200 h-auto justify-start"
-            variant="ghost"
-          >
-            <Plus className="w-5 h-5 mr-3" />
-            <span className="font-medium">Add Property</span>
-          </Button>
-        </Link>
-      </div>
-
-      {/* Stats Section */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">At a Glance</h2>
-        {loading ? (
-          <div className="py-8 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            <span className="ml-2 text-gray-600">Loading metrics...</span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Total Videos - Premier à gauche */}
-            <Link href="/dashboard/videos">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 cursor-pointer">
-                <div className="space-y-4">
-                  <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl w-fit border border-blue-200">
-                    <Video className="w-6 h-6 text-blue-700" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-3xl font-semibold text-gray-900">{stats?.total_videos ?? 0}</p>
-                    <p className="text-sm font-medium text-gray-600">Total Videos</p>
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            {/* Total Properties - Deuxième */}
-            <Link href="/dashboard/properties">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 cursor-pointer">
-                <div className="space-y-4">
-                  <div className="p-3 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl w-fit border border-gray-200">
-                    <Building2 className="w-6 h-6 text-gray-700" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-3xl font-semibold text-gray-900">{stats?.total_properties ?? 0}</p>
-                    <p className="text-sm font-medium text-gray-600">Total Properties</p>
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            {/* Usage ce mois - Troisième */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <div className="space-y-4">
-                <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-xl w-fit border border-green-200">
-                  <BarChart3 className="w-6 h-6 text-green-700" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-3xl font-semibold text-gray-900">{stats?.videos_this_month ?? 0}/{stats?.videos_limit ?? 2}</p>
-                  <p className="text-sm font-medium text-gray-600">Videos This Month / Limit</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Recent Activity */}
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="divide-y divide-gray-50">
-            <div className="p-6">
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Create New Video */}
+          <Link href="/dashboard/generate" className="md:col-span-2">
+            <div className="bg-gradient-to-tl from-[#115446] to-[#138a73] rounded-xl shadow-sm p-8 text-white cursor-pointer hover:shadow-md hover:brightness-110 transition-all duration-200 group h-full">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="p-2 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
-                    <Activity className="w-4 h-4 text-gray-700" />
+                <div>
+                  <h1 className="text-xl font-semibold mb-2" style={{ fontFamily: 'Inter' }}>Create New Video</h1>
+                  <p className="text-base font-medium text-white/90" style={{ fontFamily: 'Inter' }}>Start creating</p>
+                </div>
+                <div className="bg-white bg-opacity-20 rounded-full p-3 group-hover:bg-opacity-30 transition-all">
+                  <Plus className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+          </Link>
+          
+          {/* Upload Content */}
+          <Link href="/dashboard/properties" className="md:col-span-2">
+            <div className="bg-[#115446]/5 border border-dashed border-[#115446] rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#115446]/10 hover:shadow-md transition-all duration-200 group h-full">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-xl font-semibold mb-2 text-[#115446]" style={{ fontFamily: 'Inter' }}>Upload Content</h1>
+                  <p className="text-base font-medium text-[#115446]/80" style={{ fontFamily: 'Inter' }}>Drag & drop</p>
+                </div>
+                <div className="bg-[#115446]/10 rounded-full p-3 group-hover:bg-[#115446]/20 transition-all">
+                  <Upload className="w-5 h-5 text-[#115446]" />
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Total Videos */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
+            <div className="flex items-center space-x-3">
+              <div className="bg-gray-100 p-2 rounded-lg">
+                <Video className="w-4 h-4 text-gray-700" />
+              </div>
+              <div>
+                <div className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
+                  {stats?.total_videos ?? 0}
+                </div>
+                <div className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Total Videos</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Videos Remaining */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
+            <div className="flex items-center space-x-3">
+              <div className="bg-gray-100 p-2 rounded-lg">
+                <BarChart3 className="w-4 h-4 text-gray-700" />
+              </div>
+              <div>
+                <div className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
+                  {(stats?.videos_limit ?? 50) - (stats?.videos_used ?? 0)}
+                </div>
+                <div className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Videos Remaining</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Properties */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
+            <div className="flex items-center space-x-3">
+              <div className="bg-gray-100 p-2 rounded-lg">
+                <Building2 className="w-4 h-4 text-gray-700" />
+              </div>
+              <div>
+                <div className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
+                  {stats?.total_properties ?? 0}
+                </div>
+                <div className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Total Properties</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Add Property */}
+          <Link href="/dashboard/properties">
+            <div className="bg-[#115446]/5 border border-[#115446]/30 rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#115446]/10 hover:shadow-md transition-all duration-200 h-full">
+              <div className="flex items-center space-x-3 h-full">
+                <div className="bg-[#115446]/10 rounded-full p-3 group-hover:bg-[#115446]/20 transition-all">
+                  <Plus className="w-5 h-5 text-[#115446]" />
+                </div>
+                <span className="text-sm font-medium text-[#115446]" style={{ fontFamily: 'Inter' }}>Add Property</span>
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        {/* How to use Hospup */}
+        <div className="space-y-3">
+          <h2 className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>How to use Hospup</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {/* YouTube Tutorial */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
+              <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-all">
+                <div className="text-center">
+                  <Youtube className="w-16 h-16 text-red-500 mx-auto mb-2" />
+                  <p className="text-gray-600 font-medium" style={{ fontFamily: 'Inter' }}>Watch Tutorial</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 3 Steps Process */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>Get Started in 3 Steps</h3>
+              <div className="relative">
+                {/* Progress Line */}
+                <div className="absolute left-4 top-8 bottom-8 w-0.5 bg-[#115446]/20"></div>
+                
+                <div className="space-y-8">
+                  {/* Step 1 */}
+                  <div className="flex items-start relative">
+                    <div className="flex items-center justify-center w-8 h-8 bg-[#115446] text-white rounded-full font-semibold text-xs z-10">
+                      1
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Add Your Hotel</span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Welcome to Hospup!</p>
-                    <p className="text-sm text-gray-600">Your account has been created successfully</p>
+
+                  {/* Step 2 */}
+                  <div className="flex items-start relative">
+                    <div className="flex items-center justify-center w-8 h-8 bg-[#115446] text-white rounded-full font-semibold text-xs z-10">
+                      2
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Upload Content</span>
+                    </div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="flex items-start relative">
+                    <div className="flex items-center justify-center w-8 h-8 bg-[#115446] text-white rounded-full font-semibold text-xs z-10">
+                      3
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Generate Videos</span>
+                    </div>
                   </div>
                 </div>
-                <div className="text-sm font-medium text-gray-500">Just now</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Usage Stats & Help */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Usage Stats */}
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Usage Metrics</h3>
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Videos Used</span>
-                <span className="text-sm font-semibold text-gray-900">{user?.videosUsed} / {user?.videosLimit}</span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200">
-                <div 
-                  className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full" 
-                  style={{ width: `${((user?.videosUsed ?? 0) / (user?.videosLimit ?? 1)) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Properties Registered</span>
-                <span className="text-sm font-semibold text-gray-900">{stats?.total_properties ?? 0} / 5</span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200">
-                <div 
-                  className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full" 
-                  style={{ width: `${((stats?.total_properties ?? 0) / 5) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Storage Used</span>
-                <span className="text-sm font-semibold text-gray-900">{stats?.storage_used ?? 0}GB / 50GB</span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200">
-                <div 
-                  className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full" 
-                  style={{ width: `${((stats?.storage_used ?? 0) / 50) * 100}%` }}
-                ></div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Getting Started */}
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Getting Started</h3>
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              Start creating viral videos for your properties in just a few steps:
-            </p>
+
+        {/* Bottom Section */}
+        <div className="space-y-3">
+          <h2 className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>Account Overview</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {/* Usage Metrics */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>Usage Metrics</h3>
             <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-medium">1</div>
-                <span className="text-sm text-gray-700">Add your first property</span>
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Videos Used</span>
+                  <span className="text-sm font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
+                    {stats?.videos_used ?? 0}/50
+                  </span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      (stats?.videos_used ?? 0) > 50 
+                        ? 'bg-gradient-to-r from-red-500 to-red-600' 
+                        : 'bg-gradient-to-r from-[#115446] to-[#0f4a3d]'
+                    }`}
+                    style={{ width: `${Math.min(((stats?.videos_used ?? 0) / 50) * 100, 100)}%` }}
+                  />
+                </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center text-xs font-medium">2</div>
-                <span className="text-sm text-gray-700">Upload your property videos</span>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Properties Registered</span>
+                  <span className="text-sm font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
+                    {stats?.total_properties ?? 0}/5
+                  </span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200">
+                  <div 
+                    className="bg-gradient-to-r from-[#115446] to-[#0f4a3d] h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${((stats?.total_properties ?? 0) / 5) * 100}%` }}
+                  />
+                </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center text-xs font-medium">3</div>
-                <span className="text-sm text-gray-700">Generate your first viral video</span>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Days Remaining</span>
+                  <span className="text-sm font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
+                    {(() => {
+                      const now = new Date()
+                      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+                      const daysLeft = Math.ceil((endOfMonth - now) / (1000 * 60 * 60 * 24))
+                      return daysLeft
+                    })()} days
+                  </span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200">
+                  <div 
+                    className="bg-gradient-to-r from-[#115446] to-[#0f4a3d] h-2 rounded-full transition-all duration-300" 
+                    style={{ 
+                      width: `${(() => {
+                        const now = new Date()
+                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+                        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+                        const totalDays = endOfMonth.getDate()
+                        const daysPassed = now.getDate() - 1
+                        return (daysPassed / totalDays) * 100
+                      })()}%` 
+                    }}
+                  />
+                </div>
               </div>
             </div>
-            <Link href="/dashboard/properties">
-              <Button className="w-full mt-4">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Property
-              </Button>
-            </Link>
+          </div>
+
+          {/* Need Help */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>Need Help?</h3>
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600" style={{ fontFamily: 'Inter' }}>
+                Our support team is here to help you create amazing viral videos.
+              </p>
+              <div className="flex items-center space-x-3 p-8 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                <div className="bg-[#115446] p-2 rounded-lg">
+                  <Headphones className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Contact Support</span>
+              </div>
+            </div>
+          </div>
           </div>
         </div>
+
       </div>
     </div>
   )

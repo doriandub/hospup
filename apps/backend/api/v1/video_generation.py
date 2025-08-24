@@ -337,26 +337,12 @@ def _generate_video_from_segments(matched_segments, target_duration, adapted_tex
             if upload_result and upload_result.get("success"):
                 video_url = upload_result["url"]
                 
-                # Generate thumbnail from first frame
-                thumbnail_path = os.path.join(temp_dir, f"thumb_{video_id}.jpg")
-                thumb_cmd = [
-                    'ffmpeg', '-y',
-                    '-i', output_video_path,
-                    '-ss', '1',  # Take screenshot at 1 second
-                    '-vframes', '1',
-                    '-vf', 'scale=640:1138',  # Vertical aspect ratio
-                    thumbnail_path
-                ]
+                # Generate thumbnail using robust method
+                from tasks.video_processing_tasks import _generate_video_thumbnail
+                thumbnail_url = _generate_video_thumbnail(output_video_path, video_id, temp_dir)
                 
-                subprocess.run(thumb_cmd, capture_output=True)
-                
-                # Upload thumbnail
-                if os.path.exists(thumbnail_path):
-                    thumb_s3_key = f"generated-videos/{property_details.id}/{video_id}_thumb.jpg"
-                    with open(thumbnail_path, 'rb') as thumb_file:
-                        thumb_result = s3_service.upload_file_direct(thumb_file, thumb_s3_key, content_type="image/jpeg")
-                    thumbnail_url = thumb_result["url"] if thumb_result and thumb_result.get("success") else "https://picsum.photos/640/1138"
-                else:
+                if not thumbnail_url:
+                    logger.warning("Failed to generate thumbnail, using fallback")
                     thumbnail_url = "https://picsum.photos/640/1138"
                 
                 logger.info(f"✅ Video uploaded successfully: {video_url}")

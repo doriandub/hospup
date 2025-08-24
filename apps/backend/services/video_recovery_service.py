@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from core.database import get_db
 from models.video import Video
 from tasks.video_processing_tasks import process_uploaded_video
+from tasks.video_generation_v3 import generate_video_from_timeline_v3
 
 logger = logging.getLogger(__name__)
 
@@ -98,36 +99,84 @@ class VideoRecoveryService:
                         age_minutes = (datetime.utcnow() - video.created_at).total_seconds() / 60
                         logger.info(f"🔄 Récupération automatique: {video.title} (bloquée depuis {age_minutes:.1f}min)")
                         
-                        # Extraire la clé S3
-                        video_url = video.video_url
-                        if video_url.startswith("s3://"):
-                            s3_key = "/".join(video_url.split("/")[3:])
+                        # Déterminer le type de récupération basé sur source_data
+                        source_data = getattr(video, 'source_data', None)
+                        task = None
+                        
+                        if source_data and isinstance(source_data, (str, dict)):
+                            # Parse source_data si c'est une string JSON
+                            if isinstance(source_data, str):
+                                import json
+                                try:
+                                    source_data = json.loads(source_data)
+                                except:
+                                    source_data = {}
+                            
+                            # Vidéo générée avec timeline (contient template_id, slot_assignments, text_overlays)
+                            if source_data.get('template_id') and source_data.get('slot_assignments'):
+                                logger.info(f"🎬 Récupération d'une vidéo générée (timeline v3)")
+                                
+                                # Reconstituer les paramètres pour generate_video_from_timeline_v3
+                                template_id = source_data.get('template_id')
+                                property_id = str(video.property_id)
+                                user_id = str(video.user_id)
+                                timeline_data = {
+                                    'slot_assignments': source_data.get('slot_assignments', []),
+                                    'text_overlays': source_data.get('text_overlays', [])
+                                }
+                                
+                                task = generate_video_from_timeline_v3.delay(
+                                    str(video.id), property_id, user_id, timeline_data, template_id
+                                )
+                                
+                            else:
+                                # Vidéo uploadée classique - utiliser l'ancienne méthode
+                                logger.info(f"📤 Récupération d'une vidéo uploadée")
+                                
+                                # Extraire la clé S3
+                                video_url = video.video_url
+                                if video_url and video_url.startswith("s3://"):
+                                    s3_key = "/".join(video_url.split("/")[3:])
+                                else:
+                                    s3_key = f"properties/{video.property_id}/videos/{video.title}"
+                                
+                                task = process_uploaded_video.delay(str(video.id), s3_key)
+                                
                         else:
-                            s3_key = f"properties/{video.property_id}/videos/{video.title}"
+                            # Fallback - traiter comme vidéo uploadée
+                            logger.info(f"📤 Récupération d'une vidéo (fallback upload)")
+                            
+                            video_url = video.video_url
+                            if video_url and video_url.startswith("s3://"):
+                                s3_key = "/".join(video_url.split("/")[3:])
+                            else:
+                                s3_key = f"properties/{video.property_id}/videos/{video.title}"
+                            
+                            task = process_uploaded_video.delay(str(video.id), s3_key)
                         
-                        # Relancer la tâche Celery
-                        task = process_uploaded_video.delay(str(video.id), s3_key)
-                        
-                        # Mettre à jour le task ID
-                        video.generation_job_id = task.id
-                        db.commit()
-                        
-                        # Statistiques
-                        self.recovery_stats["total_recoveries"] += 1
-                        self.recovery_stats["videos_recovered"].append({
-                            "video_id": video.id,
-                            "title": video.title,
-                            "recovered_at": datetime.utcnow().isoformat(),
-                            "task_id": task.id,
-                            "age_minutes": age_minutes
-                        })
-                        
-                        # Garder seulement les 50 dernières récupérations
-                        if len(self.recovery_stats["videos_recovered"]) > 50:
-                            self.recovery_stats["videos_recovered"] = self.recovery_stats["videos_recovered"][-50:]
-                        
-                        recovered_count += 1
-                        logger.info(f"✅ Tâche relancée: {task.id}")
+                        if task:
+                            # Mettre à jour le task ID
+                            video.generation_job_id = task.id
+                            db.commit()
+                            
+                            # Statistiques
+                            self.recovery_stats["total_recoveries"] += 1
+                            self.recovery_stats["videos_recovered"].append({
+                                "video_id": video.id,
+                                "title": video.title,
+                                "recovered_at": datetime.utcnow().isoformat(),
+                                "task_id": task.id,
+                                "age_minutes": age_minutes
+                            })
+                            
+                            # Garder seulement les 50 dernières récupérations
+                            if len(self.recovery_stats["videos_recovered"]) > 50:
+                                self.recovery_stats["videos_recovered"] = self.recovery_stats["videos_recovered"][-50:]
+                            
+                            recovered_count += 1
+                            logger.info(f"✅ Tâche relancée: {task.id}")
+                        else:
+                            logger.error(f"❌ Impossible de déterminer le type de récupération pour {video.title}")
                         
                     except Exception as e:
                         error_msg = f"Erreur récupération {video.title}: {e}"
@@ -176,6 +225,6 @@ class VideoRecoveryService:
 
 # Instance globale du service
 video_recovery_service = VideoRecoveryService(
-    check_interval_seconds=60,  # Vérification chaque minute
-    max_processing_minutes=3    # Relancer après 3 minutes de blocage
+    check_interval_seconds=30,  # Vérification toutes les 30 secondes
+    max_processing_minutes=1.5  # Relancer après 90 secondes de blocage
 )

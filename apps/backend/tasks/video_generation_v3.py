@@ -47,6 +47,7 @@ def generate_video_from_timeline_v3(
     
     db = None
     temp_dir = None
+    video = None
     
     try:
         logger.info(f"🎬 Starting video generation v3: {video_id}")
@@ -187,7 +188,9 @@ def generate_video_from_timeline_v3(
         )
         
         # Upload to S3
+        logger.info(f"📤 About to upload video to S3: {final_video_path}")
         video_url, thumbnail_url = _upload_to_s3_v3(final_video_path, video_id, property_id)
+        logger.info(f"✅ Upload completed. Video URL: {video_url}, Thumbnail URL: {thumbnail_url}")
         
         # Calculate total duration
         actual_duration = sum(seg.get("duration", 0) for seg in video_segments)
@@ -210,6 +213,9 @@ def generate_video_from_timeline_v3(
             "segments": [{"video_id": seg.get("video_id"), "duration": seg.get("duration")} for seg in video_segments]
         }
         video.source_data = json.dumps(generation_metadata)
+        
+        # Generate AI description and add Instagram audio URL
+        _post_process_video_metadata(video_id, template_id, db)
         
         db.commit()
         
@@ -283,13 +289,18 @@ def _process_video_segment_v3(
         
         # Extract S3 key from video URL
         if video_record.video_url.startswith("s3://"):
-            s3_key = video_record.video_url[5:].split("/", 1)[1]
+            # Format: s3://bucket-name/key -> extract key part
+            url_without_protocol = video_record.video_url[5:]  # Remove "s3://"
+            s3_key = url_without_protocol.split("/", 1)[1]  # Remove bucket name, keep key
+            logger.info(f"📦 Extracted S3 key: {s3_key} from URL: {video_record.video_url}")
         else:
             logger.warning(f"Invalid video URL format: {video_record.video_url}")
             return None
         
         # Download video (adapt based on storage backend)
         local_video_path = os.path.join(temp_dir, f"source_{segment_index}.mp4")
+        
+        logger.info(f"🔧 Storage backend: {settings.STORAGE_BACKEND}")
         
         if settings.STORAGE_BACKEND == "s3":
             download_url = s3_service.generate_presigned_download_url(s3_key)
@@ -390,13 +401,155 @@ def _assemble_final_video_v3(
         
         logger.info(f"📹 Concatenated {len(video_segments)} segments successfully")
     
-    # TODO: Add text overlays processing here if needed
-    # For now, return the concatenated video
+    # Apply text overlays if any are provided (only custom text overlays, not template texts)
+    if text_overlays:
+        logger.info(f"📝 Applying {len(text_overlays)} custom text overlays")
+        final_video_path = _apply_text_overlays_v3(
+            final_video_path, text_overlays, [], temp_dir, video_id
+        )
+    else:
+        logger.info("📝 No text overlays to apply")
     
     if not os.path.exists(final_video_path):
         raise Exception("Final video file was not created")
     
     return final_video_path
+
+
+def _apply_text_overlays_v3(
+    input_video_path: str,
+    text_overlays: List[Dict[str, Any]],
+    template_texts: List[Dict[str, Any]],
+    temp_dir: str,
+    video_id: str
+) -> str:
+    """Apply text overlays to video using FFmpeg drawtext filters"""
+    try:
+        output_video_path = os.path.join(temp_dir, f"final_with_text_{video_id}.mp4")
+        
+        # Combine all text overlays
+        all_texts = []
+        
+        # Process custom text overlays from timeline
+        for text_overlay in text_overlays:
+            all_texts.append({
+                "content": text_overlay.get("content", ""),
+                "start_time": text_overlay.get("start_time", 0),
+                "end_time": text_overlay.get("end_time", 3),
+                "x": text_overlay.get("position", {}).get("x", 50) / 100.0,  # Convert % to 0-1
+                "y": text_overlay.get("position", {}).get("y", 80) / 100.0,  # Convert % to 0-1
+                "style": text_overlay.get("style", {})
+            })
+        
+        # Skip template texts - only use custom text overlays from timeline editor
+        
+        if not all_texts:
+            logger.info("📝 No text content to apply")
+            return input_video_path
+        
+        # Build FFmpeg drawtext filters
+        text_filters = []
+        for i, text_info in enumerate(all_texts):
+            content = text_info.get("content", "").strip()
+            if not content:
+                continue
+                
+            start_time = text_info.get("start_time", 0)
+            end_time = text_info.get("end_time", start_time + 3)
+            x_rel = text_info.get("x", 0.5)
+            y_rel = text_info.get("y", 0.8)
+            style = text_info.get("style", {})
+            
+            # Font configuration
+            font_file = "/System/Library/Fonts/Helvetica.ttc"  # Default font
+            font_size = int(style.get("font_size", 48))  # Default size
+            font_color = style.get("color", "#FFFFFF")
+            
+            # Convert color format
+            if font_color.startswith("#"):
+                font_color = f"0x{font_color[1:]}"
+            else:
+                font_color = "white"
+            
+            # Position calculation - Adjust to match frontend preview better
+            # Frontend uses transform: translate(-50%, -50%) which centers text at coordinates
+            # User feedback: text needs to be more left and more down
+            x_offset = int(x_rel * 1920) if x_rel < 1 else int(1920 - 10)
+            y_offset = int(y_rel * 1080) if y_rel < 1 else int(1080 - 50)
+            
+            # Adjust positioning to match preview better - move text left and down
+            # Move significantly more left and down based on user feedback
+            x_pos = f"({max(10, min(x_offset, 1910))}-text_w*0.75)"  # More left
+            y_pos = f"({max(10, min(y_offset, 1070))}-text_h*0.25)"  # More down
+            
+            # Debug logging
+            logger.info(f"📍 Text positioning: '{content}' at ({x_rel:.2f}, {y_rel:.2f}) -> pixel ({x_offset}, {y_offset}) -> FFmpeg ({x_pos}, {y_pos})")
+            
+            # Escape text for FFmpeg
+            safe_text = (content
+                        .replace("\\", "\\\\")
+                        .replace("'", "\\'")
+                        .replace('"', '\\"')
+                        .replace(":", "\\:")
+                        .replace("=", "\\=")
+                        .replace(",", "\\,")
+                        .replace("[", "\\[")
+                        .replace("]", "\\]"))
+            
+            # Create drawtext filter
+            # Get text alignment for multiline text
+            text_align = text_info.get("style", {}).get("text_align", "center")
+            alignment_map = {"left": "left", "center": "center", "right": "right"}
+            text_alignment = alignment_map.get(text_align, "center")
+            
+            text_filter = f"drawtext=text='{safe_text}':fontfile={font_file}:fontsize={font_size}:fontcolor={font_color}:x={x_pos}:y={y_pos}"
+            
+            # Add text effects based on style
+            if style.get("shadow", True):  # Default shadow on
+                text_filter += ":shadowcolor=black@0.8:shadowx=2:shadowy=2"
+            
+            if style.get("outline", False):
+                text_filter += ":bordercolor=black:borderw=2"
+            
+            if style.get("background", False):
+                text_filter += ":box=1:boxcolor=black@0.5:boxborderw=10"
+            
+            # Add timing
+            text_filter += f":enable='between(t,{start_time},{end_time})'"
+            text_filters.append(text_filter)
+        
+        if not text_filters:
+            logger.info("📝 No valid text filters created")
+            return input_video_path
+        
+        logger.info(f"🔧 Applying {len(text_filters)} text overlays with FFmpeg...")
+        
+        # Apply text overlays using FFmpeg
+        ffmpeg_cmd = [
+            'ffmpeg', '-y',
+            '-i', input_video_path,
+            '-vf', ','.join(text_filters),
+            '-c:a', 'copy',  # Keep audio unchanged
+            '-c:v', 'libx264',  # Re-encode video for text overlays
+            '-preset', 'fast',
+            '-crf', '23',
+            '-movflags', '+faststart',
+            output_video_path
+        ]
+        
+        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=300)
+        
+        if result.returncode != 0 or not os.path.exists(output_video_path):
+            logger.error(f"❌ Text overlay application failed: {result.stderr}")
+            logger.info("🔄 Falling back to video without text overlays")
+            return input_video_path
+        else:
+            logger.info(f"✅ Successfully applied {len(text_filters)} text overlays")
+            return output_video_path
+            
+    except Exception as e:
+        logger.error(f"❌ Error applying text overlays: {e}")
+        return input_video_path
 
 
 def _upload_to_s3_v3(video_path: str, video_id: str, property_id: str) -> tuple[str, str]:
@@ -412,8 +565,83 @@ def _upload_to_s3_v3(video_path: str, video_id: str, property_id: str) -> tuple[
     if not upload_result.get('success'):
         raise Exception("S3 upload failed")
     
+    # Generate real thumbnail using the existing robust function
+    logger.info(f"🖼️ Generating thumbnail for video: {video_path}")
+    
+    try:
+        from tasks.video_processing_tasks import _generate_video_thumbnail
+        temp_dir = os.path.dirname(video_path)
+        thumbnail_url = _generate_video_thumbnail(video_path, video_id, temp_dir)
+        
+        if thumbnail_url:
+            logger.info(f"✅ Generated thumbnail successfully: {thumbnail_url}")
+        else:
+            logger.warning("⚠️ Failed to generate thumbnail, using fallback")
+            thumbnail_url = "https://picsum.photos/640/1138"  # Fallback
+            
+    except Exception as e:
+        logger.error(f"❌ Failed to generate thumbnail: {e}")
+        thumbnail_url = "https://picsum.photos/640/1138"  # Fallback
+    
     # Generate presigned URLs
     video_url = s3_service.generate_presigned_download_url(s3_key, expires_in=86400)
-    thumbnail_url = "https://picsum.photos/640/1138"  # Placeholder for now
     
     return video_url, thumbnail_url
+
+
+def _post_process_video_metadata(video_id: str, template_id: str, db):
+    """Generate AI description and add Instagram audio URL after video completion"""
+    try:
+        from models.viral_video_template import ViralVideoTemplate
+        from models.video import Video
+        from models.property import Property
+        
+        logger.info(f"🤖 Post-processing video metadata for {video_id}")
+        
+        # Get video and related data
+        video = db.query(Video).filter(Video.id == video_id).first()
+        if not video:
+            logger.error(f"Video {video_id} not found for post-processing")
+            return
+            
+        property_obj = db.query(Property).filter(Property.id == video.property_id).first()
+        if not property_obj:
+            logger.warning(f"Property not found for video {video_id}")
+            return
+        
+        # Get viral template for Instagram audio URL
+        if template_id:
+            template = db.query(ViralVideoTemplate).filter(ViralVideoTemplate.id == template_id).first()
+            if template and template.video_link:
+                # Store Instagram audio URL
+                video.instagram_audio_url = template.video_link
+                logger.info(f"📱 Added Instagram audio URL: {template.video_link}")
+        
+        # Generate AI description using Groq
+        try:
+            from services.groq_service import groq_service
+            
+            # Parse original user input from source_data
+            source_data = json.loads(video.source_data) if video.source_data else {}
+            user_description = source_data.get("user_input", "")
+            
+            # Generate description with Groq AI using ALL property data
+            ai_description = groq_service.generate_instagram_description(
+                property_obj=property_obj,
+                user_description=user_description
+            )
+            
+            video.ai_description = ai_description
+            logger.info(f"🤖 Generated Groq AI description for {property_obj.name}")
+                
+        except Exception as e:
+            logger.error(f"❌ Error generating AI description: {e}")
+            # Set a basic fallback
+            city_tag = f"#{property_obj.city.lower().replace(' ', '').replace('-', '')}" if property_obj.city else "#voyage"
+            video.ai_description = f"✨ Découvrez {property_obj.name}! 🏨\n📍 {property_obj.city}\n#travel #hotel {city_tag}"
+        
+        db.commit()
+        logger.info(f"✅ Video metadata post-processing completed for {video_id}")
+        
+    except Exception as e:
+        logger.error(f"❌ Error in post-processing video metadata: {e}")

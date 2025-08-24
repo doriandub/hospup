@@ -15,8 +15,9 @@ from core.config import settings
 from core.database import get_db
 from core.security import verify_jwt_token
 from core.rate_limiter import RateLimiter
-from api.v1 import auth, properties, videos, upload, dashboard, video_generation, websocket, video_analysis, viral_matching, video_reconstruction, health, text_customization
+from api.v1 import auth, properties, videos, upload, dashboard, video_generation, websocket, video_analysis, viral_matching, video_reconstruction, health, text_customization, text_suggestions, instagram_proxy, ai_templates
 from api import instagram_templates
+from routers import video_recovery
 from models.user import User
 
 # Logging configuration
@@ -187,7 +188,11 @@ app.include_router(
 app.include_router(
     instagram_templates.router,
     tags=["instagram-templates"],
-    dependencies=[Depends(get_current_user)]
+)
+app.include_router(
+    instagram_proxy.router,
+    prefix="/api/v1/instagram",
+    tags=["instagram-proxy"]
 )
 app.include_router(websocket.router)
 
@@ -198,12 +203,29 @@ app.include_router(
     tags=["text-customization"]
 )
 
+# Text suggestions endpoints
+app.include_router(
+    text_suggestions.router,
+    prefix="/api/v1/text",
+    tags=["text-suggestions"],
+    dependencies=[Depends(get_current_user)]
+)
+app.include_router(
+    ai_templates.router, 
+    prefix="/api/v1/ai-templates", 
+    tags=["ai-templates"],
+    dependencies=[Depends(get_current_user)]
+)
+
 # Health check endpoints (no auth required)
 app.include_router(
     health.router,
     prefix="/api/v1",
     tags=["health"]
 )
+
+# Video recovery endpoints
+app.include_router(video_recovery.router)
 
 # Mount static files for local development
 import os

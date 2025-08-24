@@ -9,15 +9,19 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FileUpload } from '@/components/upload/file-upload'
 import { useProperties } from '@/hooks/useProperties'
-import { PROPERTY_TYPES } from '@/types'
+import { PROPERTY_TYPES, SUPPORTED_LANGUAGES } from '@/types'
 import { 
   ArrowLeft, 
   ArrowRight, 
   Building2, 
   Globe,
   Camera,
-  Check,
-  Sparkles
+  CheckCircle,
+  Sparkles,
+  MapPin,
+  Phone,
+  Instagram,
+  Loader2
 } from 'lucide-react'
 
 interface PropertyFormData {
@@ -28,6 +32,7 @@ interface PropertyFormData {
   website: string
   phone: string
   instagram: string
+  language: string
   description: string
 }
 
@@ -46,6 +51,7 @@ export function PropertyOnboardingDashboard() {
     website: '',
     phone: '',
     instagram: '',
+    language: 'fr',
     description: ''
   })
   
@@ -61,10 +67,10 @@ export function PropertyOnboardingDashboard() {
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {}
     
-    if (!formData.name.trim()) newErrors.name = 'Required'
-    if (!formData.type) newErrors.type = 'Required'
-    if (!formData.city.trim()) newErrors.city = 'Required'
-    if (!formData.country.trim()) newErrors.country = 'Required'
+    if (!formData.name.trim()) newErrors.name = 'Le nom de la propriété est requis'
+    if (!formData.type) newErrors.type = 'Le type d\'établissement est requis'
+    if (!formData.city.trim()) newErrors.city = 'La ville est requise'
+    if (!formData.country.trim()) newErrors.country = 'Le pays est requis'
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -80,7 +86,6 @@ export function PropertyOnboardingDashboard() {
   }
 
   const handleFilesChange = useCallback((files: File[]) => {
-    // Defer the state update to avoid render cycle issues
     setTimeout(() => {
       setUploadedFiles(files)
     }, 0)
@@ -88,17 +93,15 @@ export function PropertyOnboardingDashboard() {
 
   const handleFinish = async () => {
     if (uploadedFiles.length === 0) {
-      alert('Please upload at least one photo or video')
+      alert('Veuillez ajouter au moins une photo ou vidéo')
       return
     }
     
     setIsSubmitting(true)
     try {
-      // First create the property
-      const propertyData = { ...formData, language: 'fr' }
+      const propertyData = { ...formData }
       const newProperty = await createProperty(propertyData)
       
-      // Then upload files to the property
       if (newProperty && newProperty.id) {
         await uploadFilesToProperty(newProperty.id, uploadedFiles)
       }
@@ -113,11 +116,17 @@ export function PropertyOnboardingDashboard() {
 
   const uploadFilesToProperty = async (propertyId: string, files: File[]) => {
     const token = localStorage.getItem('access_token')
-    if (!token) return
+    if (!token) {
+      console.error('No access token found')
+      return
+    }
+
+    console.log(`Starting upload for ${files.length} files to property ${propertyId}`)
 
     for (const file of files) {
       try {
-        // Get presigned URL
+        console.log(`Uploading file: ${file.name}, type: ${file.type}, size: ${file.size}`)
+        
         const urlResponse = await fetch('http://localhost:8000/api/v1/upload/presigned-url', {
           method: 'POST',
           headers: {
@@ -132,24 +141,53 @@ export function PropertyOnboardingDashboard() {
           })
         })
 
-        if (!urlResponse.ok) continue
-
+        if (!urlResponse.ok) {
+          console.error(`Failed to get presigned URL: ${urlResponse.status} ${urlResponse.statusText}`)
+          const errorText = await urlResponse.text()
+          console.error('Error response:', errorText)
+          continue
+        }
+        
         const urlData = await urlResponse.json()
+        console.log('Received upload URL data:', urlData)
 
-        // Upload to S3
         const formData = new FormData()
-        Object.entries(urlData.fields).forEach(([key, value]) => {
-          formData.append(key, value as string)
-        })
-        formData.append('file', file)
-
-        const uploadResponse = await fetch(urlData.upload_url, {
-          method: 'POST',
-          body: formData
-        })
+        let uploadResponse: Response
+        
+        // Check if this is local storage (development) or S3
+        if (urlData.upload_url.includes('/local')) {
+          console.log('Using local storage upload')
+          // Local storage upload
+          formData.append('file', file)
+          formData.append('s3_key', urlData.s3_key)
+          formData.append('local_path', urlData.fields.local_path)
+          
+          console.log('Uploading to local storage:', urlData.upload_url)
+          uploadResponse = await fetch(urlData.upload_url, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: formData
+          })
+        } else {
+          console.log('Using S3 upload')
+          // S3 upload
+          Object.entries(urlData.fields).forEach(([key, value]) => {
+            formData.append(key, value as string)
+          })
+          formData.append('file', file)
+          
+          console.log('Uploading to S3:', urlData.upload_url)
+          uploadResponse = await fetch(urlData.upload_url, {
+            method: 'POST',
+            body: formData
+          })
+        }
+        
+        console.log('Upload response status:', uploadResponse.status, uploadResponse.statusText)
 
         if (uploadResponse.ok) {
-          // Complete upload
           await fetch('http://localhost:8000/api/v1/upload/complete', {
             method: 'POST',
             headers: {
@@ -175,282 +213,362 @@ export function PropertyOnboardingDashboard() {
     return PROPERTY_TYPES.find(type => type.value === value)?.label || value
   }
 
+  const getLanguageLabel = (value: string) => {
+    return SUPPORTED_LANGUAGES.find(lang => lang.value === value)?.label || value
+  }
+
+  const progressWidth = (currentStep / 3) * 100
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-8 max-w-7xl mx-auto">
-        
-        {/* Header cohérent avec le dashboard */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              onClick={() => router.back()}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            <div>
+    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#e6f4ef] font-inter">
+      <div className="flex items-center justify-center min-h-screen py-8 px-4">
+        <div className="w-full max-w-3xl">
+          {/* Main Card */}
+          <div className="bg-white rounded-2xl shadow-xl p-10">
+            {/* Header with back button */}
+            <div className="flex items-center justify-between mb-8">
+              <Button 
+                variant="ghost" 
+                onClick={() => router.back()}
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Retour
+              </Button>
+              <div className="text-right">
+                <p className="text-[#115446] font-semibold text-lg">
+                  Step {currentStep} of 3
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Progress bar */}
-        <div className="flex items-center justify-center mb-8">
-          <div className="flex items-center justify-between max-w-md">
-            {[1, 2, 3].map((step) => (
-              <div key={step} className="flex items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                    step < currentStep 
-                      ? 'bg-primary text-white'
-                      : step === currentStep
-                      ? 'bg-primary text-white'
-                      : 'bg-gray-200 text-gray-500'
-                  }`}
-                >
-                  {step < currentStep ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    step
-                  )}
-                </div>
-                {step < 3 && (
-                  <div className={`w-16 h-1 mx-3 rounded ${
-                    step < currentStep ? 'bg-primary' : 'bg-gray-200'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Contenu principal */}
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-            
-            {/* Step 1: Basic Information */}
-            {currentStep === 1 && (
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <Building2 className="w-12 h-12 text-primary mx-auto mb-4" />
-                  <p className="text-gray-600">Essential details about your property</p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 max-w-2xl mx-auto">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Property Name *
-                    </Label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="The Grand Hotel"
-                      className={`${errors.name ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
-                    />
-                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Property Type *
-                    </Label>
-                    <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
-                      <SelectTrigger className={`${errors.type ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PROPERTY_TYPES.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.type && <p className="text-red-500 text-sm mt-1">{errors.type}</p>}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                        City *
-                      </Label>
-                      <Input
-                        value={formData.city}
-                        onChange={(e) => handleInputChange('city', e.target.value)}
-                        placeholder="New York"
-                        className={`${errors.city ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
-                      />
-                      {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Country *
-                      </Label>
-                      <Input
-                        value={formData.country}
-                        onChange={(e) => handleInputChange('country', e.target.value)}
-                        placeholder="United States"
-                        className={`${errors.country ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
-                      />
-                      {errors.country && <p className="text-red-500 text-sm mt-1">{errors.country}</p>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Contact Details */}
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <Globe className="w-12 h-12 text-primary mx-auto mb-4" />
-                  <p className="text-gray-600">How guests can reach and find you</p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 max-w-2xl mx-auto">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Website
-                    </Label>
-                    <Input
-                      type="url"
-                      value={formData.website}
-                      onChange={(e) => handleInputChange('website', e.target.value)}
-                      placeholder="https://yourdomain.com"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Phone Number
-                    </Label>
-                    <Input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="+1 (555) 123-4567"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Instagram Handle
-                    </Label>
-                    <Input
-                      value={formData.instagram}
-                      onChange={(e) => handleInputChange('instagram', e.target.value)}
-                      placeholder="@yourhotel"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Description
-                    </Label>
-                    <Textarea
-                      value={formData.description}
-                      onChange={(e) => handleInputChange('description', e.target.value)}
-                      placeholder="Describe your property's unique features, atmosphere, and what makes it special..."
-                      rows={4}
-                      className="resize-none"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Media Assets */}
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <Camera className="w-12 h-12 text-primary mx-auto mb-4" />
-                  <p className="text-gray-600">Upload your best photos and videos for content creation</p>
-                </div>
-
-                <div className="max-w-2xl mx-auto">
-                  <FileUpload
-                    accept={{ 
-                      'image/*': ['.jpg', '.jpeg', '.png', '.webp'],
-                      'video/*': ['.mp4', '.mov', '.avi'] 
-                    }}
-                    maxFiles={20}
-                    maxSize={100 * 1024 * 1024}
-                    onFilesChange={handleFilesChange}
+            {/* Progress Bar */}
+            <div className="mb-8 flex justify-center">
+              <div className="w-full max-w-xs">
+                <div className="bg-gray-100 rounded-xl h-2 overflow-hidden">
+                  <div 
+                    className="h-full bg-[#115446] rounded-xl transition-all duration-500 ease-out"
+                    style={{ width: `${progressWidth}%` }}
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* Step Content */}
+            <div className="space-y-8">
+              {/* Step 1: Basic Information */}
+              {currentStep === 1 && (
+                <div>
+                  <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#115446] bg-opacity-10 rounded-2xl mb-6">
+                      <Building2 className="w-8 h-8 text-[#115446]" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Informations de base</h2>
+                    <p className="text-gray-600 mb-6">Parlez-nous de votre établissement</p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <Label htmlFor="name" className="text-sm font-medium text-gray-700 mb-2 block">
+                        Nom de l'établissement *
+                      </Label>
+                      <div className="relative">
+                        <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Input
+                          id="name"
+                          type="text"
+                          value={formData.name}
+                          onChange={(e) => handleInputChange('name', e.target.value)}
+                          placeholder="ex: Hôtel des Champs-Élysées"
+                          className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
+                            errors.name ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
+                          }`}
+                        />
+                      </div>
+                      {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="type" className="text-sm font-medium text-gray-700 mb-2 block">
+                        Type d'établissement *
+                      </Label>
+                      <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
+                        <SelectTrigger className={`px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
+                          errors.type ? 'border-red-500' : ''
+                        }`}>
+                          <SelectValue placeholder="Sélectionnez le type" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          {PROPERTY_TYPES.map((type) => (
+                            <SelectItem key={type.value} value={type.value} className="rounded-lg">
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.type && <p className="text-red-600 text-sm mt-1">{errors.type}</p>}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <Label htmlFor="city" className="text-sm font-medium text-gray-700 mb-2 block">
+                          Ville *
+                        </Label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                          <Input
+                            id="city"
+                            type="text"
+                            value={formData.city}
+                            onChange={(e) => handleInputChange('city', e.target.value)}
+                            placeholder="Paris"
+                            className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
+                              errors.city ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
+                            }`}
+                          />
+                        </div>
+                        {errors.city && <p className="text-red-600 text-sm mt-1">{errors.city}</p>}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="country" className="text-sm font-medium text-gray-700 mb-2 block">
+                          Pays *
+                        </Label>
+                        <div className="relative">
+                          <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                          <Input
+                            id="country"
+                            type="text"
+                            value={formData.country}
+                            onChange={(e) => handleInputChange('country', e.target.value)}
+                            placeholder="France"
+                            className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
+                              errors.country ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
+                            }`}
+                          />
+                        </div>
+                        {errors.country && <p className="text-red-600 text-sm mt-1">{errors.country}</p>}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="language" className="text-sm font-medium text-gray-700 mb-2 block">
+                        Langue principale
+                      </Label>
+                      <Select value={formData.language} onValueChange={(value) => handleInputChange('language', value)}>
+                        <SelectTrigger className="px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          {SUPPORTED_LANGUAGES.map((lang) => (
+                            <SelectItem key={lang.value} value={lang.value} className="rounded-lg">
+                              {lang.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end mt-8">
+                    <Button 
+                      onClick={handleNext} 
+                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
+                    >
+                      Continuer
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Contact Information */}
+              {currentStep === 2 && (
+                <div>
+                  <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#115446] bg-opacity-10 rounded-2xl mb-6">
+                      <Globe className="w-8 h-8 text-[#115446]" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Coordonnées & Réseaux</h2>
+                    <p className="text-gray-600 mb-6">Aidez vos clients à vous trouver</p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <Label htmlFor="website" className="text-sm font-medium text-gray-700 mb-2 block">
+                        Site web
+                      </Label>
+                      <div className="relative">
+                        <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Input
+                          id="website"
+                          type="url"
+                          value={formData.website}
+                          onChange={(e) => handleInputChange('website', e.target.value)}
+                          placeholder="https://www.votre-hotel.com"
+                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="phone" className="text-sm font-medium text-gray-700 mb-2 block">
+                        Téléphone
+                      </Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => handleInputChange('phone', e.target.value)}
+                          placeholder="+33 1 23 45 67 89"
+                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="instagram" className="text-sm font-medium text-gray-700 mb-2 block">
+                        Instagram
+                      </Label>
+                      <div className="relative">
+                        <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Input
+                          id="instagram"
+                          type="text"
+                          value={formData.instagram}
+                          onChange={(e) => handleInputChange('instagram', e.target.value)}
+                          placeholder="@votre_hotel"
+                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="description" className="text-sm font-medium text-gray-700 mb-2 block">
+                        Description
+                      </Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        placeholder="Décrivez votre établissement, son ambiance, ses spécialités..."
+                        rows={4}
+                        className="px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between mt-8">
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePrev}
+                      className="px-6 py-3 rounded-xl border-gray-200 hover:bg-gray-50 font-medium text-base transition-all duration-200"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Retour
+                    </Button>
+                    <Button 
+                      onClick={handleNext} 
+                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
+                    >
+                      Continuer
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Media Upload */}
+              {currentStep === 3 && (
+                <div>
+                  <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#115446] bg-opacity-10 rounded-2xl mb-6">
+                      <Camera className="w-8 h-8 text-[#115446]" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Photos & Vidéos</h2>
+                    <p className="text-gray-600 mb-6">
+                      Ajoutez vos plus belles photos et vidéos pour créer du contenu viral
+                    </p>
+                  </div>
+
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-[#115446] transition-all duration-200">
+                    <FileUpload
+                      accept={{ 
+                        'image/*': ['.jpg', '.jpeg', '.png', '.webp'],
+                        'video/*': ['.mp4', '.mov', '.avi', '.mkv'] 
+                      }}
+                      maxFiles={20}
+                      maxSize={100 * 1024 * 1024}
+                      onFilesChange={handleFilesChange}
+                    />
+                  </div>
 
                   {uploadedFiles.length > 0 && (
-                    <div className="mt-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
+                    <div className="mt-6 p-4 bg-[#115446] bg-opacity-5 border border-[#115446] border-opacity-20 rounded-xl">
                       <div className="flex items-center">
-                        <Check className="w-5 h-5 text-primary mr-2" />
-                        <span className="text-primary font-medium">
-                          {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''} uploaded
+                        <CheckCircle className="w-5 h-5 text-[#115446] mr-3" />
+                        <span className="text-[#115446] font-medium">
+                          {uploadedFiles.length} fichier{uploadedFiles.length > 1 ? 's' : ''} ajouté{uploadedFiles.length > 1 ? 's' : ''}
                         </span>
                       </div>
                     </div>
                   )}
 
-                  {/* Uploaded Files */}
+                  {/* Summary */}
                   {uploadedFiles.length > 0 && (
-                    <div className="mt-8 p-6 bg-gray-50 rounded-lg border">
-                      <h3 className="font-medium text-gray-900 mb-4">Uploaded Files</h3>
-                      <div className="space-y-2">
-                        {uploadedFiles.map((file, index) => (
-                          <div key={index} className="flex justify-between items-center text-sm">
-                            <span className="text-gray-700 truncate flex-1 mr-4">{file.name}</span>
-                            <span className="text-gray-500 text-xs">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
-                          </div>
-                        ))}
+                    <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-100">
+                      <h3 className="font-semibold text-gray-900 mb-4">Récapitulatif</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                        <div>
+                          <span className="text-gray-600">Établissement:</span>
+                          <p className="font-medium text-gray-900">{formData.name}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Type:</span>
+                          <p className="font-medium text-gray-900">{getPropertyTypeLabel(formData.type)}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Localisation:</span>
+                          <p className="font-medium text-gray-900">{formData.city}, {formData.country}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Médias:</span>
+                          <p className="font-medium text-gray-900">{uploadedFiles.length} fichier{uploadedFiles.length > 1 ? 's' : ''}</p>
+                        </div>
                       </div>
                     </div>
                   )}
+
+                  <div className="flex justify-between mt-8">
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePrev}
+                      className="px-6 py-3 rounded-xl border-gray-200 hover:bg-gray-50 font-medium text-base transition-all duration-200"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Retour
+                    </Button>
+                    <Button 
+                      onClick={handleFinish}
+                      disabled={isSubmitting || uploadedFiles.length === 0}
+                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Création en cours...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Terminer
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* Navigation */}
-            <div className="flex justify-between items-center mt-12 pt-6 border-t border-gray-200">
-              {currentStep > 1 ? (
-                <Button 
-                  variant="outline" 
-                  onClick={handlePrev}
-                  className="flex items-center"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-              ) : (
-                <div />
-              )}
-
-              {currentStep < 3 ? (
-                <Button 
-                  onClick={handleNext}
-                  className="bg-primary hover:bg-primary-700 text-white flex items-center"
-                >
-                  Continue
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              ) : (
-                <Button 
-                  onClick={handleFinish}
-                  disabled={isSubmitting || uploadedFiles.length === 0}
-                  className="bg-primary hover:bg-primary-700 text-white flex items-center disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                      Creating property and uploading files...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Complete Setup
-                    </>
-                  )}
-                </Button>
               )}
             </div>
           </div>

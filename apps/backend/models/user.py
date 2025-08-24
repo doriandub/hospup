@@ -33,6 +33,7 @@ class User(Base):
     # Relationships
     properties = relationship("Property", back_populates="user", cascade="all, delete-orphan")
     videos = relationship("Video", back_populates="user", cascade="all, delete-orphan")
+    viewed_templates = relationship("UserViewedTemplate", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email}, plan={self.plan})>"

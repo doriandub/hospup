@@ -78,13 +78,22 @@ async def get_upload_url(
         'video/mp4',
         'video/quicktime',
         'video/x-msvideo',
-        'video/x-ms-wmv'
+        'video/x-ms-wmv',
+        'video/avi',
+        'video/mov',
+        'application/octet-stream'  # Sometimes files upload with this type
     ]
     
-    if request.content_type not in allowed_video_types:
+    # Check if it's a video file (more permissive check)
+    is_video = (
+        request.content_type in allowed_video_types or
+        any(request.file_name.lower().endswith(ext) for ext in ['.mp4', '.mov', '.avi', '.wmv'])
+    )
+    
+    if not is_video:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file type. Only video files are allowed."
+            detail=f"Invalid file type: {request.content_type}. Only video files are allowed."
         )
     
     # Validate file size (100MB max)
@@ -97,6 +106,7 @@ async def get_upload_url(
     
     try:
         # Use storage backend based on configuration
+        print(f"DEBUG - Storage backend setting: '{settings.STORAGE_BACKEND}'")
         if settings.STORAGE_BACKEND == "s3":
             upload_data = s3_service.generate_presigned_upload_url(
                 file_name=request.file_name,
@@ -110,6 +120,7 @@ async def get_upload_url(
                 property_id=request.property_id
             )
         
+        print(f"DEBUG - Generated upload data: {upload_data}")
         return UploadUrlResponse(**upload_data)
         
     except Exception as e:

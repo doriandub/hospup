@@ -58,6 +58,24 @@ class LocalStorageService:
             logger.error(f"Error saving file {local_path}: {e}")
             return False
     
+    def save_file_from_path(self, source_path: str, s3_key: str) -> str:
+        """Copy a file from source path to local storage and return URL"""
+        try:
+            # Create destination path
+            dest_path = self.base_path / s3_key
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Copy file
+            shutil.copy2(source_path, dest_path)
+            
+            # Return URL
+            url = f"{self.base_url}/{s3_key}"
+            logger.info(f"Saved file from {source_path} to {dest_path}, accessible at {url}")
+            return url
+        except Exception as e:
+            logger.error(f"Error saving file from {source_path} to {s3_key}: {e}")
+            raise e
+    
     def delete_file(self, s3_key: str) -> bool:
         """Delete a file from local storage"""
         try:

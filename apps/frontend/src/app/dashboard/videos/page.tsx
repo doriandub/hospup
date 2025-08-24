@@ -27,7 +27,7 @@ export default function VideosPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedProperty, setSelectedProperty] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [videoTypeFilter, setVideoTypeFilter] = useState<string>('all')
+  const [videoTypeFilter, setVideoTypeFilter] = useState<string>('generated')
   const [searchQuery, setSearchQuery] = useState('')
   const [refreshing, setRefreshing] = useState(false)
 
@@ -188,12 +188,12 @@ export default function VideosPage() {
 
             <Select value={videoTypeFilter} onValueChange={setVideoTypeFilter}>
               <SelectTrigger className="w-36">
-                <SelectValue placeholder="All Videos" />
+                <SelectValue placeholder="Generated" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Videos</SelectItem>
                 <SelectItem value="generated">Generated</SelectItem>
                 <SelectItem value="uploaded">Uploaded</SelectItem>
+                <SelectItem value="all">All Videos</SelectItem>
               </SelectContent>
             </Select>
 
@@ -237,14 +237,14 @@ export default function VideosPage() {
 
       {/* Videos Grid */}
       {filteredVideos.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredVideos.map((video) => {
             const property = properties.find(p => p.id === video.property_id)
             
             return (
               <div key={video.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
                 {/* Video Thumbnail/Preview */}
-                <div className="aspect-video bg-gray-100 relative">
+                <div className="aspect-[9/16] bg-gray-100 relative">
                   {video.thumbnail_url ? (
                     <Image 
                       src={video.thumbnail_url} 

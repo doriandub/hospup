@@ -69,7 +69,7 @@ export default function PropertyContentPage() {
     } catch (error: any) {
       console.error('Error fetching videos:', error)
       if (error.response?.status === 401) {
-        router.push('/auth/signin')
+        router.push('/auth/login')
       }
     } finally {
       setLoading(false)
@@ -158,7 +158,7 @@ export default function PropertyContentPage() {
     } catch (error: any) {
       console.error('Error uploading files:', error)
       if (error.response?.status === 401) {
-        router.push('/auth/signin')
+        router.push('/auth/login')
       }
     } finally {
       setUploading(false)

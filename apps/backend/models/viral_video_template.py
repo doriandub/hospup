@@ -5,6 +5,7 @@ Simplified structure matching Airtable columns exactly.
 
 import uuid
 from sqlalchemy import Column, String, Text, Float, DateTime, BigInteger
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from core.database import Base
 
@@ -32,6 +33,9 @@ class ViralVideoTemplate(Base):
     script = Column(Text)
     audio_url = Column(Text)
     ratio = Column(Float)
+    
+    # Relationships
+    user_views = relationship("UserViewedTemplate", back_populates="viral_template", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<ViralVideoTemplate(title='{self.title}', hotel_name='{self.hotel_name}')>"

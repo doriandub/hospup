@@ -673,9 +673,17 @@ def _generate_video_from_segments(matched_segments: List[Dict], target_duration:
             )
         
         if upload_result.get('success'):
+            # Generate real thumbnail from video before we cleanup the temp file
+            from tasks.video_processing_tasks import _generate_video_thumbnail
+            
+            try:
+                thumbnail_url = _generate_video_thumbnail(final_video_path, video_id, os.path.dirname(final_video_path))
+            except Exception as e:
+                logger.warning(f"Failed to generate thumbnail: {e}")
+                thumbnail_url = "https://picsum.photos/640/1138"  # Fallback
+            
             # Generate presigned URL that expires in 24 hours
             video_url = s3_service.generate_presigned_download_url(s3_key, expires_in=86400)
-            thumbnail_url = "https://picsum.photos/640/1138"  # Placeholder thumbnail
             
             logger.info(f"✅ Video uploaded successfully with presigned URL")
             return video_url, thumbnail_url

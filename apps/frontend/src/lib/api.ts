@@ -94,4 +94,17 @@ export const videosApi = {
     api.delete(`/api/v1/videos/${id}`),
 }
 
+export const textApi = {
+  getSuggestions: (propertyId?: string, category?: string, count?: number) => {
+    const params: any = {}
+    if (propertyId) params.property_id = propertyId
+    if (category) params.category = category
+    if (count) params.count = count
+    return api.get('/api/v1/text/suggestions', { params })
+  },
+  
+  getCategories: () =>
+    api.get('/api/v1/text/categories'),
+}
+
 export default api

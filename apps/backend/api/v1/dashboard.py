@@ -54,7 +54,7 @@ async def get_dashboard_stats(
     storage_used = 2.1  # GB
     
     # Remaining videos
-    remaining_videos = current_user.remaining_videos
+    remaining_videos = max(0, current_user.videos_limit - current_user.videos_used)
     
     return DashboardStats(
         total_properties=total_properties,
@@ -102,7 +102,7 @@ async def get_recent_activity(
             id=str(property.id),
             type="property_created",
             title=f"New property added: {property.name}",
-            description=f"{property.type.replace('_', ' ').title()} in {property.city}",
+            description=f"{property.property_type.replace('_', ' ').title() if property.property_type else 'Property'} in {property.city}",
             timestamp=property.created_at.isoformat(),
             property_id=str(property.id)
         ))

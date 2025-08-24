@@ -186,9 +186,27 @@ def test_video_generation_direct():
         if not upload_result.get('success'):
             raise Exception("S3 upload failed")
         
+        # Generate real thumbnail using the existing robust function
+        print(f"🖼️ Generating thumbnail for video: {final_video_path}")
+        
+        try:
+            from tasks.video_processing_tasks import _generate_video_thumbnail
+            thumbnail_url = _generate_video_thumbnail(final_video_path, test_video_id, temp_dir)
+            
+            if thumbnail_url:
+                print(f"✅ Generated thumbnail successfully: {thumbnail_url}")
+            else:
+                print(f"⚠️ Failed to generate thumbnail, using fallback")
+                thumbnail_url = "https://picsum.photos/640/1138"  # Fallback
+                
+        except Exception as e:
+            print(f"❌ Failed to generate thumbnail: {e}")
+            import traceback
+            traceback.print_exc()
+            thumbnail_url = "https://picsum.photos/640/1138"  # Fallback
+
         # Generate URLs
         video_url = s3_service.generate_presigned_download_url(s3_key, expires_in=86400)
-        thumbnail_url = "https://picsum.photos/640/1138"
         
         actual_duration = sum(seg.get("duration", 0) for seg in video_segments)
         

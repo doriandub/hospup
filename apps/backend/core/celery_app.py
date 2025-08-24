@@ -14,7 +14,8 @@ celery_app = Celery(
         "tasks.video_generation_v2",
         "tasks.video_generation_v3",
         "tasks.video_processing_tasks",
-        "tasks.recovery_tasks"
+        "tasks.recovery_tasks",
+        "tasks.video_recovery_tasks"
     ]
 )
 
@@ -52,6 +53,25 @@ celery_app.conf.update(
     # Retry configuration
     task_default_retry_delay=60,  # 1 minute
     task_max_retries=3,
+    
+    # Beat schedule for periodic tasks
+    beat_schedule={
+        'recover-stuck-videos': {
+            'task': 'video_recovery.check_stuck_videos',
+            'schedule': 180.0,  # Every 3 minutes
+            'kwargs': {
+                'timeout_minutes': 5,  # Videos stuck for more than 5 minutes
+                'max_retries': 2
+            }
+        },
+        'cleanup-old-failed-videos': {
+            'task': 'video_recovery.cleanup_old_failed_videos', 
+            'schedule': 24 * 60 * 60.0,  # Once per day
+            'kwargs': {
+                'days_old': 7  # Delete failed videos older than 7 days
+            }
+        }
+    },
 )
 
 @worker_process_init.connect

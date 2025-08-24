@@ -12,6 +12,7 @@ from core.database import get_db
 from sqlalchemy.orm import Session
 from models.user import User
 from models.viral_video_template import ViralVideoTemplate
+from models.user_viewed_template import UserViewedTemplate
 from services.viral_matching_service import viral_matching_service
 from services.ai_matching_service import ai_matching_service
 from services.video_reconstruction_service import video_reconstruction_service
@@ -117,6 +118,10 @@ class UpdateViralTemplateRequest(BaseModel):
     comments: Optional[float] = None
     duration: Optional[float] = None
     script: Optional[dict] = None
+
+class RecordTemplateViewRequest(BaseModel):
+    template_id: str
+    context: Optional[str] = "manual_view"  # "initial_search", "new_idea_1", etc.
 
 @router.get("/properties/{property_id}/viral-matches", response_model=List[ViralMatchResponse])
 async def get_viral_matches(
@@ -548,6 +553,15 @@ async def smart_match_template(
         # Get the best match
         best_match = scored_templates[0]['template']
         
+        # Record this suggestion in user's history
+        from services.viral_suggestion_service import viral_suggestion_service
+        viral_suggestion_service.record_suggestion(
+            user_id=current_user.id,
+            viral_video_id=best_match.id,
+            context=request.user_description,
+            property_id=request.property_id
+        )
+        
         return ViralTemplateResponse(
             id=best_match.id,
             title=best_match.title or "Vidéo virale recommandée",
@@ -571,3 +585,165 @@ async def smart_match_template(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error finding smart match: {str(e)}")
+
+@router.get("/user-viral-history", response_model=List[ViralTemplateResponse])
+async def get_user_viral_history(
+    current_user: User = Depends(get_current_user),
+    limit: int = Query(50, ge=1, le=100, description="Number of suggestions to retrieve")
+):
+    """
+    Get user's viral video suggestion history - only videos that have been previously suggested to this user
+    """
+    try:
+        from services.viral_suggestion_service import viral_suggestion_service
+        
+        # Get user's viral suggestion history
+        suggestions = viral_suggestion_service.get_user_viral_history(
+            user_id=current_user.id,
+            limit=limit
+        )
+        
+        # Convert to ViralTemplateResponse format
+        return [
+            ViralTemplateResponse(
+                id=suggestion["id"],
+                title=suggestion["title"],
+                description=suggestion["description"],
+                category=suggestion["category"],
+                popularity_score=suggestion["popularity_score"],
+                total_duration_min=suggestion["total_duration_min"],
+                total_duration_max=suggestion["total_duration_max"],
+                tags=suggestion["tags"],
+                views=suggestion.get("views"),
+                likes=suggestion.get("likes"),
+                comments=suggestion.get("comments"),
+                followers=suggestion.get("followers"),
+                username=suggestion.get("username"),
+                video_link=suggestion.get("video_link"),
+                script=suggestion.get("script")
+            )
+            for suggestion in suggestions
+        ]
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving viral history: {str(e)}")
+
+@router.post("/record-template-view")
+async def record_template_view(
+    request: RecordTemplateViewRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Record that a user has viewed a viral template and automatically add to Viral Inspiration
+    """
+    try:
+        import uuid as uuid_lib
+        from datetime import datetime
+        
+        # Check if template exists
+        template = db.query(ViralVideoTemplate).filter(
+            ViralVideoTemplate.id == request.template_id
+        ).first()
+        
+        if not template:
+            raise HTTPException(status_code=404, detail="Template not found")
+        
+        # Check if user has already viewed this template
+        existing_view = db.query(UserViewedTemplate).filter(
+            UserViewedTemplate.user_id == current_user.id,
+            UserViewedTemplate.viral_template_id == request.template_id
+        ).first()
+        
+        if existing_view:
+            # Update the context if it's different
+            if existing_view.context != request.context:
+                existing_view.context = request.context
+                existing_view.viewed_at = datetime.utcnow()
+                db.commit()
+            
+            return {
+                "status": "already_viewed", 
+                "message": "Template view updated",
+                "template_id": request.template_id,
+                "context": request.context
+            }
+        
+        # Record new view
+        new_view = UserViewedTemplate(
+            id=uuid_lib.uuid4(),
+            user_id=current_user.id,
+            viral_template_id=request.template_id,
+            viewed_at=datetime.utcnow(),
+            context=request.context
+        )
+        
+        db.add(new_view)
+        
+        # Automatically add to user's Viral Inspiration using existing service
+        from services.viral_suggestion_service import viral_suggestion_service
+        viral_suggestion_service.record_suggestion(
+            user_id=current_user.id,
+            viral_video_id=request.template_id,
+            context=f"Auto-added from view: {request.context}",
+            property_id=None  # No specific property for viewed templates
+        )
+        
+        db.commit()
+        
+        return {
+            "status": "recorded",
+            "message": "Template view recorded and added to Viral Inspiration",
+            "template_id": request.template_id,
+            "context": request.context,
+            "viewed_at": new_view.viewed_at.isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error recording template view: {str(e)}")
+
+@router.get("/viewed-templates", response_model=List[ViralTemplateResponse])
+async def get_viewed_templates(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    limit: int = Query(50, ge=1, le=100, description="Number of viewed templates to retrieve")
+):
+    """
+    Get all viral templates that the user has viewed
+    """
+    try:
+        # Get user's viewed templates with template data
+        viewed_templates = db.query(UserViewedTemplate, ViralVideoTemplate).join(
+            ViralVideoTemplate, UserViewedTemplate.viral_template_id == ViralVideoTemplate.id
+        ).filter(
+            UserViewedTemplate.user_id == current_user.id
+        ).order_by(
+            UserViewedTemplate.viewed_at.desc()
+        ).limit(limit).all()
+        
+        return [
+            ViralTemplateResponse(
+                id=template.id,
+                title=template.title or "Vidéo virale vue",
+                description=f"{template.hotel_name or 'Hôtel'} - {template.property or 'Propriété'} ({template.country or 'Pays'})",
+                category=template.property or "hotel",
+                popularity_score=min(10.0, (template.views or 0) / 100000),
+                total_duration_min=max(15.0, (template.duration or 30.0) - 5),
+                total_duration_max=min(60.0, (template.duration or 30.0) + 10),
+                tags=[template.hotel_name, template.country, template.username] if template.hotel_name else [],
+                views=template.views,
+                likes=template.likes,
+                comments=template.comments,
+                followers=template.followers,
+                username=template.username,
+                video_link=template.video_link,
+                script=template.script
+            )
+            for view, template in viewed_templates
+        ]
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving viewed templates: {str(e)}")

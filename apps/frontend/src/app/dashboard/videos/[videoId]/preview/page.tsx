@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Download, Share2, Play, Loader2 } from 'lucide-react'
+import { ArrowLeft, Download, Share2, Play, Loader2, Copy, ExternalLink, Music, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { videosApi } from '@/lib/api'
 
@@ -17,6 +17,9 @@ interface Video {
   source_type: string
   source_data: any
   created_at: string
+  viral_template_id?: string
+  ai_description?: string
+  instagram_audio_url?: string
 }
 
 export default function VideoPreviewPage() {
@@ -30,7 +33,15 @@ export default function VideoPreviewPage() {
 
   useEffect(() => {
     loadVideo()
-  }, [videoId])
+    // Poll for updates every 3 seconds if video is processing
+    const interval = setInterval(() => {
+      if (video?.status === 'processing') {
+        loadVideo()
+      }
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [videoId, video?.status])
 
   const loadVideo = async () => {
     try {
@@ -154,8 +165,8 @@ export default function VideoPreviewPage() {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center text-white">
                       <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" />
-                      <p className="text-lg font-medium">Génération en cours...</p>
-                      <p className="text-sm opacity-75">Cela peut prendre quelques minutes</p>
+                      <p className="text-lg font-medium">✨ Génération IA en cours...</p>
+                      <p className="text-sm opacity-75">Votre vidéo sera prête dans quelques instants</p>
                     </div>
                   </div>
                 ) : (
@@ -172,57 +183,88 @@ export default function VideoPreviewPage() {
 
           {/* Video Info */}
           <div className="space-y-6">
-            {/* Description */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Description</h3>
-              <p className="text-gray-600">{video.description || 'Aucune description'}</p>
-            </div>
-
-            {/* Details */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Détails</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Durée:</span>
-                  <span className="font-medium">{video.duration}s</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Statut:</span>
-                  <span className={`font-medium ${
-                    video.status === 'completed' ? 'text-green-600' :
-                    video.status === 'processing' ? 'text-yellow-600' :
-                    'text-gray-600'
-                  }`}>
-                    {video.status === 'completed' ? 'Terminé' :
-                     video.status === 'processing' ? 'En cours' :
-                     video.status}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Type:</span>
-                  <span className="font-medium">
-                    {video.source_type === 'viral_template_composer' ? 'Timeline personnalisée' :
-                     video.source_type === 'viral_template' ? 'Template viral' :
-                     'Autre'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Timeline Info (if from composer) */}
-            {video.source_type === 'viral_template_composer' && video.source_data && (
+            {/* AI Generated Description */}
+            {video.status === 'completed' && (
               <div className="bg-white rounded-lg shadow-sm border p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Timeline utilisée</h3>
-                {video.source_data.custom_script && (
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600">
-                      {video.source_data.custom_script.clips?.length || 0} segments
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Durée totale: {video.source_data.custom_script.total_duration || 0}s
-                    </p>
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="w-5 h-5 text-[#ff914d]" />
+                  <h3 className="text-lg font-semibold text-gray-900">Description Instagram IA</h3>
+                </div>
+                {video.ai_description ? (
+                  <div className="space-y-3">
+                    <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-[#ff914d]">
+                      <p className="text-gray-800 whitespace-pre-wrap">{video.ai_description}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigator.clipboard.writeText(video.ai_description || '')}
+                      className="w-full"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copier la description
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#ff914d]" />
+                    <p className="text-sm text-gray-600">Génération de la description IA...</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Instagram Audio */}
+            {video.status === 'completed' && video.instagram_audio_url && (
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Music className="w-5 h-5 text-[#115446]" />
+                  <h3 className="text-lg font-semibold text-gray-900">Audio Instagram Original</h3>
+                </div>
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">
+                    Retrouvez l'audio original de la vidéo virale pour votre contenu Instagram
+                  </p>
+                  <Button
+                    onClick={() => window.open(video.instagram_audio_url, '_blank')}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Ouvrir l'audio Instagram
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Random Audio Suggestions */}
+            {video.status === 'completed' && (
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Music className="w-5 h-5 text-[#ff914d]" />
+                  <h3 className="text-lg font-semibold text-gray-900">Suggestions Audio</h3>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600 mb-3">
+                    Ou choisissez parmi ces audios tendances libres de droits
+                  </p>
+                  {[
+                    { name: "Upbeat Energy", mood: "Énergique" },
+                    { name: "Chill Vibes", mood: "Relaxant" },
+                    { name: "Trending Beat", mood: "Tendance" },
+                    { name: "Emotional", mood: "Émotionnel" }
+                  ].map((audio, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div>
+                        <p className="font-medium text-sm">{audio.name}</p>
+                        <p className="text-xs text-gray-500">{audio.mood}</p>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        <Play className="w-3 h-3 mr-1" />
+                        Écouter
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
