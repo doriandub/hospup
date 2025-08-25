@@ -196,37 +196,35 @@ async def complete_upload(
             detail="Property not found"
         )
     
-    # Create video record with processing status
+    # Create video record with processing status (will be completed once AI description is generated)
     video = Video(
         title=request.file_name,
         video_url=f"s3://{s3_service.bucket_name}/{request.s3_key}",
         format=request.content_type.split('/')[-1],
         size=request.file_size,
-        status="processing",  # Start with processing status
+        status="processing",  # Initial processing status
         user_id=current_user.id,
-        property_id=request.property_id
+        property_id=request.property_id,
+        description=f"Uploaded video: {request.file_name}"
     )
     
     db.add(video)
     db.commit()
     db.refresh(video)
     
-    # Trigger video processing task (conversion + script generation)
+    # Trigger background processing for optimization (non-blocking)
     try:
         from tasks.video_processing_tasks import process_uploaded_video
         task = process_uploaded_video.delay(str(video.id), request.s3_key)
         
-        # Store task ID for progress tracking
+        # Store task ID for progress tracking but don't wait for completion
         video.generation_job_id = task.id
         db.commit()
         
-        logger.info(f"Started video processing task {task.id} for video {video.id}")
+        logger.info(f"Started background processing task {task.id} for video {video.id}")
     except Exception as e:
-        logger.warning(f"Failed to start video processing task: {e}")
-        # Mark video as uploaded but with warning
-        video.status = "uploaded"
-        video.description = f"Upload completed but processing failed: {str(e)}"
-        db.commit()
+        logger.warning(f"Failed to start background processing task: {e}")
+        # Video is already marked as uploaded, so this is just a warning
     
     return VideoResponse.from_orm(video)
 

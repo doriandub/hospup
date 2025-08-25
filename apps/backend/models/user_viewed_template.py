@@ -27,9 +27,9 @@ class UserViewedTemplate(Base):
     viewed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     context = Column(String, nullable=True)  # "initial_search", "new_idea_1", "new_idea_2", etc.
     
-    # Relations
-    user = relationship("User", back_populates="viewed_templates")
-    viral_template = relationship("ViralVideoTemplate", back_populates="user_views")
+    # Relations (Disabled to fix SQLAlchemy circular import)
+    # user = relationship("User", back_populates="viewed_templates")
+    # viral_template = relationship("ViralVideoTemplate", back_populates="user_views")
     
     def __repr__(self):
         return f"<UserViewedTemplate(user_id={self.user_id}, template_id={self.viral_template_id}, viewed_at={self.viewed_at})>"

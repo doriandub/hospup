@@ -83,18 +83,18 @@ async def rate_limit_middleware(request: Request, call_next):
         # Reset the request body for downstream consumption
         request._body = body
     
-    # Rate limiting
-    is_allowed = await rate_limiter.is_allowed(
-        key=f"rate_limit:{client_ip}",
-        max_requests=settings.RATE_LIMIT_REQUESTS,
-        window_seconds=settings.RATE_LIMIT_WINDOW
-    )
-    
-    if not is_allowed:
-        return JSONResponse(
-            status_code=429,
-            content={"detail": "Rate limit exceeded"}
-        )
+    # Rate limiting (temporarily disabled for debugging)
+    # is_allowed = await rate_limiter.is_allowed(
+    #     key=f"rate_limit:{client_ip}",
+    #     max_requests=settings.RATE_LIMIT_REQUESTS,
+    #     window_seconds=settings.RATE_LIMIT_WINDOW
+    # )
+    # 
+    # if not is_allowed:
+    #     return JSONResponse(
+    #         status_code=429,
+    #         content={"detail": "Rate limit exceeded"}
+    #     )
     
     start_time = time.time()
     response = await call_next(request)

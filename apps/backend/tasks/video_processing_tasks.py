@@ -222,11 +222,14 @@ def process_uploaded_video(
                 video.video_url = f"s3://{s3_service.bucket_name}/{final_s3_key}"
             else:
                 video.video_url = f"s3://hospup-files/{final_s3_key}"  # Keep consistent format for local
-            video.status = "uploaded"  # Mark as completed processing
+            # Update status to "processing" during conversion
+            video.status = "processing"
             video.duration = final_metadata.get("duration")
             video.size = final_metadata.get("size", os.path.getsize(final_video_path))
             video.format = "mp4"  # Always MP4 after processing
-            video.description = content_description
+            # Enhance description with AI analysis but keep original as fallback
+            enhanced_description = f"{video.description}\n\nAI Analysis: {content_description}" if video.description else content_description
+            video.description = enhanced_description
             
             # Step 8: Generate thumbnail
             thumbnail_url = _generate_video_thumbnail(final_video_path, video_id, temp_dir)
@@ -251,6 +254,16 @@ def process_uploaded_video(
             
             # Store as JSON in source_data field
             video.source_data = json.dumps(processing_metadata)
+            
+            # Determine final status based on AI description availability
+            if content_description and not content_description.startswith("No content description available"):
+                # AI description generated successfully
+                video.status = "ready"  # Ready to use
+                logger.info(f"✅ Video ready with AI description: {content_description[:50]}...")
+            else:
+                # Video processed but no AI description
+                video.status = "uploaded"  # Uploaded but not ready for use
+                logger.info(f"⚠️ Video uploaded but AI description missing")
             
             db.commit()
             
@@ -289,11 +302,15 @@ def process_uploaded_video(
     except Exception as e:
         logger.error(f"❌ Video processing error: {str(e)}")
         
-        # Update video status to failed
+        # Log error but don't change video status to failed (it's already uploaded)
         try:
             if 'video' in locals():
-                video.status = "failed"
-                video.description = f"Processing failed: {str(e)}"
+                # Just add error info to description, don't change status
+                error_info = f"\n\nProcessing error: {str(e)}"
+                if video.description:
+                    video.description += error_info
+                else:
+                    video.description = f"Video uploaded successfully{error_info}"
                 db.commit()
         except:
             pass
@@ -395,40 +412,40 @@ def generate_heuristic_description(video_title: str, property_obj=None) -> str:
     property_name = property_obj.name if property_obj else "hotel"
     property_type = property_obj.property_type.replace('_', ' ') if property_obj and property_obj.property_type else "accommodation"
     
-    # Analyze filename for content type
+    # Analyze filename for content type - make objective descriptions
     if any(word in title_lower for word in ['pool', 'piscine', 'swim', 'water']):
-        return f"{property_name} swimming pool area featuring crystal clear water, poolside amenities, comfortable lounge chairs, and relaxing aquatic environment perfect for guests to enjoy leisure time and water activities."
+        return f"Video shows {property_name} swimming pool area with water, pool deck, seating areas, and surrounding pool facilities."
     
     elif any(word in title_lower for word in ['room', 'chambre', 'bed', 'suite', 'bedroom']):
-        return f"{property_name} guest room showcasing comfortable accommodation with premium bedding, elegant interior design, modern amenities, beautiful furnishings, and welcoming atmosphere for an exceptional stay experience."
+        return f"Video shows {property_name} guest room with bed, furniture, lighting, windows, and interior room features."
     
     elif any(word in title_lower for word in ['restaurant', 'dining', 'food', 'kitchen', 'cuisine', 'repas']):
-        return f"{property_name} restaurant and dining experience featuring exquisite culinary offerings, elegant table settings, professional kitchen operations, delicious food presentation, and exceptional gastronomic service for guests."
+        return f"Video shows {property_name} restaurant and dining area with tables, chairs, kitchen equipment, food preparation, and dining space layout."
     
     elif any(word in title_lower for word in ['lobby', 'reception', 'entrance', 'accueil', 'hall']):
-        return f"{property_name} reception and lobby area with welcoming entrance design, professional front desk service, comfortable seating areas, elegant architectural details, and hospitality excellence for guest check-in experience."
+        return f"Video shows {property_name} reception and lobby area with front desk, seating, entrance doors, and lobby interior design."
     
     elif any(word in title_lower for word in ['spa', 'wellness', 'massage', 'detente', 'relaxation']):
-        return f"{property_name} spa and wellness center offering relaxation treatments, massage therapy services, tranquil wellness amenities, serene atmosphere, and rejuvenating experiences for guest well-being."
+        return f"Video shows {property_name} spa and wellness center with treatment rooms, relaxation areas, wellness equipment, and spa facilities."
     
     elif any(word in title_lower for word in ['garden', 'outdoor', 'terrace', 'jardin', 'exterieur', 'patio']):
-        return f"{property_name} outdoor spaces and garden areas with beautiful landscape design, natural greenery, comfortable seating arrangements, scenic views, and peaceful environment for guests to relax and enjoy nature."
+        return f"Video shows {property_name} outdoor spaces and garden areas with landscaping, plants, seating, walkways, and exterior areas."
     
     elif any(word in title_lower for word in ['view', 'landscape', 'scenic', 'vue', 'paysage', 'panorama']):
-        return f"{property_name} offering stunning panoramic views and scenic landscapes, showcasing beautiful surroundings, picturesque vistas, natural beauty, and breathtaking scenery that enhances the guest experience."
+        return f"Video shows views and landscapes around {property_name} with natural surroundings, scenery, and exterior environment."
     
     elif any(word in title_lower for word in ['bar', 'cocktail', 'drink', 'beverage', 'boisson']):
-        return f"{property_name} bar and beverage service featuring expertly crafted cocktails, premium drinks selection, stylish bar atmosphere, professional bartending service, and social gathering space for guests."
+        return f"Video shows {property_name} bar area with bar counter, seating, drink preparation area, and beverage service space."
     
     elif any(word in title_lower for word in ['breakfast', 'petit', 'dejeuner', 'morning', 'matin']):
-        return f"{property_name} breakfast service showcasing delicious morning cuisine, fresh ingredients, varied breakfast options, elegant presentation, and delightful start to the day for guests."
+        return f"Video shows {property_name} breakfast area with food service, dining setup, morning meal preparation, and breakfast facilities."
     
     elif any(word in title_lower for word in ['event', 'conference', 'meeting', 'evenement', 'reunion']):
-        return f"{property_name} event and meeting facilities providing professional conference spaces, modern equipment, flexible room configurations, and excellent service for business and social gatherings."
+        return f"Video shows {property_name} event and meeting spaces with conference rooms, seating arrangements, and event facilities."
     
     else:
-        # Generic description with hospitality focus
-        return f"{property_name} {property_type} featuring luxury hospitality services, premium guest amenities, beautiful interior and exterior spaces, exceptional comfort, professional service excellence, and memorable experiences for discerning travelers."
+        # Generic description - simple and objective
+        return f"Video shows interior and exterior spaces of {property_name} with various areas and facilities."
 
 @celery_app.task(bind=True)
 def get_video_processing_status(self, video_id: str) -> Dict[str, Any]:

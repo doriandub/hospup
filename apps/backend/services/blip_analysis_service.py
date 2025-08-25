@@ -78,8 +78,8 @@ class BLIPAnalysisService:
             # Decode the generated text
             raw_caption = self.processor.decode(generated_ids[0], skip_special_tokens=True)
             
-            # Capitalize and clean up the caption
-            clean_description = raw_caption.strip().capitalize()
+            # Create objective, descriptive caption
+            clean_description = self._make_objective_description(raw_caption, property_name)
             
             logger.info(f"📝 BLIP generated description: {clean_description}")
             
@@ -87,101 +87,77 @@ class BLIPAnalysisService:
             
         except Exception as e:
             logger.error(f"❌ BLIP analysis failed: {e}")
-            # Fallback to a basic description
-            return f"{property_name} featuring beautiful hospitality spaces and exceptional guest experiences."
+            # Simple fallback description
+            return f"Visual content showing various elements and details present in the scene at {property_name}."
     
-    def _enhance_for_hospitality(self, raw_caption: str, property_name: str) -> str:
+    def _make_objective_description(self, raw_caption: str, property_name: str) -> str:
         """
-        Enhance BLIP caption with hospitality-specific language
+        Make objective, descriptive caption focused ONLY on what's actually visible
         
         Args:
             raw_caption: Raw caption from BLIP
             property_name: Property name for context
             
         Returns:
-            Enhanced hospitality-focused description
+            Pure description of visible elements only
         """
         try:
-            # Clean up the caption
-            caption = raw_caption.strip().lower()
+            # Clean up the caption and use it as the base
+            caption = raw_caption.strip()
             
-            # Hospitality enhancement mappings
-            enhancements = {
-                # Views and windows
-                "window": "panoramic window view",
-                "view": "scenic vista",
-                "landscape": "breathtaking landscape",
-                "mountains": "majestic mountain views",
-                "ocean": "oceanfront location",
-                "sea": "seaside setting",
-                "forest": "forest surroundings",
-                "garden": "landscaped gardens",
-                
-                # Architecture and interiors
-                "room": "guest accommodation",
-                "door": "entrance",
-                "wall": "elegant wall design",
-                "stone": "traditional stone architecture",
-                "wood": "refined wooden features",
-                "glass": "modern glass elements",
-                
-                # Natural elements
-                "tree": "mature trees",
-                "grass": "manicured grounds",
-                "flowers": "beautiful floral displays",
-                "plants": "lush vegetation",
-                "water": "water features",
-                
-                # Lighting and atmosphere
-                "light": "ambient lighting",
-                "shadow": "atmospheric shadows",
-                "sun": "natural sunlight",
-                "sky": "open sky views",
-                "cloud": "dramatic sky",
-            }
+            # Remove marketing words but keep descriptive ones
+            marketing_words = ['featuring', 'showcasing', 'offering', 'providing', 'delivering', 'exceptional', 'luxury', 'premium', 'stunning', 'breathtaking', 'magnificent']
             
-            # Apply enhancements
-            enhanced_words = []
-            for word in caption.split():
-                # Remove punctuation for matching
-                clean_word = word.strip('.,!?;:')
-                if clean_word in enhancements:
-                    enhanced_words.append(enhancements[clean_word])
+            words = caption.split()
+            objective_words = []
+            
+            for word in words:
+                clean_word = word.strip('.,!?;:').lower()
+                if clean_word not in marketing_words:
+                    objective_words.append(word)
+            
+            objective_caption = ' '.join(objective_words).strip()
+            
+            # If no caption, return a generic fallback
+            if not objective_caption:
+                return f"Visual content showing various elements present in the scene."
+            
+            # Clean up generic prefixes
+            if objective_caption.lower().startswith('a '):
+                objective_caption = objective_caption[2:]
+            if objective_caption.lower().startswith('an '):
+                objective_caption = objective_caption[3:]
+            
+            # Simply enhance the actual BLIP description with more detail
+            # But ONLY based on what BLIP actually detected
+            final_description = objective_caption.capitalize()
+            
+            # Add some descriptive enhancement but stay factual
+            if len(final_description.split()) < 8:  # If description is too short, enhance slightly
+                # Add common visual descriptors that could apply to any scene
+                if any(word in final_description.lower() for word in ['blue', 'water', 'ocean', 'sea']):
+                    final_description += " with visible water surface and natural lighting conditions"
+                elif any(word in final_description.lower() for word in ['green', 'trees', 'plants']):
+                    final_description += " with natural vegetation and organic textures"
+                elif any(word in final_description.lower() for word in ['building', 'structure', 'wall']):
+                    final_description += " with architectural elements and structural details"
+                elif any(word in final_description.lower() for word in ['room', 'interior']):
+                    final_description += " with interior spatial arrangement and furnishing elements"
                 else:
-                    enhanced_words.append(word)
+                    final_description += " with various visual elements and environmental details"
             
-            enhanced_caption = ' '.join(enhanced_words)
+            # Ensure proper sentence structure
+            if not final_description.endswith('.'):
+                final_description += '.'
             
-            # Create final hospitality-focused description without redundant property name
-            hospitality_description = enhanced_caption.capitalize()
-            
-            # Add hospitality closing
-            hospitality_endings = [
-                "providing guests with an exceptional experience",
-                "offering memorable moments for discerning travelers", 
-                "creating the perfect ambiance for relaxation",
-                "featuring premium amenities and authentic charm",
-                "delivering luxury hospitality in a stunning setting"
-            ]
-            
-            # Choose ending based on content type
-            if any(word in caption for word in ["view", "window", "landscape"]):
-                ending = "offering guests breathtaking views and serene surroundings"
-            elif any(word in caption for word in ["room", "door", "wall"]):
-                ending = "providing elegant accommodations with thoughtful design details"
-            else:
-                ending = hospitality_endings[0]
-            
-            final_description = f"{hospitality_description}, {ending}."
-            
-            # Capitalize first letter
-            final_description = final_description[0].upper() + final_description[1:]
+            # Clean up multiple periods
+            final_description = final_description.replace('..', '.')
             
             return final_description
             
         except Exception as e:
-            logger.error(f"❌ Enhancement failed: {e}")
-            return f"{property_name} featuring {raw_caption} with exceptional hospitality services."
+            logger.error(f"❌ Objective description failed: {e}")
+            return f"{raw_caption.capitalize()}."
 
 # Global service instance
 blip_analysis_service = BLIPAnalysisService()

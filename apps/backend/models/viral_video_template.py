@@ -35,7 +35,7 @@ class ViralVideoTemplate(Base):
     ratio = Column(Float)
     
     # Relationships
-    user_views = relationship("UserViewedTemplate", back_populates="viral_template", cascade="all, delete-orphan")
+    # user_views = relationship("UserViewedTemplate", back_populates="viral_template", cascade="all, delete-orphan")  # Disabled to fix SQLAlchemy circular import
     
     def __repr__(self):
         return f"<ViralVideoTemplate(title='{self.title}', hotel_name='{self.hotel_name}')>"

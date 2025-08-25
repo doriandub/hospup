@@ -349,14 +349,31 @@ async def get_video_url(
             detail="Video not found"
         )
     
-    # Extract S3 key from video metadata
+    # Extract S3 key from video
     s3_key = None
+    
+    # For generated videos: get S3 key from source_data
     if video.source_data:
         try:
             metadata = json.loads(video.source_data)
             s3_key = metadata.get('s3_key')
         except:
             pass
+    
+    # For uploaded videos: extract S3 key from video_url
+    if not s3_key and video.video_url:
+        if video.video_url.startswith("s3://"):
+            try:
+                # Extract key from s3://bucket-name/key format
+                s3_key = video.video_url.split("s3://", 1)[1].split("/", 1)[1]
+            except Exception:
+                pass
+        elif "hospup-files.s3" in video.video_url:
+            try:
+                # Extract key from full S3 URL
+                s3_key = video.video_url.split("hospup-files.s3.amazonaws.com/", 1)[1].split("?", 1)[0]
+            except Exception:
+                pass
     
     if not s3_key:
         raise HTTPException(
@@ -376,5 +393,63 @@ async def get_video_url(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate video URL"
+        )
+
+@router.post("/{video_id}/restart-processing")
+async def restart_video_processing(
+    video_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Restart processing for a stuck video"""
+    
+    # Verify video belongs to user
+    video = db.query(Video).filter(
+        Video.id == video_id,
+        Video.user_id == current_user.id
+    ).first()
+    
+    if not video:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Video not found"
+        )
+    
+    # Only restart if video is in processing or uploaded state
+    if video.status not in ["processing", "uploaded"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot restart video in {video.status} state"
+        )
+    
+    try:
+        # Reset video status to processing
+        video.status = "processing"
+        video.generation_job_id = None  # Clear old job ID
+        db.commit()
+        
+        # Restart the processing task
+        from tasks.video_processing_tasks import process_uploaded_video
+        if video.source_data:
+            import json
+            metadata = json.loads(video.source_data)
+            s3_key = metadata.get('s3_key')
+            if s3_key:
+                task = process_uploaded_video.delay(str(video.id), s3_key)
+                video.generation_job_id = task.id
+                db.commit()
+                
+                return {
+                    "message": "Video processing restarted successfully",
+                    "video_id": video_id,
+                    "task_id": task.id
+                }
+        
+        return {"message": "Video status reset to processing"}
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to restart processing: {str(e)}"
         )
 

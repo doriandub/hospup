@@ -26,6 +26,10 @@ class WeaviateService:
     def _connect(self):
         """Connect to Weaviate instance"""
         try:
+            # Temporarily disable Weaviate connection for development
+            logger.warning("Weaviate connection disabled for development")
+            self.client = None
+            return
             self.client = weaviate.Client(
                 url=settings.WEAVIATE_URL,
                 additional_headers={
