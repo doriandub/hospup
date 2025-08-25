@@ -212,19 +212,48 @@ async def complete_upload(
     db.commit()
     db.refresh(video)
     
-    # Trigger background processing for optimization (non-blocking)
-    try:
-        from tasks.video_processing_tasks import process_uploaded_video
-        task = process_uploaded_video.delay(str(video.id), request.s3_key)
+    # Auto-detect environment and choose appropriate processing method
+    from core.deployment import deployment_config
+    
+    config = deployment_config.get_processing_config()
+    
+    if config["use_async_processing"]:
+        # Local/Production avec Celery - traitement asynchrone
+        try:
+            from tasks.video_processing_tasks import process_uploaded_video
+            task = process_uploaded_video.delay(str(video.id), request.s3_key)
+            
+            video.generation_job_id = task.id
+            db.commit()
+            
+            logger.info(f"🔄 Started async processing task {task.id} for video {video.id}")
+        except Exception as e:
+            logger.warning(f"❌ Async processing failed, video will remain as uploaded: {e}")
+    else:
+        # Vercel/Production sans Celery - traitement synchrone
+        logger.info(f"🚀 Processing video synchronously (mode: {config['mode']})")
         
-        # Store task ID for progress tracking but don't wait for completion
-        video.generation_job_id = task.id
-        db.commit()
-        
-        logger.info(f"Started background processing task {task.id} for video {video.id}")
-    except Exception as e:
-        logger.warning(f"Failed to start background processing task: {e}")
-        # Video is already marked as uploaded, so this is just a warning
+        try:
+            # Import the synchronous processing function
+            from api.v1.upload_vercel import process_video_sync
+            
+            # Process synchronously with timeout
+            processed = await process_video_sync(
+                video=video,
+                s3_key=request.s3_key,
+                db=db,
+                config=config
+            )
+            
+            if processed:
+                logger.info(f"✅ Synchronous processing completed for video {video.id}")
+            else:
+                logger.warning(f"⚠️ Synchronous processing partial success for video {video.id}")
+                
+        except Exception as e:
+            logger.error(f"❌ Synchronous processing failed: {e}")
+            video.status = "uploaded"  # Fallback to uploaded status
+            db.commit()
     
     return VideoResponse.from_orm(video)
 

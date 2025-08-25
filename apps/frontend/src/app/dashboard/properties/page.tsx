@@ -133,47 +133,48 @@ export default function PropertiesPage() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      {/* Error State */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-          {error}
-        </div>
-      )}
+    <div className="min-h-screen bg-gray-50 font-inter">
+      <div className="grid grid-cols-1 gap-3 p-8">
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-3">
+            {error}
+          </div>
+        )}
 
-      {/* Empty State */}
-      {properties.length === 0 && !loading && !error && (
-        <div className="text-center py-12">
-          <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No properties yet</h3>
-          <p className="text-gray-600 mb-6">Add your first property to start generating viral videos</p>
-          <Button onClick={() => router.push('/dashboard/properties/new')}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Your First Property
-          </Button>
-        </div>
-      )}
+        {/* Empty State */}
+        {properties.length === 0 && !loading && !error && (
+          <div className="text-center py-12">
+            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No properties yet</h3>
+            <p className="text-gray-600 mb-6">Add your first property to start generating viral videos</p>
+            <Button onClick={() => router.push('/dashboard/properties/new')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Your First Property
+            </Button>
+          </div>
+        )}
 
-      {/* Properties Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Add Property Card - Always first */}
-        <div 
-          className="bg-[#115446]/5 border border-[#115446]/30 rounded-xl shadow-sm p-6 cursor-pointer hover:bg-[#115446]/10 hover:shadow-md transition-all duration-200 group"
-          onClick={() => router.push('/dashboard/properties/new')}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold mb-2 text-[#115446]" style={{ fontFamily: 'Inter' }}>Add Property</h1>
-              <p className="text-base font-medium text-[#115446]/80" style={{ fontFamily: 'Inter' }}>Create new property</p>
-            </div>
-            <div className="bg-[#115446]/10 rounded-full p-3 group-hover:bg-[#115446]/20 transition-all">
-              <Plus className="w-5 h-5 text-[#115446]" />
+        {/* Properties Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Add Property Card - Always first */}
+          <div 
+            className="bg-[#115446]/5 border border-[#115446]/30 rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#115446]/10 hover:shadow-md transition-all duration-200 group"
+            onClick={() => router.push('/dashboard/properties/new')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-semibold mb-2 text-[#115446]" style={{ fontFamily: 'Inter' }}>Add Property</h1>
+                <p className="text-base font-medium text-[#115446]/80" style={{ fontFamily: 'Inter' }}>Create new property</p>
+              </div>
+              <div className="bg-[#115446]/10 rounded-full p-3 group-hover:bg-[#115446]/20 transition-all">
+                <Plus className="w-5 h-5 text-[#115446]" />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Property Cards */}
-        {properties.map((property) => (
+          {/* Property Cards */}
+          {properties.map((property) => (
           <div key={property.id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 overflow-hidden">
             {/* Thumbnail */}
             {propertyThumbnails[property.id] ? (
@@ -294,7 +295,8 @@ export default function PropertiesPage() {
               </div>
             </div>
           </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Create Property Modal */}

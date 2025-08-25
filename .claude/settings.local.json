@@ -62,7 +62,10 @@
       "Bash(CORS_ORIGINS=\"http://localhost:3000,http://localhost:3001,http://localhost:3002\" ALLOWED_HOSTS=\"localhost,127.0.0.1,localhost:3000,localhost:3001,localhost:3002\" python3 main.py)",
       "Bash(find:*)",
       "Bash(git init:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(CORS_ORIGINS=\"http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003\" ALLOWED_HOSTS=\"localhost,127.0.0.1,localhost:3003\" python3 main.py)",
+      "Bash(CORS_ORIGINS=\"http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003\" ALLOWED_HOSTS=\"localhost,127.0.0.1,localhost:3003\" python main.py)",
+      "Bash(CORS_ORIGINS=\"http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003\" ALLOWED_HOSTS=\"localhost,127.0.0.1,localhost:3003\" uvicorn main:app --reload --host 0.0.0.0 --port 8000)"
     ],
     "deny": [],
     "ask": [],

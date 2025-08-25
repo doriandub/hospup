@@ -50,6 +50,11 @@ export default function PropertyContentPage() {
   const fetchVideos = useCallback(async () => {
     try {
       const response = await videosApi.getAll(propertyId, 'uploaded')
+      console.log('🔍 Videos fetched:', response.data.map(v => ({ 
+        title: v.title, 
+        thumbnail_url: v.thumbnail_url,
+        has_thumbnail: !!v.thumbnail_url
+      })))
       setVideos(response.data)
         
       // Get download URLs for video previews

@@ -36,6 +36,14 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'commondatastorage.googleapis.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'dummyimage.com',
       }
     ],
   },

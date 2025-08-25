@@ -35,9 +35,10 @@ export default function ViralInspirationPage() {
   // Filter and sort templates
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = searchQuery === '' || 
-      template.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.tags.some(tag => tag?.toLowerCase().includes(searchQuery.toLowerCase()))
+      template.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.hotel_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.country?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.username?.toLowerCase().includes(searchQuery.toLowerCase())
     
     const matchesCategory = categoryFilter === 'all' || template.category === categoryFilter
     
@@ -48,10 +49,17 @@ export default function ViralInspirationPage() {
         return (b.views || 0) - (a.views || 0)
       case 'likes':
         return (b.likes || 0) - (a.likes || 0)
-      case 'popularity':
-        return b.popularity_score - a.popularity_score
-      case 'recent':
-        return a.title.localeCompare(b.title) // Fallback since we don't have created_at
+      case 'ratio':
+        // Calculate engagement ratio: (likes + comments) / views
+        const aRatio = ((a.likes || 0) + (a.comments || 0)) / (a.views || 1)
+        const bRatio = ((b.likes || 0) + (b.comments || 0)) / (b.views || 1)
+        return bRatio - aRatio
+      case 'latest':
+        // Sort by creation date (most recent first)
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      case 'newest':
+        // Same as latest for now
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
       default:
         return 0
     }
@@ -78,6 +86,7 @@ export default function ViralInspirationPage() {
     return categories
   }
 
+
   if (loading) {
     return (
       <div className="container mx-auto px-6 py-8">
@@ -97,68 +106,85 @@ export default function ViralInspirationPage() {
   }
 
   return (
-    <div className="container mx-auto px-6 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
-            <Lightbulb className="w-8 h-8 mr-3 text-yellow-500" />
-            Viral Inspiration
-          </h1>
-          <p className="text-gray-600">
-            Découvrez toutes les vidéos virales utilisées comme inspiration pour vos générations
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 font-inter">
+      <div className="grid grid-cols-1 gap-3 p-8">
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Rechercher des vidéos virales..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+        {/* Filters */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-3">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search Bar */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Rechercher des vidéos virales..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            {/* Filters and Sort Controls */}
+            <div className="flex gap-3">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Toutes les catégories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les catégories</SelectItem>
+                  {getCategories().map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Trier par" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="views">
+                    <div className="flex items-center">
+                      <Eye className="w-4 h-4 mr-2" />
+                      Vues
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="likes">
+                    <div className="flex items-center">
+                      <Heart className="w-4 h-4 mr-2" />
+                      Likes
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="ratio">
+                    <div className="flex items-center">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Ratio d'engagement
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="latest">
+                    <div className="flex items-center">
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Plus récentes
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="newest">
+                    <div className="flex items-center">
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Les plus nouvelles
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          
-          <div className="flex gap-3">
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Toutes les catégories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les catégories</SelectItem>
-                {getCategories().map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Trier par" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="views">Vues</SelectItem>
-                <SelectItem value="likes">Likes</SelectItem>
-                <SelectItem value="popularity">Popularité</SelectItem>
-                <SelectItem value="recent">Récent</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
-      </div>
 
-      {/* Templates Grid */}
-      {filteredTemplates.length === 0 ? (
-        <EmptyState
+        {/* Templates Grid */}
+        {filteredTemplates.length === 0 ? (
+          <EmptyState
           icon={Lightbulb}
           title="Aucune inspiration trouvée"
           description={
@@ -180,86 +206,114 @@ export default function ViralInspirationPage() {
               </Button>
             ) : null
           }
-        />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTemplates.map((template) => (
-              <div key={template.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
-                {/* Video Thumbnail/Preview */}
-                <div className="aspect-[9/16] bg-gray-100 relative overflow-hidden">
-                  {template.video_link && template.video_link.includes('instagram.com') ? (
-                    <div className="w-full h-full">
-                      <InstagramEmbed 
-                        postUrl={template.video_link}
-                        className="w-full h-full"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Video className="w-12 h-12 text-gray-300" />
-                    </div>
-                  )}
-                  
-                  {/* Play overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-sm">
-                      <Play className="w-5 h-5 text-gray-900 ml-0.5" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Template Header */}
-                <div className="p-6">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
-                      {template.hotel_name}
-                    </h3>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                    <div className="flex items-center">
-                      <Eye className="w-3 h-3 mr-1 text-[#115446]" />
-                      <span>{formatNumber(template.views)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Users className="w-3 h-3 mr-1 text-[#ff914d]" />
-                      <span>{formatNumber(template.followers)}</span>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex space-x-2">
-                    <Button 
-                      onClick={() => handleRecreateVideo(template)}
-                      className="flex-1"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Recréer la vidéo
-                    </Button>
-                    
-                    {template.video_link && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(template.video_link, '_blank')}
-                        className="px-3"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
+          />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {filteredTemplates.map((template) => (
+                <div key={template.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
+                  {/* Video Thumbnail/Preview */}
+                  <div className="aspect-[9/16] bg-gray-100 relative overflow-hidden">
+                    {template.video_link && template.video_link.includes('instagram.com') ? (
+                      <div className="w-full h-full">
+                        <InstagramEmbed 
+                          postUrl={template.video_link}
+                          className="w-full h-full"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Video className="w-12 h-12 text-gray-300" />
+                      </div>
                     )}
+                    
+                    {/* Play overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-sm">
+                        <Play className="w-5 h-5 text-gray-900 ml-0.5" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Template Header */}
+                  <div className="p-6">
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1">
+                          {template.hotel_name}
+                        </h3>
+                        {template.property && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[#115446]/10 text-[#115446] ml-2">
+                            {template.property}
+                          </span>
+                        )}
+                      </div>
+                      {template.country && (
+                        <p className="text-sm text-gray-600">
+                          📍 {template.country}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 mb-4">
+                      <div className="flex items-center">
+                        <Eye className="w-3 h-3 mr-1 text-[#115446]" />
+                        <span>{formatNumber(template.views)}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Heart className="w-3 h-3 mr-1 text-red-500" />
+                        <span>{formatNumber(template.likes)}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Users className="w-3 h-3 mr-1 text-[#ff914d]" />
+                        <span>{formatNumber(template.followers)}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <MessageCircle className="w-3 h-3 mr-1 text-blue-500" />
+                        <span>{formatNumber(template.comments)}</span>
+                      </div>
+                      {/* Engagement Ratio */}
+                      <div className="col-span-2 flex items-center justify-center bg-gray-50 rounded-lg py-1 px-2 mt-1">
+                        <Sparkles className="w-3 h-3 mr-1 text-purple-500" />
+                        <span className="text-purple-700 font-semibold">
+                          Engagement: {(((template.likes || 0) + (template.comments || 0)) / (template.views || 1) * 100).toFixed(2)}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={() => handleRecreateVideo(template)}
+                        className="flex-1"
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Recréer la vidéo
+                      </Button>
+                      
+                      {template.video_link && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(template.video_link, '_blank')}
+                          className="px-3"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          {/* Stats */}
-          <div className="mt-8 text-center text-sm text-gray-500">
-            Affichage de {filteredTemplates.length} vidéo{filteredTemplates.length !== 1 ? 's' : ''} virale{filteredTemplates.length !== 1 ? 's' : ''} sur {templates.length} au total
-          </div>
-        </>
-      )}
+            {/* Stats */}
+            <div className="mt-8 text-center text-sm text-gray-500">
+              Affichage de {filteredTemplates.length} vidéo{filteredTemplates.length !== 1 ? 's' : ''} virale{filteredTemplates.length !== 1 ? 's' : ''} sur {templates.length} au total
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }

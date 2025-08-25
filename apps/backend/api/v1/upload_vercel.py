@@ -1,0 +1,466 @@
+"""
+Version Vercel-compatible de l'API upload - traitement synchrone des vidéos
+"""
+
+from fastapi import APIRouter, HTTPException, Depends, status
+from sqlalchemy.orm import Session
+from core.database import get_db
+from models.video import Video
+from models.property import Property
+from models.user import User
+from api.dependencies.auth import get_current_user
+from services.s3_service import s3_service
+from services.local_storage_service import local_storage_service
+from services.video_conversion_service import video_conversion_service
+from services.blip_analysis_service import blip_analysis_service
+from core.config import settings
+from schemas.video import VideoResponse, VideoCreateRequest, UploadUrlRequest, UploadUrlResponse
+import logging
+import tempfile
+import os
+import json
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+async def process_video_sync(video: Video, s3_key: str, db: Session, config: dict) -> bool:
+    """
+    Process video synchronously (Vercel-compatible)
+    Returns True if successful, False if partial success, raises Exception if failed
+    """
+    
+    try:
+        logger.info(f"🎬 Processing video synchronously: {video.title}")
+        
+        # Download video from S3
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Download original video
+            original_path = os.path.join(temp_dir, f"original_{video.id}.mp4")
+            
+            if settings.STORAGE_BACKEND == "s3":
+                s3_service.download_file(s3_key, original_path)
+            else:
+                # For local storage, copy file
+                local_path = os.path.join("uploads", s3_key)
+                import shutil
+                shutil.copy2(local_path, original_path)
+            
+            # Get video metadata
+            metadata = video_conversion_service.get_video_metadata(original_path)
+            
+            # Check if conversion is needed
+            needs_conversion = video_conversion_service.needs_conversion(metadata)
+            final_video_path = original_path
+            
+            if needs_conversion:
+                logger.info("📐 Video needs conversion - converting...")
+                converted_path = os.path.join(temp_dir, f"converted_{video.id}.mp4")
+                
+                conversion_result = video_conversion_service.convert_video(
+                    original_path, 
+                    converted_path,
+                    target_resolution="1080x1920",
+                    target_fps=30,
+                    timeout=config["processing_timeout"]["video_conversion"]
+                )
+                
+                if conversion_result.get("success"):
+                    final_video_path = converted_path
+                    logger.info("✅ Video converted successfully")
+                else:
+                    logger.warning("⚠️ Conversion failed, using original")
+            
+            # Generate AI description (with timeout)
+            content_description = "Video uploaded successfully"
+            try:
+                if config["enable_ai_description"]:
+                    logger.info("📝 Generating AI description...")
+                    content_description = blip_analysis_service.analyze_video_content(
+                        final_video_path,
+                        max_frames=config["max_frames_for_ai"],
+                        timeout=config["processing_timeout"]["ai_analysis"]
+                    )
+            except Exception as e:
+                logger.warning(f"AI description failed: {e}")
+            
+            # Upload processed video if converted
+            final_s3_key = s3_key
+            if needs_conversion:
+                # Upload converted video
+                base_key = s3_key.rsplit('.', 1)[0]
+                final_s3_key = f"{base_key}_processed.mp4"
+                
+                if settings.STORAGE_BACKEND == "s3":
+                    with open(final_video_path, 'rb') as video_file:
+                        upload_result = s3_service.upload_file_direct(
+                            video_file, 
+                            final_s3_key, 
+                            content_type="video/mp4",
+                            public_read=False
+                        )
+                    
+                    if upload_result.get("success"):
+                        # Delete original to save space
+                        s3_service.delete_file(s3_key)
+                        logger.info("✅ Processed video uploaded, original deleted")
+                else:
+                    # Local storage
+                    final_local_path = os.path.join("uploads", final_s3_key)
+                    os.makedirs(os.path.dirname(final_local_path), exist_ok=True)
+                    import shutil
+                    shutil.copy2(final_video_path, final_local_path)
+                    
+                    # Remove original
+                    original_local_path = os.path.join("uploads", s3_key)
+                    if os.path.exists(original_local_path):
+                        os.remove(original_local_path)
+            
+            # Generate thumbnail (quick version)
+            thumbnail_url = None
+            try:
+                if config["enable_thumbnail_generation"]:
+                    logger.info("📸 Generating thumbnail...")
+                    thumbnail_path = os.path.join(temp_dir, f"thumb_{video.id}.jpg")
+                    
+                    # Generate thumbnail at 2 second mark
+                    import subprocess
+                    result = subprocess.run([
+                        'ffmpeg', '-i', final_video_path, '-ss', '2', '-vframes', '1',
+                        '-q:v', '2', '-y', thumbnail_path
+                    ], capture_output=True, text=True, timeout=config["processing_timeout"]["thumbnail_generation"])
+                    
+                    if result.returncode == 0 and os.path.exists(thumbnail_path):
+                        # Upload thumbnail
+                        thumb_key = f"thumbnails/{video.id}.jpg"
+                        
+                        if settings.STORAGE_BACKEND == "s3":
+                            with open(thumbnail_path, 'rb') as thumb_file:
+                                thumb_result = s3_service.upload_file_direct(
+                                    thumb_file, thumb_key, content_type="image/jpeg", public_read=True
+                                )
+                            if thumb_result.get("success"):
+                                thumbnail_url = f"s3://{s3_service.bucket_name}/{thumb_key}"
+                        else:
+                            # Local storage
+                            thumb_local_path = os.path.join("uploads", thumb_key)
+                            os.makedirs(os.path.dirname(thumb_local_path), exist_ok=True)
+                            import shutil
+                            shutil.copy2(thumbnail_path, thumb_local_path)
+                            thumbnail_url = f"s3://hospup-files/{thumb_key}"
+                        
+                        logger.info("✅ Thumbnail generated")
+                
+            except Exception as e:
+                logger.warning(f"Thumbnail generation failed: {e}")
+            
+            # Update video record with final information
+            final_metadata = video_conversion_service.get_video_metadata(final_video_path)
+            
+            # Update video with processed information
+            if settings.STORAGE_BACKEND == "s3":
+                video.video_url = f"s3://{s3_service.bucket_name}/{final_s3_key}"
+            else:
+                video.video_url = f"s3://hospup-files/{final_s3_key}"
+            
+            video.duration = final_metadata.get("duration")
+            video.size = final_metadata.get("size", os.path.getsize(final_video_path))
+            video.format = "mp4"
+            video.description = f"{video.description}\n\nAI Analysis: {content_description}"
+            
+            if thumbnail_url:
+                video.thumbnail_url = thumbnail_url
+            
+            # Set final status
+            if content_description and not content_description.startswith("Video uploaded successfully"):
+                video.status = "ready"  # Ready with AI description
+            else:
+                video.status = "uploaded"  # Uploaded but basic description
+            
+            # Store processing metadata
+            processing_metadata = {
+                "processed_at": datetime.utcnow().isoformat(),
+                "conversion_needed": needs_conversion,
+                "content_description": content_description,
+                "processing_mode": f"synchronous_{config['mode']}",
+                "final_s3_key": final_s3_key
+            }
+            
+            video.source_data = json.dumps(processing_metadata)
+            
+            db.commit()
+            db.refresh(video)
+            
+            logger.info(f"✅ Video processing completed synchronously: {video.id}")
+            
+            return True
+            
+    except Exception as e:
+        logger.error(f"❌ Synchronous processing failed: {e}")
+        raise e
+
+@router.post("/complete", response_model=VideoResponse)
+async def complete_upload_vercel(
+    request: VideoCreateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Create a video record and process it synchronously (Vercel-compatible)
+    """
+    
+    # Validate property ownership
+    property = db.query(Property).filter(
+        Property.id == request.property_id,
+        Property.user_id == current_user.id
+    ).first()
+    
+    if not property:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    
+    # Create video record initially as processing
+    video = Video(
+        title=request.file_name,
+        video_url=f"s3://{s3_service.bucket_name}/{request.s3_key}",
+        format=request.content_type.split('/')[-1],
+        size=request.file_size,
+        status="processing",
+        user_id=current_user.id,
+        property_id=request.property_id,
+        description=f"Uploaded video: {request.file_name}"
+    )
+    
+    db.add(video)
+    db.commit()
+    db.refresh(video)
+    
+    # Process video synchronously (instead of async with Celery)
+    try:
+        logger.info(f"🎬 Processing video synchronously: {video.title}")
+        
+        # Download video from S3
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Download original video
+            original_path = os.path.join(temp_dir, f"original_{video.id}.mp4")
+            
+            if settings.STORAGE_BACKEND == "s3":
+                s3_service.download_file(request.s3_key, original_path)
+            else:
+                # For local storage, copy file
+                local_path = os.path.join("uploads", request.s3_key)
+                import shutil
+                shutil.copy2(local_path, original_path)
+            
+            # Get video metadata
+            metadata = video_conversion_service.get_video_metadata(original_path)
+            
+            # Check if conversion is needed
+            needs_conversion = video_conversion_service.needs_conversion(metadata)
+            final_video_path = original_path
+            
+            if needs_conversion:
+                logger.info("📐 Video needs conversion - converting...")
+                converted_path = os.path.join(temp_dir, f"converted_{video.id}.mp4")
+                
+                conversion_result = video_conversion_service.convert_video(
+                    original_path, 
+                    converted_path,
+                    target_resolution="1080x1920",
+                    target_fps=30
+                )
+                
+                if conversion_result.get("success"):
+                    final_video_path = converted_path
+                    logger.info("✅ Video converted successfully")
+                else:
+                    logger.warning("⚠️ Conversion failed, using original")
+            
+            # Generate AI description (with timeout for Vercel)
+            try:
+                logger.info("📝 Generating AI description...")
+                content_description = blip_analysis_service.analyze_video_content(
+                    final_video_path,
+                    max_frames=5,  # Reduced for faster processing
+                    timeout=30     # 30 second timeout for Vercel
+                )
+            except Exception as e:
+                logger.warning(f"AI description failed: {e}")
+                content_description = "Video uploaded successfully"
+            
+            # Upload processed video if converted
+            final_s3_key = request.s3_key
+            if needs_conversion:
+                # Upload converted video
+                base_key = request.s3_key.rsplit('.', 1)[0]
+                final_s3_key = f"{base_key}_processed.mp4"
+                
+                if settings.STORAGE_BACKEND == "s3":
+                    with open(final_video_path, 'rb') as video_file:
+                        upload_result = s3_service.upload_file_direct(
+                            video_file, 
+                            final_s3_key, 
+                            content_type="video/mp4",
+                            public_read=False
+                        )
+                    
+                    if upload_result.get("success"):
+                        # Delete original to save space
+                        s3_service.delete_file(request.s3_key)
+                        logger.info("✅ Processed video uploaded, original deleted")
+                else:
+                    # Local storage
+                    final_local_path = os.path.join("uploads", final_s3_key)
+                    os.makedirs(os.path.dirname(final_local_path), exist_ok=True)
+                    shutil.copy2(final_video_path, final_local_path)
+                    
+                    # Remove original
+                    original_local_path = os.path.join("uploads", request.s3_key)
+                    if os.path.exists(original_local_path):
+                        os.remove(original_local_path)
+            
+            # Generate thumbnail (quick version for Vercel)
+            thumbnail_url = None
+            try:
+                logger.info("📸 Generating thumbnail...")
+                thumbnail_path = os.path.join(temp_dir, f"thumb_{video.id}.jpg")
+                
+                # Generate thumbnail at 2 second mark
+                import subprocess
+                result = subprocess.run([
+                    'ffmpeg', '-i', final_video_path, '-ss', '2', '-vframes', '1',
+                    '-q:v', '2', '-y', thumbnail_path
+                ], capture_output=True, text=True, timeout=15)
+                
+                if result.returncode == 0 and os.path.exists(thumbnail_path):
+                    # Upload thumbnail
+                    thumb_key = f"thumbnails/{video.id}.jpg"
+                    
+                    if settings.STORAGE_BACKEND == "s3":
+                        with open(thumbnail_path, 'rb') as thumb_file:
+                            thumb_result = s3_service.upload_file_direct(
+                                thumb_file, thumb_key, content_type="image/jpeg", public_read=True
+                            )
+                        if thumb_result.get("success"):
+                            thumbnail_url = f"s3://{s3_service.bucket_name}/{thumb_key}"
+                    else:
+                        # Local storage
+                        thumb_local_path = os.path.join("uploads", thumb_key)
+                        os.makedirs(os.path.dirname(thumb_local_path), exist_ok=True)
+                        shutil.copy2(thumbnail_path, thumb_local_path)
+                        thumbnail_url = f"s3://hospup-files/{thumb_key}"
+                    
+                    logger.info("✅ Thumbnail generated")
+                
+            except Exception as e:
+                logger.warning(f"Thumbnail generation failed: {e}")
+            
+            # Update video record with final information
+            final_metadata = video_conversion_service.get_video_metadata(final_video_path)
+            
+            # Update video with processed information
+            if settings.STORAGE_BACKEND == "s3":
+                video.video_url = f"s3://{s3_service.bucket_name}/{final_s3_key}"
+            else:
+                video.video_url = f"s3://hospup-files/{final_s3_key}"
+            
+            video.duration = final_metadata.get("duration")
+            video.size = final_metadata.get("size", os.path.getsize(final_video_path))
+            video.format = "mp4"
+            video.description = f"{video.description}\n\nAI Analysis: {content_description}"
+            
+            if thumbnail_url:
+                video.thumbnail_url = thumbnail_url
+            
+            # Set final status
+            if content_description and not content_description.startswith("Video uploaded successfully"):
+                video.status = "ready"  # Ready with AI description
+            else:
+                video.status = "uploaded"  # Uploaded but basic description
+            
+            # Store processing metadata
+            processing_metadata = {
+                "processed_at": datetime.utcnow().isoformat(),
+                "conversion_needed": needs_conversion,
+                "content_description": content_description,
+                "processing_mode": "synchronous_vercel",
+                "final_s3_key": final_s3_key
+            }
+            
+            video.source_data = json.dumps(processing_metadata)
+            
+            db.commit()
+            db.refresh(video)
+            
+            logger.info(f"✅ Video processing completed synchronously: {video.id}")
+            
+            return VideoResponse.from_orm(video)
+            
+    except Exception as e:
+        logger.error(f"❌ Synchronous processing failed: {e}")
+        
+        # Update video status to failed
+        video.status = "failed"
+        video.description = f"{video.description}\n\nProcessing failed: {str(e)}"
+        db.commit()
+        
+        # Still return the video record
+        return VideoResponse.from_orm(video)
+
+# Keep the original async endpoint for local development
+@router.post("/complete-async", response_model=VideoResponse)
+async def complete_upload_async(
+    request: VideoCreateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Create a video record with async processing (for local development with Celery)
+    """
+    
+    # Validate property ownership
+    property = db.query(Property).filter(
+        Property.id == request.property_id,
+        Property.user_id == current_user.id
+    ).first()
+    
+    if not property:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    
+    # Create video record with processing status
+    video = Video(
+        title=request.file_name,
+        video_url=f"s3://{s3_service.bucket_name}/{request.s3_key}",
+        format=request.content_type.split('/')[-1],
+        size=request.file_size,
+        status="processing",
+        user_id=current_user.id,
+        property_id=request.property_id,
+        description=f"Uploaded video: {request.file_name}"
+    )
+    
+    db.add(video)
+    db.commit()
+    db.refresh(video)
+    
+    # Trigger background processing with Celery (for local dev)
+    try:
+        from tasks.video_processing_tasks import process_uploaded_video
+        task = process_uploaded_video.delay(str(video.id), request.s3_key)
+        
+        video.generation_job_id = task.id
+        db.commit()
+        
+        logger.info(f"Started async processing task {task.id} for video {video.id}")
+        
+    except Exception as e:
+        logger.warning(f"Async processing unavailable (Celery not running): {e}")
+        # Video stays in processing status - will be handled by recovery system
+    
+    return VideoResponse.from_orm(video)

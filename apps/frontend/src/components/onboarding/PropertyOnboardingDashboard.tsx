@@ -34,6 +34,10 @@ interface PropertyFormData {
   instagram: string
   language: string
   description: string
+  brandFont: string
+  brandColor: string
+  textOutline: boolean
+  outlineColor: string
 }
 
 export function PropertyOnboardingDashboard() {
@@ -52,25 +56,33 @@ export function PropertyOnboardingDashboard() {
     phone: '',
     instagram: '',
     language: 'fr',
-    description: ''
+    description: '',
+    brandFont: 'Inter',
+    brandColor: '#115446',
+    textOutline: true,
+    outlineColor: '#FFFFFF'
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const handleInputChange = (field: keyof PropertyFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
+  const handleInputChange = (field: keyof PropertyFormData, value: string | boolean) => {
+    if (field === 'textOutline') {
+      setFormData(prev => ({ ...prev, [field]: value === 'true' || value === true }))
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value as string }))
+    }
+    if (errors[field as string]) {
+      setErrors(prev => ({ ...prev, [field as string]: '' }))
     }
   }
 
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {}
     
-    if (!formData.name.trim()) newErrors.name = 'Le nom de la propriété est requis'
-    if (!formData.type) newErrors.type = 'Le type d\'établissement est requis'
-    if (!formData.city.trim()) newErrors.city = 'La ville est requise'
-    if (!formData.country.trim()) newErrors.country = 'Le pays est requis'
+    if (!formData.name.trim()) newErrors.name = 'Property name is required'
+    if (!formData.type) newErrors.type = 'Property type is required'
+    if (!formData.city.trim()) newErrors.city = 'City is required'
+    if (!formData.country.trim()) newErrors.country = 'Country is required'
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -78,7 +90,7 @@ export function PropertyOnboardingDashboard() {
 
   const handleNext = () => {
     if (currentStep === 1 && !validateStep1()) return
-    setCurrentStep(prev => Math.min(prev + 1, 3))
+    setCurrentStep(prev => Math.min(prev + 1, 5))
   }
 
   const handlePrev = () => {
@@ -93,7 +105,7 @@ export function PropertyOnboardingDashboard() {
 
   const handleFinish = async () => {
     if (uploadedFiles.length === 0) {
-      alert('Veuillez ajouter au moins une photo ou vidéo')
+      alert('Please add at least one photo or video')
       return
     }
     
@@ -217,86 +229,75 @@ export function PropertyOnboardingDashboard() {
     return SUPPORTED_LANGUAGES.find(lang => lang.value === value)?.label || value
   }
 
-  const progressWidth = (currentStep / 3) * 100
+  const progressWidth = (currentStep / 5) * 100
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#e6f4ef] font-inter">
-      <div className="flex items-center justify-center min-h-screen py-8 px-4">
+    <div className="min-h-screen bg-gray-50 font-inter">
+      <div className="flex items-start justify-center pt-12 px-4">
         <div className="w-full max-w-3xl">
           {/* Main Card */}
           <div className="bg-white rounded-2xl shadow-xl p-10">
-            {/* Header with back button */}
-            <div className="flex items-center justify-between mb-8">
+            {/* Header with back button and progress */}
+            <div className="flex items-center justify-between mb-6">
               <Button 
                 variant="ghost" 
                 onClick={() => router.back()}
                 className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Retour
+                Back
               </Button>
-              <div className="text-right">
-                <p className="text-[#115446] font-semibold text-lg">
-                  Step {currentStep} of 3
-                </p>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mb-8 flex justify-center">
-              <div className="w-full max-w-xs">
-                <div className="bg-gray-100 rounded-xl h-2 overflow-hidden">
-                  <div 
-                    className="h-full bg-[#115446] rounded-xl transition-all duration-500 ease-out"
-                    style={{ width: `${progressWidth}%` }}
-                  />
+              <div className="flex-1 flex justify-center">
+                <div className="w-32">
+                  <div className="bg-gray-100 rounded-xl h-2 overflow-hidden">
+                    <div 
+                      className="h-full bg-[#115446] rounded-xl transition-all duration-500 ease-out"
+                      style={{ width: `${progressWidth}%` }}
+                    />
+                  </div>
                 </div>
               </div>
+              <p className="text-[#115446] font-semibold text-lg">
+                Step {currentStep} of 5
+              </p>
             </div>
 
             {/* Step Content */}
-            <div className="space-y-8">
+            <div className="space-y-4">
               {/* Step 1: Basic Information */}
               {currentStep === 1 && (
                 <div>
-                  <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#115446] bg-opacity-10 rounded-2xl mb-6">
-                      <Building2 className="w-8 h-8 text-[#115446]" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Informations de base</h2>
-                    <p className="text-gray-600 mb-6">Parlez-nous de votre établissement</p>
+                  <div className="text-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Inter' }}>Basic Information</h2>
                   </div>
 
-                  <div className="space-y-6">
+                  <div className="space-y-3">
                     <div>
                       <Label htmlFor="name" className="text-sm font-medium text-gray-700 mb-2 block">
-                        Nom de l'établissement *
+                        Property Name *
                       </Label>
-                      <div className="relative">
-                        <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <Input
-                          id="name"
-                          type="text"
-                          value={formData.name}
-                          onChange={(e) => handleInputChange('name', e.target.value)}
-                          placeholder="ex: Hôtel des Champs-Élysées"
-                          className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
-                            errors.name ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
-                          }`}
-                        />
-                      </div>
+                      <Input
+                        id="name"
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        placeholder="e.g. Grand Hotel Paris"
+                        className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
+                          errors.name ? 'border-red-500 focus:border-red-500' : ''
+                        }`}
+                      />
                       {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
                     </div>
 
                     <div>
                       <Label htmlFor="type" className="text-sm font-medium text-gray-700 mb-2 block">
-                        Type d'établissement *
+                        Property Type *
                       </Label>
                       <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
-                        <SelectTrigger className={`px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
+                        <SelectTrigger className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
                           errors.type ? 'border-red-500' : ''
                         }`}>
-                          <SelectValue placeholder="Sélectionnez le type" />
+                          <SelectValue placeholder="Select property type" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
                           {PROPERTY_TYPES.map((type) => (
@@ -309,187 +310,319 @@ export function PropertyOnboardingDashboard() {
                       {errors.type && <p className="text-red-600 text-sm mt-1">{errors.type}</p>}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="city" className="text-sm font-medium text-gray-700 mb-2 block">
-                          Ville *
+                          City *
                         </Label>
-                        <div className="relative">
-                          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                          <Input
-                            id="city"
-                            type="text"
-                            value={formData.city}
-                            onChange={(e) => handleInputChange('city', e.target.value)}
-                            placeholder="Paris"
-                            className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
-                              errors.city ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
-                            }`}
-                          />
-                        </div>
+                        <Input
+                          id="city"
+                          type="text"
+                          value={formData.city}
+                          onChange={(e) => handleInputChange('city', e.target.value)}
+                          placeholder="Paris"
+                          className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
+                            errors.city ? 'border-red-500 focus:border-red-500' : ''
+                          }`}
+                        />
                         {errors.city && <p className="text-red-600 text-sm mt-1">{errors.city}</p>}
                       </div>
 
                       <div>
                         <Label htmlFor="country" className="text-sm font-medium text-gray-700 mb-2 block">
-                          Pays *
+                          Country *
                         </Label>
-                        <div className="relative">
-                          <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                          <Input
-                            id="country"
-                            type="text"
-                            value={formData.country}
-                            onChange={(e) => handleInputChange('country', e.target.value)}
-                            placeholder="France"
-                            className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
-                              errors.country ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
-                            }`}
-                          />
-                        </div>
+                        <Input
+                          id="country"
+                          type="text"
+                          value={formData.country}
+                          onChange={(e) => handleInputChange('country', e.target.value)}
+                          placeholder="France"
+                          className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
+                            errors.country ? 'border-red-500 focus:border-red-500' : ''
+                          }`}
+                        />
                         {errors.country && <p className="text-red-600 text-sm mt-1">{errors.country}</p>}
                       </div>
                     </div>
 
-                    <div>
-                      <Label htmlFor="language" className="text-sm font-medium text-gray-700 mb-2 block">
-                        Langue principale
-                      </Label>
-                      <Select value={formData.language} onValueChange={(value) => handleInputChange('language', value)}>
-                        <SelectTrigger className="px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          {SUPPORTED_LANGUAGES.map((lang) => (
-                            <SelectItem key={lang.value} value={lang.value} className="rounded-lg">
-                              {lang.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
 
-                  <div className="flex justify-end mt-8">
+                  <div className="flex justify-end mt-6">
                     <Button 
                       onClick={handleNext} 
                       className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
                     >
-                      Continuer
+                      Continue
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
                 </div>
               )}
 
-              {/* Step 2: Contact Information */}
+              {/* Step 2: More Information */}
               {currentStep === 2 && (
                 <div>
-                  <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#115446] bg-opacity-10 rounded-2xl mb-6">
-                      <Globe className="w-8 h-8 text-[#115446]" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Coordonnées & Réseaux</h2>
-                    <p className="text-gray-600 mb-6">Aidez vos clients à vous trouver</p>
+                  <div className="text-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Inter' }}>More Information</h2>
                   </div>
 
-                  <div className="space-y-6">
+                  <div className="space-y-3">
                     <div>
                       <Label htmlFor="website" className="text-sm font-medium text-gray-700 mb-2 block">
-                        Site web
+                        Website
                       </Label>
-                      <div className="relative">
-                        <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <Input
-                          id="website"
-                          type="url"
-                          value={formData.website}
-                          onChange={(e) => handleInputChange('website', e.target.value)}
-                          placeholder="https://www.votre-hotel.com"
-                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200"
-                        />
-                      </div>
+                      <Input
+                        id="website"
+                        type="url"
+                        value={formData.website}
+                        onChange={(e) => handleInputChange('website', e.target.value)}
+                        placeholder="https://www.your-hotel.com"
+                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
+                      />
                     </div>
 
                     <div>
                       <Label htmlFor="phone" className="text-sm font-medium text-gray-700 mb-2 block">
-                        Téléphone
+                        Phone
                       </Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <Input
-                          id="phone"
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => handleInputChange('phone', e.target.value)}
-                          placeholder="+33 1 23 45 67 89"
-                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200"
-                        />
-                      </div>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        placeholder="+33 1 23 45 67 89"
+                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
+                      />
                     </div>
 
                     <div>
                       <Label htmlFor="instagram" className="text-sm font-medium text-gray-700 mb-2 block">
                         Instagram
                       </Label>
-                      <div className="relative">
-                        <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <Input
-                          id="instagram"
-                          type="text"
-                          value={formData.instagram}
-                          onChange={(e) => handleInputChange('instagram', e.target.value)}
-                          placeholder="@votre_hotel"
-                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="description" className="text-sm font-medium text-gray-700 mb-2 block">
-                        Description
-                      </Label>
-                      <Textarea
-                        id="description"
-                        value={formData.description}
-                        onChange={(e) => handleInputChange('description', e.target.value)}
-                        placeholder="Décrivez votre établissement, son ambiance, ses spécialités..."
-                        rows={4}
-                        className="px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 resize-none"
+                      <Input
+                        id="instagram"
+                        type="text"
+                        value={formData.instagram}
+                        onChange={(e) => handleInputChange('instagram', e.target.value)}
+                        placeholder="@your_hotel"
+                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
                       />
                     </div>
+
                   </div>
 
-                  <div className="flex justify-between mt-8">
+                  <div className="flex justify-between mt-6">
                     <Button 
                       variant="outline" 
                       onClick={handlePrev}
                       className="px-6 py-3 rounded-xl border-gray-200 hover:bg-gray-50 font-medium text-base transition-all duration-200"
                     >
                       <ArrowLeft className="w-4 h-4 mr-2" />
-                      Retour
+                      Back
                     </Button>
                     <Button 
                       onClick={handleNext} 
                       className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
                     >
-                      Continuer
+                      Continue
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
                 </div>
               )}
 
-              {/* Step 3: Media Upload */}
+              {/* Step 3: Description */}
               {currentStep === 3 && (
                 <div>
-                  <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#115446] bg-opacity-10 rounded-2xl mb-6">
-                      <Camera className="w-8 h-8 text-[#115446]" />
+                  <div className="text-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Inter' }}>Hotel Description</h2>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="description" className="text-sm font-medium text-gray-700 mb-2 block">
+                        Description *
+                      </Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        placeholder="Describe your hotel, its atmosphere, specialties, unique features..."
+                        rows={6}
+                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 resize-none"
+                      />
+                      <p className="text-sm text-gray-500 mt-2">This will be used to generate engaging Instagram descriptions for your videos.</p>
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Photos & Vidéos</h2>
-                    <p className="text-gray-600 mb-6">
-                      Ajoutez vos plus belles photos et vidéos pour créer du contenu viral
+                  </div>
+
+                  <div className="flex justify-between mt-6">
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePrev}
+                      className="px-6 py-3 rounded-xl border-gray-200 hover:bg-gray-50 font-medium text-base transition-all duration-200"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleNext} 
+                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
+                    >
+                      Continue
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Text Styling */}
+              {currentStep === 4 && (
+                <div>
+                  <div className="text-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Inter' }}>Brand Text Styling</h2>
+                    <p className="text-base font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>
+                      Choose your brand fonts and colors for video text overlays
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Font Selection */}
+                    <div>
+                      <Label htmlFor="brandFont" className="text-sm font-medium text-gray-700 mb-2 block">
+                        Brand Font
+                      </Label>
+                      <Select value={formData.brandFont} onValueChange={(value) => handleInputChange('brandFont', value)}>
+                        <SelectTrigger className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus:ring-offset-0 focus:shadow-sm transition-all duration-200">
+                          <SelectValue placeholder="Select font" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="Inter" className="rounded-lg">Inter (Modern & Clean)</SelectItem>
+                          <SelectItem value="Montserrat" className="rounded-lg">Montserrat (Bold & Strong)</SelectItem>
+                          <SelectItem value="Poppins" className="rounded-lg">Poppins (Friendly & Round)</SelectItem>
+                          <SelectItem value="Playfair Display" className="rounded-lg">Playfair Display (Elegant & Luxury)</SelectItem>
+                          <SelectItem value="Oswald" className="rounded-lg">Oswald (Impact & Bold)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Brand Color */}
+                    <div>
+                      <Label htmlFor="brandColor" className="text-sm font-medium text-gray-700 mb-2 block">
+                        Brand Color
+                      </Label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="color"
+                          id="brandColor"
+                          value={formData.brandColor}
+                          onChange={(e) => handleInputChange('brandColor', e.target.value)}
+                          className="w-12 h-12 rounded-lg border border-gray-200 cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={formData.brandColor}
+                          onChange={(e) => handleInputChange('brandColor', e.target.value)}
+                          placeholder="#115446"
+                          className="flex-1 px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Text Outline Toggle */}
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="textOutline" className="text-sm font-medium text-gray-700">
+                          Add Text Outline
+                        </Label>
+                        <button
+                          type="button"
+                          onClick={() => handleInputChange('textOutline', (!formData.textOutline).toString())}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            formData.textOutline ? 'bg-[#115446]' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              formData.textOutline ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Helps text stand out on various backgrounds</p>
+                    </div>
+
+                    {/* Outline Color (if outline is enabled) */}
+                    {formData.textOutline && (
+                      <div>
+                        <Label htmlFor="outlineColor" className="text-sm font-medium text-gray-700 mb-2 block">
+                          Outline Color
+                        </Label>
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="color"
+                            id="outlineColor"
+                            value={formData.outlineColor}
+                            onChange={(e) => handleInputChange('outlineColor', e.target.value)}
+                            className="w-12 h-12 rounded-lg border border-gray-200 cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={formData.outlineColor}
+                            onChange={(e) => handleInputChange('outlineColor', e.target.value)}
+                            placeholder="#FFFFFF"
+                            className="flex-1 px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Preview */}
+                    <div className="mt-6 p-6 bg-gray-900 rounded-xl">
+                      <div className="text-center">
+                        <h3 className="text-sm font-medium text-gray-400 mb-3">Preview</h3>
+                        <div
+                          className="text-2xl font-bold"
+                          style={{
+                            fontFamily: formData.brandFont,
+                            color: formData.brandColor,
+                            textShadow: formData.textOutline ? `2px 2px 0px ${formData.outlineColor}, -2px -2px 0px ${formData.outlineColor}, 2px -2px 0px ${formData.outlineColor}, -2px 2px 0px ${formData.outlineColor}` : 'none'
+                          }}
+                        >
+                          {formData.name || 'Your Hotel Name'}
+                        </div>
+                        <p className="text-gray-400 text-sm mt-2">This is how text will appear on your videos</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between mt-6">
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePrev}
+                      className="px-6 py-3 rounded-xl border-gray-200 hover:bg-gray-50 font-medium text-base transition-all duration-200"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleNext} 
+                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
+                    >
+                      Continue
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 5: Media Upload */}
+              {currentStep === 5 && (
+                <div>
+                  <div className="text-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Inter' }}>Photos & Videos</h2>
+                    <p className="text-base font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>
+                      Add your best photos and videos to create viral content
                     </p>
                   </div>
 
@@ -510,7 +643,7 @@ export function PropertyOnboardingDashboard() {
                       <div className="flex items-center">
                         <CheckCircle className="w-5 h-5 text-[#115446] mr-3" />
                         <span className="text-[#115446] font-medium">
-                          {uploadedFiles.length} fichier{uploadedFiles.length > 1 ? 's' : ''} ajouté{uploadedFiles.length > 1 ? 's' : ''}
+                          {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''} added
                         </span>
                       </div>
                     </div>
@@ -519,10 +652,10 @@ export function PropertyOnboardingDashboard() {
                   {/* Summary */}
                   {uploadedFiles.length > 0 && (
                     <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-100">
-                      <h3 className="font-semibold text-gray-900 mb-4">Récapitulatif</h3>
+                      <h3 className="font-semibold text-gray-900 mb-4">Summary</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                         <div>
-                          <span className="text-gray-600">Établissement:</span>
+                          <span className="text-gray-600">Property:</span>
                           <p className="font-medium text-gray-900">{formData.name}</p>
                         </div>
                         <div>
@@ -530,25 +663,25 @@ export function PropertyOnboardingDashboard() {
                           <p className="font-medium text-gray-900">{getPropertyTypeLabel(formData.type)}</p>
                         </div>
                         <div>
-                          <span className="text-gray-600">Localisation:</span>
+                          <span className="text-gray-600">Location:</span>
                           <p className="font-medium text-gray-900">{formData.city}, {formData.country}</p>
                         </div>
                         <div>
-                          <span className="text-gray-600">Médias:</span>
-                          <p className="font-medium text-gray-900">{uploadedFiles.length} fichier{uploadedFiles.length > 1 ? 's' : ''}</p>
+                          <span className="text-gray-600">Media:</span>
+                          <p className="font-medium text-gray-900">{uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''}</p>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  <div className="flex justify-between mt-8">
+                  <div className="flex justify-between mt-6">
                     <Button 
                       variant="outline" 
                       onClick={handlePrev}
                       className="px-6 py-3 rounded-xl border-gray-200 hover:bg-gray-50 font-medium text-base transition-all duration-200"
                     >
                       <ArrowLeft className="w-4 h-4 mr-2" />
-                      Retour
+                      Back
                     </Button>
                     <Button 
                       onClick={handleFinish}
@@ -558,12 +691,12 @@ export function PropertyOnboardingDashboard() {
                       {isSubmitting ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Création en cours...
+                          Creating...
                         </>
                       ) : (
                         <>
                           <Sparkles className="w-4 h-4 mr-2" />
-                          Terminer
+                          Finish
                         </>
                       )}
                     </Button>

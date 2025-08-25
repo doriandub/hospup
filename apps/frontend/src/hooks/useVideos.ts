@@ -6,9 +6,9 @@ import { videosApi } from '@/lib/api'
 interface Video {
   id: string
   title: string
-  thumbnail_url: string
+  thumbnail_url: string | null
   video_url: string
-  duration: number
+  duration: number | null
   status: string
   created_at: string
   property_id: string
