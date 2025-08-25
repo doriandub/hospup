@@ -74,6 +74,7 @@ export function VideoTimelineEditor({
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null)
   const [resizingText, setResizingText] = useState<{ textId: string, side: 'start' | 'end' } | null>(null)
   const [showTextEditor, setShowTextEditor] = useState<boolean>(false)
+  const [showPreview, setShowPreview] = useState<boolean>(false)
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
   const [editingContent, setEditingContent] = useState<string>('')
 
@@ -387,675 +388,673 @@ export function VideoTimelineEditor({
   })
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{templateTitle}</h1>
-            <p className="text-gray-600">
-              Timeline • {templateSlots.length} segments • {formatTime(totalDuration)} total
-            </p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-sm">
-              <span className="text-gray-600">{assignedSlots}/{templateSlots.length} slots remplis</span>
-              <div className="w-32 bg-gray-200 rounded-full h-2 mt-1">
-                <div 
-                  className="bg-primary h-2 rounded-full transition-all duration-300" 
-                  style={{ width: `${(assignedSlots / templateSlots.length) * 100}%` }}
-                ></div>
+    <div className="min-h-screen bg-gray-50 font-inter">
+      <div className="grid grid-cols-1 gap-3 p-8">
+        
+        {/* Permanent Top Bar with Stats and Buttons */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <span className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                {templateSlots.length} segments
+              </span>
+              <span className="flex items-center gap-1">
+                <Video className="w-4 h-4" />
+                {formatTime(totalDuration)} total
+              </span>
+              <span className="text-[#115446] font-medium">
+                {assignedSlots}/{templateSlots.length} assigned
+              </span>
+              {textOverlays.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <Type className="w-4 h-4" />
+                  {textOverlays.length} text{textOverlays.length !== 1 ? 's' : ''}
+                </span>
+              )}
+              <div className="flex flex-col items-end">
+                <div className="w-24 bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-[#115446] h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${(assignedSlots / templateSlots.length) * 100}%` }}
+                  ></div>
+                </div>
+                <span className="text-xs text-gray-500 mt-1">Progress</span>
               </div>
             </div>
-            <Button
-              onClick={() => {
-                console.log('🎯 Generate button clicked!')
-                console.log('🎯 Assignments:', assignments)
-                console.log('🎯 Text overlays:', textOverlays)
-                onGenerate(assignments, textOverlays)
-              }}
-              disabled={assignedSlots === 0}
-              className="bg-primary text-white hover:bg-primary/90"
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Générer ({assignedSlots} segments)
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button
+                onClick={() => {
+                  const newId = Date.now().toString()
+                  setTextOverlays([...textOverlays, {
+                    id: newId,
+                    content: 'New Text',
+                    start_time: 0,
+                    end_time: 3,
+                    position: { x: 50, y: 50, anchor: 'center' },
+                    style: {
+                      font_family: 'Arial',
+                      font_size: 48,
+                      color: '#FFFFFF',
+                      bold: false,
+                      italic: false,
+                      shadow: true,
+                      outline: false,
+                      background: false,
+                      opacity: 1
+                    }
+                  }])
+                  setSelectedTextId(newId)
+                  setShowPreview(true)
+                  setShowTextEditor(true)
+                }}
+                variant="outline"
+                size="sm"
+                className="border-[#ff914d] text-[#ff914d] hover:bg-[#ff914d]/10"
+              >
+                <Type className="w-4 h-4 mr-2" />
+                Add Text
+              </Button>
+              <Button
+                onClick={() => {
+                  console.log('🎯 Generate button clicked!')
+                  console.log('🎯 Assignments:', assignments)
+                  console.log('🎯 Text overlays:', textOverlays)
+                  onGenerate(assignments, textOverlays)
+                }}
+                disabled={assignedSlots === 0}
+                className="bg-[#115446] hover:bg-[#115446]/90"
+                size="sm"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Generate ({assignedSlots})
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Timeline horizontale */}
-      <div className="flex-1 p-6">
-        {/* Éditeur de texte positionné au-dessus de la Timeline Template */}
-        {showTextEditor && selectedTextId && (
-          <div className="bg-white rounded-lg shadow-sm border p-4 mb-6 relative z-20">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-medium text-gray-900 flex items-center gap-2">
-                <Type className="w-4 h-4" />
-                Édition du texte
-              </h3>
-              <button
-                onClick={() => setShowTextEditor(false)}
-                className="text-gray-400 hover:text-gray-600 text-lg"
-                title="Fermer l'éditeur"
-              >
-                ×
-              </button>
+        {/* Collapsible Preview Section */}
+        {showPreview && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            
+            {/* Preview Card - 1/3 */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full relative">
+                {/* Close button */}
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setShowPreview(false)
+                    setShowTextEditor(false)
+                  }}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 z-20"
+                  size="sm"
+                >
+                  ×
+                </Button>
+                <div 
+                  className="w-full h-full rounded-lg border border-gray-200 relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900"
+                  style={{
+                    backgroundImage: (() => {
+                      const selectedText = textOverlays.find(t => t.id === selectedTextId)
+                      if (!selectedText || textOverlays.length === 0) return 'linear-gradient(135deg, #115446 0%, #ff914d 100%)'
+                      
+                      for (const slot of videoSlots) {
+                        if (selectedText.start_time >= slot.start_time && selectedText.start_time < slot.end_time) {
+                          return slot.assignedVideo?.thumbnail_url ? `url(${slot.assignedVideo.thumbnail_url})` : 'linear-gradient(135deg, #115446 0%, #ff914d 100%)'
+                        }
+                      }
+                      return 'linear-gradient(135deg, #115446 0%, #ff914d 100%)'
+                    })(),
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }}
+                >
+                  {/* All text overlays preview */}
+                  {textOverlays.map((text) => (
+                    <div
+                      key={text.id}
+                      className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all cursor-pointer ${
+                        selectedTextId === text.id ? 'ring-2 ring-[#115446] ring-opacity-50' : ''
+                      }`}
+                      style={{
+                        left: `${text.position.x}%`,
+                        top: `${text.position.y}%`,
+                        fontFamily: text.style.font_family,
+                        fontSize: `${Math.max(8, text.style.font_size / 3)}px`,
+                        color: text.style.color,
+                        textShadow: text.style.shadow ? '2px 2px 4px rgba(0,0,0,0.8)' : 'none',
+                        WebkitTextStroke: text.style.outline ? '1px black' : 'none',
+                        backgroundColor: text.style.background ? 'rgba(0,0,0,0.5)' : 'transparent',
+                        fontWeight: text.style.bold ? 'bold' : 'normal',
+                        fontStyle: text.style.italic ? 'italic' : 'normal',
+                        padding: text.style.background ? '4px 8px' : '0',
+                        borderRadius: text.style.background ? '4px' : '0',
+                        opacity: text.style.opacity,
+                        whiteSpace: 'nowrap',
+                        maxWidth: '80%',
+                        textAlign: 'center',
+                        zIndex: 10
+                      }}
+                      onClick={() => {
+                        setSelectedTextId(text.id)
+                        setShowTextEditor(true)
+                      }}
+                      title={`Edit: ${text.content}`}
+                    >
+                      {text.content}
+                    </div>
+                  ))}
+                  
+                  {/* Empty state */}
+                  {textOverlays.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center text-white/70">
+                        <Type className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Add text to preview</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Layout horizontal en 3 colonnes */}
-            <div className="grid grid-cols-3 gap-4 h-64">
-              
-              {/* Colonne 1 : Aperçu vidéo */}
-              <div className="flex flex-col">
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">Aperçu</Label>
-                <div 
-                  className="relative rounded-lg aspect-[9/16] w-full h-full overflow-hidden border-2 border-gray-300"
-                    style={{
-                      backgroundImage: (() => {
-                        const selectedText = textOverlays.find(t => t.id === selectedTextId)
-                        if (!selectedText) return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                        
-                        // Trouver la vidéo correspondant au timing du texte
-                        for (const slot of videoSlots) {
-                          if (selectedText.start_time >= slot.start_time && selectedText.start_time < slot.end_time) {
-                            return slot.assignedVideo?.thumbnail_url ? `url(${slot.assignedVideo.thumbnail_url})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                          }
-                        }
-                        return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                      })(),
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center'
-                    }}
-                  >
-                    {(() => {
-                      const selectedText = textOverlays.find(t => t.id === selectedTextId)
-                      if (!selectedText) return null
-                      
-                      return (
-                        <div
-                          className="absolute transform -translate-x-1/2 -translate-y-1/2"
-                          style={{
-                            left: `${selectedText.position.x}%`,
-                            top: `${selectedText.position.y}%`,
-                            fontFamily: selectedText.style.font_family,
-                            fontSize: `${Math.max(6, selectedText.style.font_size / 4)}px`,
-                            color: selectedText.style.color,
-                            textShadow: selectedText.style.shadow ? '1px 1px 2px rgba(0,0,0,0.8)' : 'none',
-                            WebkitTextStroke: selectedText.style.outline ? '0.5px black' : 'none',
-                            backgroundColor: selectedText.style.background ? 'rgba(0,0,0,0.5)' : 'transparent',
-                            fontWeight: selectedText.style.bold ? 'bold' : 'normal',
-                            fontStyle: selectedText.style.italic ? 'italic' : 'normal',
-                            padding: selectedText.style.background ? '1px 2px' : '0',
-                            borderRadius: selectedText.style.background ? '2px' : '0',
-                            opacity: selectedText.style.opacity,
-                            whiteSpace: 'nowrap',
-                            maxWidth: '80%',
-                            textAlign: 'center'
-                          }}
-                        >
-                          {selectedText.content || 'Votre texte'}
-                        </div>
-                      )
-                    })()}
+            {/* Text Editor Card - 2/3 */}
+            <div className="lg:col-span-2 flex flex-col">
+              {showTextEditor && selectedTextId && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <Type className="w-5 h-5" />
+                      Text Editor
+                    </h2>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowTextEditor(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      ×
+                    </Button>
                   </div>
-              </div>
 
-              {/* Colonne 2 : Contenu et Style */}
-              <div className="flex flex-col space-y-3">
-                {(() => {
-                  const selectedText = textOverlays.find(t => t.id === selectedTextId)
-                  if (!selectedText) return null
-                  
-                  return (
-                    <>
-                      {/* Contenu */}
-                      <div>
-                        <Label className="text-sm font-medium text-gray-700 mb-2 block">Contenu</Label>
-                        <Textarea
-                          value={selectedText.content}
-                          onChange={(e) => {
-                            setTextOverlays(textOverlays.map(t => 
-                              t.id === selectedTextId ? { ...t, content: e.target.value } : t
-                            ))
-                          }}
-                          placeholder="Saisissez votre texte..."
-                          className="resize-none text-sm h-16"
-                        />
-                      </div>
-
-                      {/* Style */}
-                      <div>
-                        <Label className="text-sm font-medium text-gray-700 mb-2 block">Style</Label>
-                        <div className="space-y-2">
-                          <Select
-                            value={selectedText.style.font_family}
-                            onValueChange={(value) => {
+                  {(() => {
+                    const selectedText = textOverlays.find(t => t.id === selectedTextId)
+                    if (!selectedText) return null
+                    
+                    return (
+                      <div className="space-y-4">
+                        
+                        {/* Content */}
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 mb-2">Content</Label>
+                          <Textarea
+                            value={selectedText.content}
+                            onChange={(e) => {
                               setTextOverlays(textOverlays.map(t => 
-                                t.id === selectedTextId ? { ...t, style: { ...t.style, font_family: value } } : t
+                                t.id === selectedTextId ? { ...t, content: e.target.value } : t
                               ))
                             }}
-                          >
-                            <SelectTrigger className="h-8 text-sm">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Inter">Inter</SelectItem>
-                              <SelectItem value="Helvetica">Helvetica</SelectItem>
-                              <SelectItem value="Arial">Arial</SelectItem>
-                              <SelectItem value="Times">Times</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-600 w-8">{selectedText.style.font_size}px</span>
-                            <Input
-                              type="range"
-                              value={selectedText.style.font_size}
-                              onChange={(e) => {
-                                setTextOverlays(textOverlays.map(t => 
-                                  t.id === selectedTextId ? { ...t, style: { ...t.style, font_size: parseInt(e.target.value) } } : t
-                                ))
-                              }}
-                              min={12}
-                              max={72}
-                              step={2}
-                              className="flex-1"
-                            />
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="color"
-                              value={selectedText.style.color}
-                              onChange={(e) => {
-                                setTextOverlays(textOverlays.map(t => 
-                                  t.id === selectedTextId ? { ...t, style: { ...t.style, color: e.target.value } } : t
-                                ))
-                              }}
-                              className="w-12 h-8"
-                            />
-                            <div className="flex gap-1 flex-1">
-                              {[
-                                { key: 'bold', label: 'B' },
-                                { key: 'italic', label: 'I' },
-                                { key: 'shadow', label: 'S' },
-                                { key: 'outline', label: 'O' }
-                              ].map(({ key, label }) => (
-                                <button
-                                  key={key}
-                                  onClick={() => {
-                                    setTextOverlays(textOverlays.map(t => 
-                                      t.id === selectedTextId ? { 
-                                        ...t, 
-                                        style: { ...t.style, [key]: !t.style[key as keyof typeof t.style] } 
-                                      } : t
-                                    ))
-                                  }}
-                                  className={`px-2 py-1 text-xs rounded ${
-                                    selectedText.style[key as keyof typeof selectedText.style] 
-                                      ? 'bg-blue-500 text-white' 
-                                      : 'bg-gray-100 hover:bg-gray-200'
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
+                            placeholder="Enter your text..."
+                            className="resize-none h-16"
+                          />
                         </div>
-                      </div>
-                    </>
-                  )
-                })()}
-              </div>
 
-              {/* Colonne 3 : Timing et Position */}
-              <div className="flex flex-col space-y-3">
-                {(() => {
-                  const selectedText = textOverlays.find(t => t.id === selectedTextId)
-                  if (!selectedText) return null
-                  
-                  return (
-                    <>
-                      {/* Timing */}
-                      <div>
-                        <Label className="text-sm font-medium text-gray-700 mb-2 block">Timing</Label>
-                        <div className="space-y-2">
+                        {/* Controls Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          
+                          {/* Style */}
                           <div>
-                            <Label className="text-xs text-gray-600">Début</Label>
-                            <Input
-                              type="number"
-                              value={selectedText.start_time}
-                              onChange={(e) => {
-                                const start = Math.max(0, Math.min(parseFloat(e.target.value) || 0, totalDuration - 0.1))
-                                const end = Math.max(start + 0.1, selectedText.end_time)
-                                setTextOverlays(textOverlays.map(t => 
-                                  t.id === selectedTextId ? { ...t, start_time: start, end_time: end } : t
-                                ))
-                              }}
-                              min={0}
-                              max={totalDuration - 0.1}
-                              step={0.1}
-                              className="text-sm h-8"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs text-gray-600">Fin</Label>
-                            <Input
-                              type="number"
-                              value={selectedText.end_time}
-                              onChange={(e) => {
-                                const end = Math.max(selectedText.start_time + 0.1, Math.min(parseFloat(e.target.value) || 0, totalDuration))
-                                setTextOverlays(textOverlays.map(t => 
-                                  t.id === selectedTextId ? { ...t, end_time: end } : t
-                                ))
-                              }}
-                              min={selectedText.start_time + 0.1}
-                              max={totalDuration}
-                              step={0.1}
-                              className="text-sm h-8"
-                            />
-                          </div>
-                          <div className="text-xs text-gray-500 text-center">
-                            Durée: {(selectedText.end_time - selectedText.start_time).toFixed(1)}s
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Position */}
-                      <div>
-                        <Label className="text-sm font-medium text-gray-700 mb-2 block">Position</Label>
-                        <div className="space-y-2">
-                          <div className="flex gap-1">
-                            {[
-                              { name: 'H', anchor: 'top-center' as const, x: 50, y: 20 },
-                              { name: 'C', anchor: 'center' as const, x: 50, y: 50 },
-                              { name: 'B', anchor: 'bottom-center' as const, x: 50, y: 80 }
-                            ].map((preset) => (
-                              <button
-                                key={preset.name}
-                                className={`px-2 py-1 text-xs rounded ${
-                                  selectedText.position.anchor === preset.anchor 
-                                    ? 'bg-blue-500 text-white' 
-                                    : 'bg-gray-100 hover:bg-gray-200'
-                                }`}
-                                onClick={() => {
+                            <Label className="text-sm font-medium text-gray-700 mb-2">Style</Label>
+                            <div className="space-y-2">
+                              <Select
+                                value={selectedText.style.font_family}
+                                onValueChange={(value) => {
                                   setTextOverlays(textOverlays.map(t => 
-                                    t.id === selectedTextId ? { ...t, position: { ...t.position, ...preset } } : t
+                                    t.id === selectedTextId ? { ...t, style: { ...t.style, font_family: value } } : t
                                   ))
                                 }}
                               >
-                                {preset.name}
-                              </button>
-                            ))}
-                          </div>
-                          <div>
-                            <div className="flex justify-between text-xs text-gray-600 mb-1">
-                              <span>X: {selectedText.position.x}%</span>
+                                <SelectTrigger className="h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Inter">Inter</SelectItem>
+                                  <SelectItem value="Helvetica">Helvetica</SelectItem>
+                                  <SelectItem value="Arial">Arial</SelectItem>
+                                  <SelectItem value="Times">Times</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-600 w-8">{selectedText.style.font_size}</span>
+                                <Input
+                                  type="range"
+                                  value={selectedText.style.font_size}
+                                  onChange={(e) => {
+                                    setTextOverlays(textOverlays.map(t => 
+                                      t.id === selectedTextId ? { ...t, style: { ...t.style, font_size: parseInt(e.target.value) } } : t
+                                    ))
+                                  }}
+                                  min={12}
+                                  max={72}
+                                  step={2}
+                                  className="flex-1"
+                                />
+                              </div>
+                              
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  type="color"
+                                  value={selectedText.style.color}
+                                  onChange={(e) => {
+                                    setTextOverlays(textOverlays.map(t => 
+                                      t.id === selectedTextId ? { ...t, style: { ...t.style, color: e.target.value } } : t
+                                    ))
+                                  }}
+                                  className="w-10 h-8"
+                                />
+                                <div className="flex gap-1 flex-1">
+                                  {[
+                                    { key: 'bold', label: 'B' },
+                                    { key: 'italic', label: 'I' },
+                                    { key: 'shadow', label: 'S' },
+                                    { key: 'outline', label: 'O' }
+                                  ].map(({ key, label }) => (
+                                    <Button
+                                      key={key}
+                                      variant={selectedText.style[key as keyof typeof selectedText.style] ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => {
+                                        setTextOverlays(textOverlays.map(t => 
+                                          t.id === selectedTextId ? { 
+                                            ...t, 
+                                            style: { ...t.style, [key]: !t.style[key as keyof typeof t.style] } 
+                                          } : t
+                                        ))
+                                      }}
+                                      className="px-1 text-xs h-8 flex-1"
+                                    >
+                                      {label}
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
-                            <Input
-                              type="range"
-                              value={selectedText.position.x}
-                              onChange={(e) => {
-                                const newX = parseInt(e.target.value)
-                                setTextOverlays(textOverlays.map(t => 
-                                  t.id === selectedTextId ? { 
-                                    ...t, 
-                                    position: { ...t.position, x: newX, anchor: 'center' } 
-                                  } : t
-                                ))
-                              }}
-                              min={0}
-                              max={100}
-                              className="w-full"
-                            />
                           </div>
+
+                          {/* Timing */}
                           <div>
-                            <div className="flex justify-between text-xs text-gray-600 mb-1">
-                              <span>Y: {selectedText.position.y}%</span>
+                            <Label className="text-sm font-medium text-gray-700 mb-2">Timing</Label>
+                            <div className="space-y-2">
+                              <div>
+                                <Label className="text-xs text-gray-600">Start (s)</Label>
+                                <Input
+                                  type="number"
+                                  value={selectedText.start_time}
+                                  onChange={(e) => {
+                                    const start = Math.max(0, Math.min(parseFloat(e.target.value) || 0, totalDuration - 0.1))
+                                    const end = Math.max(start + 0.1, selectedText.end_time)
+                                    setTextOverlays(textOverlays.map(t => 
+                                      t.id === selectedTextId ? { ...t, start_time: start, end_time: end } : t
+                                    ))
+                                  }}
+                                  min={0}
+                                  max={totalDuration - 0.1}
+                                  step={0.1}
+                                  className="h-8"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-600">End (s)</Label>
+                                <Input
+                                  type="number"
+                                  value={selectedText.end_time}
+                                  onChange={(e) => {
+                                    const end = Math.max(selectedText.start_time + 0.1, Math.min(parseFloat(e.target.value) || 0, totalDuration))
+                                    setTextOverlays(textOverlays.map(t => 
+                                      t.id === selectedTextId ? { ...t, end_time: end } : t
+                                    ))
+                                  }}
+                                  min={selectedText.start_time + 0.1}
+                                  max={totalDuration}
+                                  step={0.1}
+                                  className="h-8"
+                                />
+                              </div>
+                              <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                                Duration: {(selectedText.end_time - selectedText.start_time).toFixed(1)}s
+                              </div>
                             </div>
-                            <Input
-                              type="range"
-                              value={selectedText.position.y}
-                              onChange={(e) => {
-                                const newY = parseInt(e.target.value)
-                                setTextOverlays(textOverlays.map(t => 
-                                  t.id === selectedTextId ? { 
-                                    ...t, 
-                                    position: { ...t.position, y: newY, anchor: 'center' } 
-                                  } : t
-                                ))
-                              }}
-                              min={0}
-                              max={100}
-                              className="w-full"
-                            />
+                          </div>
+
+                          {/* Position */}
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700 mb-2">Position</Label>
+                            <div className="space-y-2">
+                              <div className="flex gap-1">
+                                {[
+                                  { name: 'Top', anchor: 'top-center' as const, x: 50, y: 20 },
+                                  { name: 'Center', anchor: 'center' as const, x: 50, y: 50 },
+                                  { name: 'Bottom', anchor: 'bottom-center' as const, x: 50, y: 80 }
+                                ].map((preset) => (
+                                  <Button
+                                    key={preset.name}
+                                    variant={selectedText.position.anchor === preset.anchor ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => {
+                                      setTextOverlays(textOverlays.map(t => 
+                                        t.id === selectedTextId ? { ...t, position: { ...t.position, ...preset } } : t
+                                      ))
+                                    }}
+                                    className="text-xs flex-1 h-8"
+                                  >
+                                    {preset.name}
+                                  </Button>
+                                ))}
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs text-gray-600">X: {selectedText.position.x}%</Label>
+                                <Input
+                                  type="range"
+                                  value={selectedText.position.x}
+                                  onChange={(e) => {
+                                    const newX = parseInt(e.target.value)
+                                    setTextOverlays(textOverlays.map(t => 
+                                      t.id === selectedTextId ? { 
+                                        ...t, 
+                                        position: { ...t.position, x: newX, anchor: 'center' } 
+                                      } : t
+                                    ))
+                                  }}
+                                  min={0}
+                                  max={100}
+                                  className="w-full"
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs text-gray-600">Y: {selectedText.position.y}%</Label>
+                                <Input
+                                  type="range"
+                                  value={selectedText.position.y}
+                                  onChange={(e) => {
+                                    const newY = parseInt(e.target.value)
+                                    setTextOverlays(textOverlays.map(t => 
+                                      t.id === selectedTextId ? { 
+                                        ...t, 
+                                        position: { ...t.position, y: newY, anchor: 'center' } 
+                                      } : t
+                                    ))
+                                  }}
+                                  min={0}
+                                  max={100}
+                                  className="w-full"
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </>
-                  )
-                })()}
-              </div>
+                    )
+                  })()}
+                </div>
+              )}
             </div>
           </div>
         )}
 
-      {/* Timeline Template Section */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+
+        {/* Timeline Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Timeline Template</h2>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const newAssignments = autoMatchVideosToSlots()
-                  setAssignments(newAssignments)
-                }}
-              >
-                <Shuffle className="w-4 h-4 mr-2" />
-                Re-matcher
-              </Button>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900">Video Timeline</h2>
           </div>
 
-          {/* Timeline horizontale comme un logiciel de montage */}
-          <div className="relative">
-
-            {/* Timeline des textes - au-dessus des vidéos */}
-            {textOverlays.length > 0 && (
-              <div className="mb-2">
-                <div className="h-8 border border-blue-200 rounded bg-blue-50 relative overflow-hidden">
-                  {textOverlays.map((text) => {
-                    const left = (text.start_time / totalDuration) * 100
-                    const width = ((text.end_time - text.start_time) / totalDuration) * 100
-                    
-                    return (
-                      <div
-                        key={text.id}
-                        className={`absolute h-6 top-1 rounded cursor-pointer border-2 flex items-center text-xs font-medium transition-all group ${
-                          selectedTextId === text.id 
-                            ? 'border-blue-600 bg-blue-500 text-white'
-                            : 'border-blue-400 bg-blue-200 hover:bg-blue-300 text-blue-800'
-                        }`}
-                        style={{ 
-                          left: `${left}%`, 
-                          width: `${width}%`,
-                          minWidth: '50px'
-                        }}
-                        onClick={() => {
-                          setSelectedTextId(text.id)
-                          setShowTextEditor(true)
-                        }}
-                        title={`${text.content} (${text.start_time}s - ${text.end_time}s)`}
-                      >
-                        {/* Handle de redimensionnement gauche */}
-                        <div 
-                          className="absolute left-0 top-0 h-full w-2 cursor-ew-resize bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onMouseDown={(e) => {
-                            e.stopPropagation()
-                            setResizingText({ textId: text.id, side: 'start' })
-                          }}
-                          title="Glisser pour ajuster le début"
-                        />
-                        
-                        <span className="truncate px-2 flex-1">{text.content}</span>
-                        
-                        {/* Affichage de la durée */}
-                        <div className="text-xs px-1">
-                          {(text.end_time - text.start_time).toFixed(1)}s
-                        </div>
-                        
-                        {/* Handle de redimensionnement droite */}
-                        <div 
-                          className="absolute right-0 top-0 h-full w-2 cursor-ew-resize bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onMouseDown={(e) => {
-                            e.stopPropagation()
-                            setResizingText({ textId: text.id, side: 'end' })
-                          }}
-                          title="Glisser pour ajuster la fin"
-                        />
+          {/* Timeline with videos only */}
+          <div className="space-y-3">
+            
+            {/* Video Segments Timeline */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium text-gray-700">Video Segments</Label>
+                <span className="text-xs text-gray-500">{formatTime(totalDuration)} total</span>
+              </div>
+              <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                {/* Video segments row */}
+                <div className="flex">
+                  {templateSlots.map((slot, index) => {
+                  const video = getVideoForSlot(slot.id)
+                  
+                  return (
+                    <div
+                      key={slot.id}
+                      className={`relative border-r border-gray-200 last:border-r-0 h-24 transition-all duration-200 ${
+                        video ? 'bg-white' : 'bg-gray-100'
+                      } ${
+                        selectedSlot === slot.id ? 'ring-2 ring-[#115446] ring-opacity-50' : ''
+                      } ${
+                        dragOverSlot === slot.id ? 'ring-2 ring-[#ff914d] bg-orange-50' : ''
+                      }`}
+                      style={{ 
+                        width: `${(slot.duration / totalDuration) * 100}%`,
+                        minWidth: '80px'
+                      }}
+                      onClick={() => setSelectedSlot(slot.id)}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        setDragOverSlot(slot.id)
+                      }}
+                      onDragLeave={() => setDragOverSlot(null)}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        if (draggedVideo) {
+                          if (canVideoFitSlot(draggedVideo, slot)) {
+                            assignVideoToSlot(slot.id, draggedVideo.id)
+                          } else {
+                            alert(`This video (${draggedVideo.duration}s) is too short for this slot (${slot.duration}s)`)
+                          }
+                          setDraggedVideo(null)
+                          setDragOverSlot(null)
+                        }
+                      }}
+                    >
+                      {/* Slot number */}
+                      <div className="absolute top-1 left-1 w-5 h-5 bg-gray-600 text-white rounded-full flex items-center justify-center text-xs font-medium">
+                        {slot.order}
                       </div>
-                    )
+
+                      {/* Duration */}
+                      <div className="absolute top-1 right-1 bg-black bg-opacity-70 text-white text-xs px-1.5 py-0.5 rounded">
+                        {formatTime(slot.duration)}
+                      </div>
+
+                      {/* Content */}
+                      <div className="h-full flex flex-col items-center justify-center p-1.5">
+                        {video ? (
+                          <div className="w-full h-full relative group">
+                            <img
+                              src={video.thumbnail_url || '/placeholder-video.jpg'}
+                              alt={video.title}
+                              className="w-full h-full object-cover rounded"
+                            />
+                            
+                            {/* Hover actions */}
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 rounded flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    assignVideoToSlot(slot.id, null)
+                                  }}
+                                  className="text-white hover:text-red-300 h-6 w-6 p-0"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                                {index > 0 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      swapSlotVideos(slot.id, templateSlots[index - 1].id)
+                                    }}
+                                    className="text-white hover:text-blue-300 h-6 w-6 p-0"
+                                  >
+                                    ←
+                                  </Button>
+                                )}
+                                {index < templateSlots.length - 1 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      swapSlotVideos(slot.id, templateSlots[index + 1].id)
+                                    }}
+                                    className="text-white hover:text-blue-300 h-6 w-6 p-0"
+                                  >
+                                    →
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Video info overlay */}
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent text-white text-xs p-1">
+                              <p className="truncate font-medium">{video.title}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center border border-dashed border-gray-300 rounded">
+                            <Video className="w-5 h-5 text-gray-400 mb-1" />
+                            <p className="text-xs text-gray-500 text-center leading-tight">
+                              Drop video here
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
                   })}
                 </div>
+                
+                {/* Text Overlays - embedded within the same timeline block */}
+                {textOverlays.length > 0 && (
+                  <div className="border-t border-gray-200 bg-gray-50">
+                    {textOverlays.map((text, index) => {
+                      const left = (text.start_time / totalDuration) * 100
+                      const width = ((text.end_time - text.start_time) / totalDuration) * 100
+                      
+                      return (
+                        <div key={text.id} className="h-6 relative" data-text-timeline>
+                          <div
+                            className={`absolute h-5 top-0.5 rounded cursor-pointer border flex items-center text-xs font-medium transition-all group ${
+                              selectedTextId === text.id 
+                                ? 'border-[#115446] bg-[#115446] text-white'
+                                : 'border-[#ff914d] bg-[#ff914d]/20 hover:bg-[#ff914d]/30 text-[#ff914d]'
+                            }`}
+                            style={{ 
+                              left: `${left}%`, 
+                              width: `${width}%`,
+                              minWidth: '50px'
+                            }}
+                            onClick={() => {
+                              setSelectedTextId(text.id)
+                              setShowPreview(true)
+                              setShowTextEditor(true)
+                            }}
+                            title={`${text.content} (${text.start_time}s - ${text.end_time}s)`}
+                          >
+                            {/* Left resize handle */}
+                            <div 
+                              className="absolute left-0 top-0 h-full w-1 cursor-ew-resize bg-[#115446] opacity-0 group-hover:opacity-70 transition-opacity"
+                              onMouseDown={(e) => {
+                                e.stopPropagation()
+                                setResizingText({ textId: text.id, side: 'start' })
+                              }}
+                              title="Drag to adjust start time"
+                            />
+                            
+                            <span className="truncate px-1 flex-1 text-xs">{text.content}</span>
+                            
+                            {/* Duration display */}
+                            <div className="text-xs px-1 opacity-75">
+                              {(text.end_time - text.start_time).toFixed(1)}s
+                            </div>
+                            
+                            {/* Right resize handle */}
+                            <div 
+                              className="absolute right-0 top-0 h-full w-1 cursor-ew-resize bg-[#115446] opacity-0 group-hover:opacity-70 transition-opacity"
+                              onMouseDown={(e) => {
+                                e.stopPropagation()
+                                setResizingText({ textId: text.id, side: 'end' })
+                              }}
+                              title="Drag to adjust end time"
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-            )}
-            
-            {/* Slots vidéo sans superposition */}
-            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-              
-              {templateSlots.map((slot, index) => {
-                const video = getVideoForSlot(slot.id)
-                const slotColor = getSlotColor(slot)
+            </div>
+          </div>
+        </div>
+
+        {/* Content Library */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Content Library</h2>
+            <div className="text-sm text-gray-600">{contentVideos.length} video{contentVideos.length !== 1 ? 's' : ''} available</div>
+          </div>
+
+          {contentVideos.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Video className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <p>No videos in your Content Library</p>
+            </div>
+          ) : (
+            <div className="flex space-x-4 overflow-x-auto pb-4">
+              {contentVideos.map((video) => {
+                const isUsed = assignments.some(a => a.videoId === video.id)
                 
                 return (
                   <div
-                    key={slot.id}
-                    className={`relative border-r border-gray-300 last:border-r-0 h-32 transition-all duration-200 ${slotColor} ${
-                      selectedSlot === slot.id ? 'ring-2 ring-primary ring-opacity-50' : ''
-                    } ${
-                      dragOverSlot === slot.id ? 'ring-2 ring-blue-400 bg-blue-50' : ''
+                    key={video.id}
+                    className={`flex-shrink-0 w-40 bg-gray-50 rounded-lg p-3 cursor-move hover:bg-gray-100 transition-colors ${
+                      isUsed ? 'opacity-50' : ''
                     }`}
-                    style={{ 
-                      width: `${(slot.duration / totalDuration) * 100}%`,
-                      minWidth: '100px'
+                    draggable
+                    onDragStart={() => {
+                      setDraggedVideo(video)
                     }}
-                    onClick={() => setSelectedSlot(slot.id)}
-                    onDragOver={(e) => {
-                      e.preventDefault()
-                      setDragOverSlot(slot.id)
-                    }}
-                    onDragLeave={() => setDragOverSlot(null)}
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      console.log('🎯 Drop event:', draggedVideo?.title, '→ slot', slot.order)
-                      if (draggedVideo) {
-                        if (canVideoFitSlot(draggedVideo, slot)) {
-                          console.log('✅ Video fits, assigning to slot')
-                          assignVideoToSlot(slot.id, draggedVideo.id)
-                        } else {
-                          console.log('❌ Video too short for slot')
-                          alert(`Cette vidéo (${draggedVideo.duration}s) est trop courte pour ce slot (${slot.duration}s)`)
-                        }
-                        setDraggedVideo(null)
-                        setDragOverSlot(null)
-                      }
+                    onDragEnd={() => {
+                      setDraggedVideo(null)
                     }}
                   >
-                    {/* Numéro du slot */}
-                    <div className="absolute top-1 left-1 w-6 h-6 bg-gray-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                      {slot.order}
-                    </div>
-
-                    {/* Durée du slot */}
-                    <div className="absolute top-1 right-1 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-                      {formatTime(slot.duration)}
-                    </div>
-
-                    {/* Contenu du slot */}
-                    <div className="h-full flex flex-col items-center justify-center p-2">
-                      {video ? (
-                        <div className="w-full h-full relative group">
-                          <img
-                            src={video.thumbnail_url || '/placeholder-video.jpg'}
-                            alt={video.title}
-                            className="w-full h-full object-cover rounded"
-                          />
-                          
-                          {/* Overlay avec actions */}
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 rounded flex items-center justify-center">
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  assignVideoToSlot(slot.id, null)
-                                }}
-                                className="text-white hover:text-red-300"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                              {/* Boutons d'échange avec slots voisins */}
-                              {index > 0 && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    swapSlotVideos(slot.id, templateSlots[index - 1].id)
-                                  }}
-                                  className="text-white hover:text-blue-300"
-                                >
-                                  ←
-                                </Button>
-                              )}
-                              {index < templateSlots.length - 1 && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    swapSlotVideos(slot.id, templateSlots[index + 1].id)
-                                  }}
-                                  className="text-white hover:text-blue-300"
-                                >
-                                  →
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Info vidéo */}
-                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs p-1">
-                            <p className="truncate font-medium">{video.title}</p>
-                            <p className="truncate opacity-75">
-                              Durée: {formatTime(video.duration)} 
-                              {video.duration < slot.duration && (
-                                <span className="text-red-300 ml-1">⚠️ Trop courte</span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-400 rounded relative bg-gray-900">
-                          
-                          <Video className="w-8 h-8 text-gray-400 mb-2" />
-                          <p className="text-xs text-gray-600 text-center">
-                            Slot {slot.order}
-                          </p>
-                          <p className="text-xs text-gray-500 text-center">
-                            {formatTime(slot.duration)}
-                          </p>
-                          <p className="text-xs text-gray-400 text-center mt-1 px-1">
-                            {slot.description.slice(0, 30)}...
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                    <img
+                      src={video.thumbnail_url || '/placeholder-video.jpg'}
+                      alt={video.title}
+                      className="w-full h-24 object-cover rounded mb-2"
+                    />
+                    <p className="text-sm font-medium text-gray-900 truncate">{video.title}</p>
+                    <p className="text-xs text-gray-500">{formatTime(video.duration)}</p>
+                    {video.description && (
+                      <p className="text-xs text-gray-400 truncate mt-1">{video.description}</p>
+                    )}
+                    {isUsed && (
+                      <p className="text-xs text-green-600 mt-1">✓ Used</p>
+                    )}
                   </div>
                 )
               })}
             </div>
-
-
-
-            {/* Bouton Ajouter du texte */}
-            <div className="mt-4">
-              <button
-                onClick={() => {
-                  const newText = {
-                    id: `text_${Date.now()}`,
-                    content: 'Nouveau texte',
-                    start_time: 0,
-                    end_time: 3,
-                    position: {
-                      x: 50,
-                      y: 50,
-                      anchor: 'center' as const
-                    },
-                    style: {
-                      font_family: 'Inter',
-                      font_size: 24,
-                      color: '#ffffff',
-                      shadow: true,
-                      outline: true,
-                      background: false,
-                      bold: true,
-                      italic: false,
-                      opacity: 1,
-                      text_align: 'center' as const
-                    }
-                  }
-                  setTextOverlays([...textOverlays, newText])
-                  setSelectedTextId(newText.id)
-                  setShowTextEditor(true)
-                }}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Ajouter du texte
-              </button>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Content Library - Liste horizontale */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Content Library</h2>
-            <div className="text-sm text-gray-600">{contentVideos.length} vidéos disponibles</div>
-          </div>
-
-          <div className="flex space-x-4 overflow-x-auto pb-4">
-            {contentVideos.map((video) => {
-              const isUsed = assignments.some(a => a.videoId === video.id)
-              
-              return (
-                <div
-                  key={video.id}
-                  className={`flex-shrink-0 w-40 bg-gray-50 rounded-lg p-3 cursor-move hover:bg-gray-100 transition-colors ${
-                    isUsed ? 'opacity-50' : ''
-                  }`}
-                  draggable
-                  onDragStart={() => {
-                    console.log('🎬 Drag start:', video.title, video.duration + 's')
-                    setDraggedVideo(video)
-                  }}
-                  onDragEnd={() => {
-                    console.log('🎬 Drag end')
-                    setDraggedVideo(null)
-                  }}
-                >
-                  <img
-                    src={video.thumbnail_url || '/placeholder-video.jpg'}
-                    alt={video.title}
-                    className="w-full h-24 object-cover rounded mb-2"
-                  />
-                  <p className="text-sm font-medium text-gray-900 truncate">{video.title}</p>
-                  <p className="text-xs text-gray-500">{formatTime(video.duration)}</p>
-                  {video.description && (
-                    <p className="text-xs text-gray-400 truncate mt-1">{video.description}</p>
-                  )}
-                  {isUsed && (
-                    <p className="text-xs text-green-600 mt-1">✓ Utilisé</p>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          {contentVideos.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <Video className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-              <p>Aucune vidéo dans votre Content Library</p>
-            </div>
           )}
         </div>
-
       </div>
     </div>
   )
