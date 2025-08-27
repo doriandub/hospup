@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { TimelineTextEditor, TextOverlay } from './timeline-text-editor'
 import { UnifiedTextEditor } from './unified-text-editor'
+import { InteractiveTextEditor } from './interactive-text-editor'
 import { textApi, api } from '@/lib/api'
 
 interface TemplateSlot {
@@ -56,6 +57,8 @@ interface TimelineEditorProps {
   onGenerate: (assignments: SlotAssignment[], texts: any[]) => void
   propertyId: string
   templateId: string
+  onAddText?: () => void
+  onGenerateVideo?: () => void
 }
 
 export function VideoTimelineEditor({
@@ -64,7 +67,9 @@ export function VideoTimelineEditor({
   contentVideos,
   onGenerate,
   propertyId,
-  templateId
+  templateId,
+  onAddText,
+  onGenerateVideo
 }: TimelineEditorProps) {
   const [assignments, setAssignments] = useState<SlotAssignment[]>([])
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
@@ -78,13 +83,114 @@ export function VideoTimelineEditor({
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
   const [editingContent, setEditingContent] = useState<string>('')
 
-  // Auto-match initial assignments when data is ready
+  // Functions to save/load assignments
+  const saveAssignmentsToStorage = (assignments: SlotAssignment[]) => {
+    try {
+      const key = `template_assignments_${templateId}_${propertyId}`
+      localStorage.setItem(key, JSON.stringify(assignments))
+      console.log('💾 Saved assignments to localStorage:', assignments.length, 'assignments')
+    } catch (error) {
+      console.error('❌ Failed to save assignments:', error)
+    }
+  }
+
+  const loadAssignmentsFromStorage = (): SlotAssignment[] => {
+    try {
+      const key = `template_assignments_${templateId}_${propertyId}`
+      const stored = localStorage.getItem(key)
+      if (stored) {
+        const assignments = JSON.parse(stored)
+        console.log('📂 Loaded assignments from localStorage:', assignments.length, 'assignments')
+        return assignments
+      }
+    } catch (error) {
+      console.error('❌ Failed to load assignments:', error)
+    }
+    return []
+  }
+
+  // Handle external add text request
+  const handleAddText = () => {
+    const newId = Date.now().toString()
+    setTextOverlays(prev => [...prev, {
+      id: newId,
+      content: 'New Text',
+      start_time: 0,
+      end_time: 3,
+      position: { x: 50, y: 50, anchor: 'center' },
+      style: {
+        font_family: 'Arial',
+        font_size: 48,
+        color: '#FFFFFF',
+        bold: false,
+        italic: false,
+        shadow: true,
+        outline: false,
+        background: false,
+        opacity: 1
+      }
+    }])
+    setSelectedTextId(newId)
+    setShowPreview(true)
+    setShowTextEditor(true)
+  }
+
+  const handleGenerateVideo = () => {
+    console.log('🎯 Generate button clicked!')
+    console.log('🎯 Assignments:', assignments)
+    console.log('🎯 Text overlays:', textOverlays)
+    onGenerate(assignments, textOverlays)
+  }
+
+  // Call external callbacks when needed
   useEffect(() => {
-    if (templateSlots.length > 0 && contentVideos.length > 0) {
-      console.log('🎯 Auto-matching', templateSlots.length, 'slots with', contentVideos.length, 'videos')
-      loadSmartAssignments()
+    if (onAddText) {
+      // Store the internal handler for external use
+      (window as any).videoTimelineAddText = handleAddText
+    }
+  }, [onAddText])
+
+  useEffect(() => {
+    if (onGenerateVideo) {
+      // Store the internal handler for external use  
+      (window as any).videoTimelineGenerateVideo = handleGenerateVideo
+    }
+  }, [onGenerateVideo, assignments, textOverlays, onGenerate])
+
+  // Load saved assignments or auto-match when data is ready  
+  useEffect(() => {
+    console.log('🔍 useEffect triggered:', { 
+      templateSlotsLength: templateSlots.length, 
+      contentVideosLength: contentVideos.length, 
+      assignmentsLength: assignments.length,
+      templateId,
+      propertyId
+    })
+    
+    if (templateSlots.length > 0 && contentVideos.length > 0 && assignments.length === 0) {
+      // First try to load saved assignments
+      const savedAssignments = loadAssignmentsFromStorage()
+      if (savedAssignments.length > 0) {
+        console.log('✅ Using saved assignments:', savedAssignments.length, 'slots restored from storage')
+        console.log('📋 Saved assignments:', savedAssignments)
+        setAssignments(savedAssignments)
+      } else {
+        console.log('🎯 Auto-matching', templateSlots.length, 'slots with', contentVideos.length, 'videos (no saved assignments)')
+        loadSmartAssignments()
+      }
+    } else if (assignments.length > 0) {
+      console.log('✅ Using existing assignments:', assignments.length, 'slots already assigned')
+    } else {
+      console.log('⏳ Waiting for data to load...')
     }
   }, [templateSlots, contentVideos])
+
+  // Auto-save assignments when they change
+  useEffect(() => {
+    if (assignments.length > 0 && templateId && propertyId) {
+      saveAssignmentsToStorage(assignments)
+    }
+  }, [assignments, templateId, propertyId])
 
   const autoMatchVideosToSlots = (): SlotAssignment[] => {
     const assignments: SlotAssignment[] = []
@@ -98,8 +204,8 @@ export function VideoTimelineEditor({
       for (const video of contentVideos) {
         if (usedVideoIds.has(video.id)) continue
         
-        // Vérifie la compatibilité de durée (doit être >= durée du slot)
-        if (video.duration < slot.duration) continue
+        // Assouplit les règles de durée - accepte toute vidéo de plus de 1 seconde
+        if (video.duration < 1) continue
 
         // Score basé sur la similarité de description
         const score = calculateMatchScore(slot.description, video)
@@ -131,6 +237,8 @@ export function VideoTimelineEditor({
   const loadSmartAssignments = async () => {
     try {
       console.log('🧠 Calling smart matching service for property:', propertyId, 'template:', templateId)
+      console.log('🧠 API call URL:', '/api/v1/video-generation/smart-match')
+      console.log('🧠 Request payload:', { property_id: propertyId, template_id: templateId })
       
       const response = await api.post('/api/v1/video-generation/smart-match', {
         property_id: propertyId,
@@ -157,6 +265,7 @@ export function VideoTimelineEditor({
       }
     } catch (error) {
       console.error('❌ Error loading smart assignments:', error)
+      console.error('❌ Error details:', error?.response?.data || error?.message || error)
       console.log('🔄 Falling back to basic auto-matching')
       const fallbackAssignments = autoMatchVideosToSlots()
       setAssignments(fallbackAssignments)
@@ -207,14 +316,15 @@ export function VideoTimelineEditor({
       }
     })
     
-    // Normaliser le score
-    const normalizedScore = Math.min(1.0, score)
+    // Ajouter un score de base minimal pour toutes les vidéos (permet le matching même sans correspondance parfaite)
+    const baseScore = 0.1
+    const finalScore = Math.min(1.0, score + baseScore)
     
-    if (normalizedScore > 0.3) {
-      console.log(`✅ Good match (${normalizedScore.toFixed(2)}): "${slotDescription}" ↔ "${video.title}"`)
+    if (finalScore > 0.3) {
+      console.log(`✅ Good match (${finalScore.toFixed(2)}): "${slotDescription}" ↔ "${video.title}"`)
     }
     
-    return normalizedScore
+    return finalScore
   }
 
   const getVideoForSlot = (slotId: string): ContentVideo | null => {
@@ -224,7 +334,7 @@ export function VideoTimelineEditor({
   }
 
   const canVideoFitSlot = (video: ContentVideo, slot: TemplateSlot): boolean => {
-    return video.duration >= slot.duration
+    return video.duration >= 1 // Accepte toute vidéo de plus de 1 seconde
   }
 
   const assignVideoToSlot = (slotId: string, videoId: string | null) => {
@@ -391,87 +501,6 @@ export function VideoTimelineEditor({
     <div className="min-h-screen bg-gray-50 font-inter">
       <div className="grid grid-cols-1 gap-3 p-8">
         
-        {/* Permanent Top Bar with Stats and Buttons */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <span className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                {templateSlots.length} segments
-              </span>
-              <span className="flex items-center gap-1">
-                <Video className="w-4 h-4" />
-                {formatTime(totalDuration)} total
-              </span>
-              <span className="text-[#115446] font-medium">
-                {assignedSlots}/{templateSlots.length} assigned
-              </span>
-              {textOverlays.length > 0 && (
-                <span className="flex items-center gap-1">
-                  <Type className="w-4 h-4" />
-                  {textOverlays.length} text{textOverlays.length !== 1 ? 's' : ''}
-                </span>
-              )}
-              <div className="flex flex-col items-end">
-                <div className="w-24 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-[#115446] h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${(assignedSlots / templateSlots.length) * 100}%` }}
-                  ></div>
-                </div>
-                <span className="text-xs text-gray-500 mt-1">Progress</span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button
-                onClick={() => {
-                  const newId = Date.now().toString()
-                  setTextOverlays([...textOverlays, {
-                    id: newId,
-                    content: 'New Text',
-                    start_time: 0,
-                    end_time: 3,
-                    position: { x: 50, y: 50, anchor: 'center' },
-                    style: {
-                      font_family: 'Arial',
-                      font_size: 48,
-                      color: '#FFFFFF',
-                      bold: false,
-                      italic: false,
-                      shadow: true,
-                      outline: false,
-                      background: false,
-                      opacity: 1
-                    }
-                  }])
-                  setSelectedTextId(newId)
-                  setShowPreview(true)
-                  setShowTextEditor(true)
-                }}
-                variant="outline"
-                size="sm"
-                className="border-[#ff914d] text-[#ff914d] hover:bg-[#ff914d]/10"
-              >
-                <Type className="w-4 h-4 mr-2" />
-                Add Text
-              </Button>
-              <Button
-                onClick={() => {
-                  console.log('🎯 Generate button clicked!')
-                  console.log('🎯 Assignments:', assignments)
-                  console.log('🎯 Text overlays:', textOverlays)
-                  onGenerate(assignments, textOverlays)
-                }}
-                disabled={assignedSlots === 0}
-                className="bg-[#115446] hover:bg-[#115446]/90"
-                size="sm"
-              >
-                <Zap className="w-4 h-4 mr-2" />
-                Generate ({assignedSlots})
-              </Button>
-            </div>
-          </div>
-        </div>
 
         {/* Collapsible Preview Section */}
         {showPreview && (
@@ -492,9 +521,48 @@ export function VideoTimelineEditor({
                 >
                   ×
                 </Button>
-                <div 
-                  className="w-full h-full rounded-lg border border-gray-200 relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900"
-                  style={{
+                <div className="flex justify-center items-center h-full">
+                  <div 
+                    className="rounded-lg border border-gray-200 relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900"
+                    style={{
+                      aspectRatio: '9/16',
+                      width: '270px',  // Fixed width for precise calculations
+                      height: '480px', // Fixed height (270 * 16/9)
+                    }}
+                    data-video-preview="true"
+                    onDoubleClick={(e) => {
+                      // Create new text at double-click position
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      const x = ((e.clientX - rect.left) / 270) * 100 // Convert to percentage
+                      const y = ((e.clientY - rect.top) / 480) * 100
+                      
+                      const newText = {
+                        id: Date.now().toString(),
+                        content: 'New Text',
+                        start_time: 0,
+                        end_time: 3,
+                        position: { x: Math.max(0, Math.min(95, x)), y: Math.max(0, Math.min(95, y)), anchor: 'center' },
+                        style: {
+                          font_family: 'Arial',
+                          font_size: 72,
+                          color: '#FFFFFF',
+                          bold: false,
+                          italic: false,
+                          shadow: true,
+                          outline: false,
+                          background: false,
+                          opacity: 1
+                        }
+                      }
+                      
+                      setTextOverlays([...textOverlays, newText])
+                      setSelectedTextId(newText.id)
+                      setShowTextEditor(true)
+                    }}
+                  >
+                    <div
+                      className="absolute inset-0"
+                      style={{
                     backgroundImage: (() => {
                       const selectedText = textOverlays.find(t => t.id === selectedTextId)
                       if (!selectedText || textOverlays.length === 0) return 'linear-gradient(135deg, #115446 0%, #ff914d 100%)'
@@ -510,51 +578,31 @@ export function VideoTimelineEditor({
                     backgroundPosition: 'center'
                   }}
                 >
-                  {/* All text overlays preview */}
-                  {textOverlays.map((text) => (
-                    <div
-                      key={text.id}
-                      className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all cursor-pointer ${
-                        selectedTextId === text.id ? 'ring-2 ring-[#115446] ring-opacity-50' : ''
-                      }`}
-                      style={{
-                        left: `${text.position.x}%`,
-                        top: `${text.position.y}%`,
-                        fontFamily: text.style.font_family,
-                        fontSize: `${Math.max(8, text.style.font_size / 3)}px`,
-                        color: text.style.color,
-                        textShadow: text.style.shadow ? '2px 2px 4px rgba(0,0,0,0.8)' : 'none',
-                        WebkitTextStroke: text.style.outline ? '1px black' : 'none',
-                        backgroundColor: text.style.background ? 'rgba(0,0,0,0.5)' : 'transparent',
-                        fontWeight: text.style.bold ? 'bold' : 'normal',
-                        fontStyle: text.style.italic ? 'italic' : 'normal',
-                        padding: text.style.background ? '4px 8px' : '0',
-                        borderRadius: text.style.background ? '4px' : '0',
-                        opacity: text.style.opacity,
-                        whiteSpace: 'nowrap',
-                        maxWidth: '80%',
-                        textAlign: 'center',
-                        zIndex: 10
-                      }}
-                      onClick={() => {
-                        setSelectedTextId(text.id)
-                        setShowTextEditor(true)
-                      }}
-                      title={`Edit: ${text.content}`}
-                    >
-                      {text.content}
-                    </div>
-                  ))}
+                  {/* Interactive Text Editor */}
+                  <InteractiveTextEditor
+                    textOverlays={textOverlays}
+                    setTextOverlays={setTextOverlays}
+                    selectedTextId={selectedTextId}
+                    setSelectedTextId={setSelectedTextId}
+                    videoSlots={videoSlots}
+                    editorWidth={270}
+                    editorHeight={480}
+                    videoWidth={1080}
+                    videoHeight={1920}
+                  />
                   
                   {/* Empty state */}
                   {textOverlays.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="text-center text-white/70">
                         <Type className="w-12 h-12 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">Add text to preview</p>
+                        <p className="text-xs mt-1 opacity-75">Double-click to add text anywhere</p>
                       </div>
                     </div>
                   )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
