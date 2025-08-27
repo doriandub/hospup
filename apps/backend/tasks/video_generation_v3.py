@@ -92,7 +92,16 @@ def generate_video_from_timeline_v3(
             raise ValueError(f"Template {template_id} has no script")
         
         try:
-            script_data = json.loads(template.script)
+            # Clean script (same logic as frontend)
+            clean_script = template.script.strip()
+            
+            # Remove '=' prefixes if they exist (may be == or =)
+            while clean_script.startswith('='):
+                clean_script = clean_script[1:].strip()
+            
+            logger.info(f"📜 Cleaned script: {clean_script[:100]}...")
+            
+            script_data = json.loads(clean_script)
             template_clips = script_data.get("clips", [])
             template_texts = script_data.get("texts", [])
         except json.JSONDecodeError as e:
@@ -291,8 +300,13 @@ def _process_video_segment_v3(
         if video_record.video_url.startswith("s3://"):
             # Format: s3://bucket-name/key -> extract key part
             url_without_protocol = video_record.video_url[5:]  # Remove "s3://"
+            
+            # Remove any query parameters (like AWS signature parameters)
+            if '?' in url_without_protocol:
+                url_without_protocol = url_without_protocol.split('?')[0]
+            
             s3_key = url_without_protocol.split("/", 1)[1]  # Remove bucket name, keep key
-            logger.info(f"📦 Extracted S3 key: {s3_key} from URL: {video_record.video_url}")
+            logger.info(f"📦 Extracted clean S3 key: {s3_key} from URL: {video_record.video_url}")
         else:
             logger.warning(f"Invalid video URL format: {video_record.video_url}")
             return None
@@ -370,10 +384,22 @@ def _assemble_final_video_v3(
     final_video_path = os.path.join(temp_dir, f"final_{video_id}.mp4")
     
     if len(video_segments) == 1:
-        # Single segment - just copy
-        import shutil
-        shutil.copy2(video_segments[0]["path"], final_video_path)
-        logger.info(f"📹 Single segment copied to final video")
+        # Single segment - scale to 9:16 format for social media
+        scale_cmd = [
+            "ffmpeg", "-y", "-i", video_segments[0]["path"],
+            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black",
+            "-c:v", "libx264", "-c:a", "aac",
+            "-r", "30", "-crf", "23",
+            final_video_path
+        ]
+        
+        result = subprocess.run(scale_cmd, capture_output=True, text=True, timeout=300)
+        
+        if result.returncode != 0:
+            logger.error(f"Single segment scaling failed: {result.stderr}")
+            raise Exception(f"Video scaling failed: {result.stderr}")
+        
+        logger.info(f"📹 Single segment scaled to 9:16 format")
     else:
         # Multiple segments - concatenate with proper encoding
         concat_list_path = os.path.join(temp_dir, "concat_list.txt")
@@ -384,10 +410,11 @@ def _assemble_final_video_v3(
                 path = segment['path'].replace("'", "\\'")
                 f.write(f"file '{path}'\n")
         
-        # Use concat demuxer for better performance
+        # Use concat demuxer with scaling to 9:16 format for social media
         concat_cmd = [
             "ffmpeg", "-y", "-f", "concat", "-safe", "0",
             "-i", concat_list_path,
+            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black",
             "-c:v", "libx264", "-c:a", "aac",
             "-r", "30", "-crf", "23",
             final_video_path
@@ -471,19 +498,22 @@ def _apply_text_overlays_v3(
             else:
                 font_color = "white"
             
-            # Position calculation - Adjust to match frontend preview better
-            # Frontend uses transform: translate(-50%, -50%) which centers text at coordinates
-            # User feedback: text needs to be more left and more down
-            x_offset = int(x_rel * 1920) if x_rel < 1 else int(1920 - 10)
-            y_offset = int(y_rel * 1080) if y_rel < 1 else int(1080 - 50)
+            # CLEAN AND SIMPLE: Direct percentage to pixel conversion
+            # Video is 1080x1920 (9:16 portrait format for social media)
+            video_width = 1080
+            video_height = 1920
             
-            # Adjust positioning to match preview better - move text left and down
-            # Move significantly more left and down based on user feedback
-            x_pos = f"({max(10, min(x_offset, 1910))}-text_w*0.75)"  # More left
-            y_pos = f"({max(10, min(y_offset, 1070))}-text_h*0.25)"  # More down
+            # Convert percentage (0-100) to pixels
+            # Adjustments based on user feedback: texte trop à droite et trop haut
+            x_pixels = int((x_rel * video_width)) - 30  # Adjustment: -30px left (était +10)
+            y_pixels = int((y_rel * video_height)) + 50  # Adjustment: +50px down (était +15)
             
-            # Debug logging
-            logger.info(f"📍 Text positioning: '{content}' at ({x_rel:.2f}, {y_rel:.2f}) -> pixel ({x_offset}, {y_offset}) -> FFmpeg ({x_pos}, {y_pos})")
+            # FFmpeg uses top-left corner positioning
+            x_pos = str(max(0, min(x_pixels, video_width - 50)))
+            y_pos = str(max(0, min(y_pixels, video_height - 50)))
+            
+            # Simple debug log
+            logger.info(f"📍 Text '{content}': {x_rel*100:.1f}%,{y_rel*100:.1f}% -> {x_pixels},{y_pixels}px -> FFmpeg({x_pos},{y_pos})")
             
             # Escape text for FFmpeg
             safe_text = (content

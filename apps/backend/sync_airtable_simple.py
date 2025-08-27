@@ -67,16 +67,17 @@ def sync_simple():
             comments = int(fields.get('Comments', 0) or 0)
             duration = float(fields.get('Duration', 30) or 30)
             script = fields.get('Script', '')
+            audio_url = fields.get('Audio', '')
             
-            # Insertion SIMPLE
+            # Insertion SIMPLE avec audio_url
             cursor.execute('''
                 INSERT INTO viral_video_templates 
                 (title, hotel_name, username, property, country, video_link, account_link,
-                 followers, views, likes, comments, duration, script, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 followers, views, likes, comments, duration, script, audio_url, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (
                 title, hotel_name, username, property_val, country, video_link, account_link,
-                followers, views, likes, comments, duration, script, datetime.now()
+                followers, views, likes, comments, duration, script, audio_url, datetime.now()
             ))
             
             synced += 1

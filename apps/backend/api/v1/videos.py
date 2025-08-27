@@ -32,6 +32,8 @@ class VideoResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     completed_at: Optional[datetime] = None
+    viral_video_id: Optional[str] = None
+    ai_description: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -64,7 +66,9 @@ async def get_videos(
         query = query.filter(Video.property_id == property_id)
     
     if status:
-        query = query.filter(Video.status == status)
+        # Support multiple statuses separated by comma
+        status_list = [s.strip() for s in status.split(',')]
+        query = query.filter(Video.status.in_(status_list))
     
     # Filter by video type
     if video_type == "uploaded":

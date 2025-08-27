@@ -137,24 +137,24 @@ async def get_download_url(
 ):
     """Get a presigned URL for downloading files from S3"""
     
-    # Extract property_id from s3_key (properties/{property_id}/videos/...)
     try:
-        parts = s3_key.split('/')
-        if len(parts) < 2 or parts[0] != 'properties':
-            raise ValueError("Invalid S3 key format")
+        logger.info(f"Getting download URL for s3_key: {s3_key}")
         
-        property_id = parts[1]
+        # Check if user has access to any video with this S3 key
+        # Construct the full S3 URL to search for
+        full_s3_url = f"s3://hospup-files/{s3_key}"
         
-        # Validate property ownership
-        property = db.query(Property).filter(
-            Property.id == property_id,
+        # Find video that belongs to user's properties
+        video = db.query(Video).join(Property).filter(
+            Video.video_url == full_s3_url,
             Property.user_id == current_user.id
         ).first()
         
-        if not property:
+        if not video:
+            logger.warning(f"No video found for s3_key: {s3_key} and user: {current_user.id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Property not found"
+                detail="Video not found or access denied"
             )
         
         # Use storage backend based on configuration
@@ -163,14 +163,11 @@ async def get_download_url(
         else:
             download_url = local_storage_service.generate_presigned_download_url(s3_key)
         
+        logger.info(f"Generated download URL successfully for s3_key: {s3_key}")
         return {"download_url": download_url}
         
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file path"
-        )
     except Exception as e:
+        logger.error(f"Failed to generate download URL for s3_key: {s3_key}, error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate download URL"

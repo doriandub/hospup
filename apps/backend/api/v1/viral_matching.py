@@ -35,7 +35,9 @@ class ViralTemplateResponse(BaseModel):
     followers: Optional[int] = None
     username: Optional[str] = None
     video_link: Optional[str] = None
+    audio_url: Optional[str] = None
     script: Optional[str] = None
+    duration: Optional[float] = None
 
 class MatchedSegmentResponse(BaseModel):
     segment_id: str
@@ -213,7 +215,9 @@ async def list_viral_templates(
                     followers=template.followers,
                     username=template.username,
                     video_link=template.video_link,
-                    script=template.script
+                    audio_url=template.audio_url,
+                    script=template.script,
+                    duration=template.duration
                 )
                 for template in templates
                 if template.title or template.hotel_name  # Only return templates with some content
@@ -435,7 +439,9 @@ async def get_viral_template(
             followers=template.followers,
             username=template.username,
             video_link=template.video_link,
-            script=template.script
+            audio_url=template.audio_url,
+            script=template.script,
+            duration=template.duration
         )
         
     except HTTPException:
@@ -496,7 +502,8 @@ async def test_smart_match_template(
             followers=best_match.followers,
             username=best_match.username,
             video_link=best_match.video_link,
-            script=best_match.script
+            script=best_match.script,
+            duration=best_match.duration
         )
         
     except HTTPException:
@@ -578,7 +585,8 @@ async def smart_match_template(
             followers=best_match.followers,
             username=best_match.username,
             video_link=best_match.video_link,
-            script=best_match.script
+            script=best_match.script,
+            duration=best_match.duration
         )
         
     except HTTPException:
@@ -740,6 +748,7 @@ async def get_viewed_templates(
                 followers=template.followers,
                 username=template.username,
                 video_link=template.video_link,
+                audio_url=template.audio_url,
                 script=template.script
             )
             for view, template in viewed_templates
