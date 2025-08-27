@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -12,6 +12,7 @@ import {
   SkipBack, 
   SkipForward,
   Trash2,
+  Copy,
   Shuffle,
   Clock,
   Video,
@@ -24,6 +25,7 @@ import {
 import { TimelineTextEditor, TextOverlay } from './timeline-text-editor'
 import { UnifiedTextEditor } from './unified-text-editor'
 import { InteractiveTextEditor } from './interactive-text-editor'
+import { TimelineVideoScrubber } from './timeline-video-scrubber'
 import { textApi, api } from '@/lib/api'
 
 interface TemplateSlot {
@@ -82,6 +84,8 @@ export function VideoTimelineEditor({
   const [showPreview, setShowPreview] = useState<boolean>(false)
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
   const [editingContent, setEditingContent] = useState<string>('')
+  const [currentTime, setCurrentTime] = useState<number>(0)
+  const [isPlaying, setIsPlaying] = useState<boolean>(false)
 
   // Functions to save/load assignments
   const saveAssignmentsToStorage = (assignments: SlotAssignment[]) => {
@@ -112,15 +116,18 @@ export function VideoTimelineEditor({
   // Handle external add text request
   const handleAddText = () => {
     const newId = Date.now().toString()
+    const snappedStart = snapToNearestCut(0)
+    const snappedEnd = snapToNearestCut(3)
+    
     setTextOverlays(prev => [...prev, {
       id: newId,
       content: 'New Text',
-      start_time: 0,
-      end_time: 3,
+      start_time: snappedStart,
+      end_time: snappedEnd,
       position: { x: 50, y: 50, anchor: 'center' },
       style: {
         font_family: 'Arial',
-        font_size: 48,
+        font_size: 4.8, // Taille réduite de 10x
         color: '#FFFFFF',
         bold: false,
         italic: false,
@@ -128,7 +135,8 @@ export function VideoTimelineEditor({
         outline: false,
         background: false,
         opacity: 1
-      }
+      },
+      textAlign: 'center'
     }])
     setSelectedTextId(newId)
     setShowPreview(true)
@@ -407,6 +415,34 @@ export function VideoTimelineEditor({
 
   const totalDuration = templateSlots.reduce((sum, slot) => sum + slot.duration, 0)
 
+  // Fonction d'alignement sur les cuts - TOUJOURS aligner sur le cut le plus proche
+  const snapToNearestCut = useCallback((time: number): number => {
+    // Créer une liste de tous les points de coupe (début et fin de slots)
+    const cutPoints: number[] = [0, totalDuration] // Début et fin de la vidéo
+    
+    templateSlots.forEach(slot => {
+      cutPoints.push(slot.start_time)
+      cutPoints.push(slot.end_time)
+    })
+    
+    // Supprimer les doublons et trier
+    const uniqueCuts = [...new Set(cutPoints)].sort((a, b) => a - b)
+    
+    // TOUJOURS trouver le cut le plus proche (pas de tolérance)
+    let nearestCut = uniqueCuts[0]
+    let minDistance = Math.abs(time - uniqueCuts[0])
+    
+    for (const cut of uniqueCuts) {
+      const distance = Math.abs(time - cut)
+      if (distance < minDistance) {
+        minDistance = distance
+        nearestCut = cut
+      }
+    }
+    
+    return nearestCut
+  }, [templateSlots, totalDuration])
+
   // Calculer les layers pour éviter les superpositions de textes
   const calculateTextLayers = (texts: TextOverlay[]) => {
     const layers: { [textId: string]: number } = {}
@@ -459,9 +495,11 @@ export function VideoTimelineEditor({
       let updatedText = { ...textToUpdate }
 
       if (resizingText.side === 'start') {
-        updatedText.start_time = Math.max(0, Math.min(newTime, textToUpdate.end_time - 0.1))
+        const snappedTime = snapToNearestCut(newTime)
+        updatedText.start_time = Math.max(0, Math.min(snappedTime, textToUpdate.end_time - 0.1))
       } else {
-        updatedText.end_time = Math.max(textToUpdate.start_time + 0.1, Math.min(newTime, totalDuration))
+        const snappedTime = snapToNearestCut(newTime)
+        updatedText.end_time = Math.max(textToUpdate.start_time + 0.1, Math.min(snappedTime, totalDuration))
       }
 
       setTextOverlays(prev => prev.map(t => t.id === resizingText.textId ? updatedText : t))
@@ -521,95 +559,32 @@ export function VideoTimelineEditor({
                 >
                   ×
                 </Button>
-                <div className="flex justify-center items-center h-full">
-                  <div 
-                    className="rounded-lg border border-gray-200 relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900"
-                    style={{
-                      aspectRatio: '9/16',
-                      width: '270px',  // Fixed width for precise calculations
-                      height: '480px', // Fixed height (270 * 16/9)
-                    }}
-                    data-video-preview="true"
-                    onDoubleClick={(e) => {
-                      // Create new text at double-click position
-                      const rect = e.currentTarget.getBoundingClientRect()
-                      const x = ((e.clientX - rect.left) / 270) * 100 // Convert to percentage
-                      const y = ((e.clientY - rect.top) / 480) * 100
-                      
-                      const newText = {
-                        id: Date.now().toString(),
-                        content: 'New Text',
-                        start_time: 0,
-                        end_time: 3,
-                        position: { x: Math.max(0, Math.min(95, x)), y: Math.max(0, Math.min(95, y)), anchor: 'center' },
-                        style: {
-                          font_family: 'Arial',
-                          font_size: 72,
-                          color: '#FFFFFF',
-                          bold: false,
-                          italic: false,
-                          shadow: true,
-                          outline: false,
-                          background: false,
-                          opacity: 1
-                        }
-                      }
-                      
-                      setTextOverlays([...textOverlays, newText])
-                      setSelectedTextId(newText.id)
-                      setShowTextEditor(true)
-                    }}
-                  >
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                    backgroundImage: (() => {
-                      const selectedText = textOverlays.find(t => t.id === selectedTextId)
-                      if (!selectedText || textOverlays.length === 0) return 'linear-gradient(135deg, #115446 0%, #ff914d 100%)'
-                      
-                      for (const slot of videoSlots) {
-                        if (selectedText.start_time >= slot.start_time && selectedText.start_time < slot.end_time) {
-                          return slot.assignedVideo?.thumbnail_url ? `url(${slot.assignedVideo.thumbnail_url})` : 'linear-gradient(135deg, #115446 0%, #ff914d 100%)'
-                        }
-                      }
-                      return 'linear-gradient(135deg, #115446 0%, #ff914d 100%)'
-                    })(),
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
-                >
-                  {/* Interactive Text Editor */}
-                  <InteractiveTextEditor
+                <div className="flex flex-col space-y-4">
+                  {/* Timeline Video Scrubber avec preview unifié et édition interactive */}
+                  <TimelineVideoScrubber
+                    videoSlots={videoSlots}
                     textOverlays={textOverlays}
                     setTextOverlays={setTextOverlays}
                     selectedTextId={selectedTextId}
                     setSelectedTextId={setSelectedTextId}
-                    videoSlots={videoSlots}
+                    currentTime={currentTime}
+                    totalDuration={totalDuration}
+                    onTimeChange={setCurrentTime}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    isPlaying={isPlaying}
                     editorWidth={270}
                     editorHeight={480}
-                    videoWidth={1080}
-                    videoHeight={1920}
+                    onShowTextEditor={() => setShowTextEditor(true)}
                   />
                   
-                  {/* Empty state */}
-                  {textOverlays.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="text-center text-white/70">
-                        <Type className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">Add text to preview</p>
-                        <p className="text-xs mt-1 opacity-75">Double-click to add text anywhere</p>
-                      </div>
-                    </div>
-                  )}
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
 
             {/* Text Editor Card - 2/3 */}
             <div className="lg:col-span-2 flex flex-col">
-              {showTextEditor && selectedTextId && (
+              {showPreview && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -618,7 +593,10 @@ export function VideoTimelineEditor({
                     </h2>
                     <Button
                       variant="ghost"
-                      onClick={() => setShowTextEditor(false)}
+                      onClick={() => {
+                        setShowTextEditor(false)
+                        setShowPreview(false)
+                      }}
                       className="text-gray-400 hover:text-gray-600"
                     >
                       ×
@@ -673,20 +651,25 @@ export function VideoTimelineEditor({
                                 </SelectContent>
                               </Select>
                               
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-600 w-8">{selectedText.style.font_size}</span>
-                                <Input
+                              <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                  Taille: {selectedText.style.font_size.toFixed(1)}%
+                                </label>
+                                <input
                                   type="range"
+                                  min="2"
+                                  max="15"
+                                  step="0.5"
                                   value={selectedText.style.font_size}
                                   onChange={(e) => {
-                                    setTextOverlays(textOverlays.map(t => 
-                                      t.id === selectedTextId ? { ...t, style: { ...t.style, font_size: parseInt(e.target.value) } } : t
+                                    const newSize = parseFloat(e.target.value)
+                                    setTextOverlays(textOverlays.map(text => 
+                                      text.id === selectedTextId 
+                                        ? { ...text, style: { ...text.style, font_size: newSize } }
+                                        : text
                                     ))
                                   }}
-                                  min={12}
-                                  max={72}
-                                  step={2}
-                                  className="flex-1"
+                                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                                 />
                               </div>
                               
@@ -740,7 +723,8 @@ export function VideoTimelineEditor({
                                   type="number"
                                   value={selectedText.start_time}
                                   onChange={(e) => {
-                                    const start = Math.max(0, Math.min(parseFloat(e.target.value) || 0, totalDuration - 0.1))
+                                    const inputTime = Math.max(0, Math.min(parseFloat(e.target.value) || 0, totalDuration - 0.1))
+                                    const start = snapToNearestCut(inputTime)
                                     const end = Math.max(start + 0.1, selectedText.end_time)
                                     setTextOverlays(textOverlays.map(t => 
                                       t.id === selectedTextId ? { ...t, start_time: start, end_time: end } : t
@@ -758,7 +742,8 @@ export function VideoTimelineEditor({
                                   type="number"
                                   value={selectedText.end_time}
                                   onChange={(e) => {
-                                    const end = Math.max(selectedText.start_time + 0.1, Math.min(parseFloat(e.target.value) || 0, totalDuration))
+                                    const inputTime = Math.max(selectedText.start_time + 0.1, Math.min(parseFloat(e.target.value) || 0, totalDuration))
+                                    const end = snapToNearestCut(inputTime)
                                     setTextOverlays(textOverlays.map(t => 
                                       t.id === selectedTextId ? { ...t, end_time: end } : t
                                     ))
@@ -775,73 +760,6 @@ export function VideoTimelineEditor({
                             </div>
                           </div>
 
-                          {/* Position */}
-                          <div>
-                            <Label className="text-sm font-medium text-gray-700 mb-2">Position</Label>
-                            <div className="space-y-2">
-                              <div className="flex gap-1">
-                                {[
-                                  { name: 'Top', anchor: 'top-center' as const, x: 50, y: 20 },
-                                  { name: 'Center', anchor: 'center' as const, x: 50, y: 50 },
-                                  { name: 'Bottom', anchor: 'bottom-center' as const, x: 50, y: 80 }
-                                ].map((preset) => (
-                                  <Button
-                                    key={preset.name}
-                                    variant={selectedText.position.anchor === preset.anchor ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => {
-                                      setTextOverlays(textOverlays.map(t => 
-                                        t.id === selectedTextId ? { ...t, position: { ...t.position, ...preset } } : t
-                                      ))
-                                    }}
-                                    className="text-xs flex-1 h-8"
-                                  >
-                                    {preset.name}
-                                  </Button>
-                                ))}
-                              </div>
-                              
-                              <div>
-                                <Label className="text-xs text-gray-600">X: {selectedText.position.x}%</Label>
-                                <Input
-                                  type="range"
-                                  value={selectedText.position.x}
-                                  onChange={(e) => {
-                                    const newX = parseInt(e.target.value)
-                                    setTextOverlays(textOverlays.map(t => 
-                                      t.id === selectedTextId ? { 
-                                        ...t, 
-                                        position: { ...t.position, x: newX, anchor: 'center' } 
-                                      } : t
-                                    ))
-                                  }}
-                                  min={0}
-                                  max={100}
-                                  className="w-full"
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label className="text-xs text-gray-600">Y: {selectedText.position.y}%</Label>
-                                <Input
-                                  type="range"
-                                  value={selectedText.position.y}
-                                  onChange={(e) => {
-                                    const newY = parseInt(e.target.value)
-                                    setTextOverlays(textOverlays.map(t => 
-                                      t.id === selectedTextId ? { 
-                                        ...t, 
-                                        position: { ...t.position, y: newY, anchor: 'center' } 
-                                      } : t
-                                    ))
-                                  }}
-                                  min={0}
-                                  max={100}
-                                  className="w-full"
-                                />
-                              </div>
-                            </div>
-                          </div>
                         </div>
                       </div>
                     )

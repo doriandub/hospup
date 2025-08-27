@@ -312,7 +312,7 @@ export function VideoComposer({
                     end_time: 3,
                     position: 'center',
                     font_family: 'system-ui',
-                    font_size: 24,
+                    font_size: 2.4, // Taille réduite de 10x
                     color: '#FFFFFF',
                     has_shadow: true,
                     has_outline: false

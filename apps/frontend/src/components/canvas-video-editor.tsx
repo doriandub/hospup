@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useRef, useEffect, useState, useCallback } from 'react'
-import { Play, Pause, Type, Trash2, AlignLeft, AlignCenter, AlignRight, Plus, Minus } from 'lucide-react'
+import { Play, Pause, Type, Trash2, AlignLeft, AlignCenter, AlignRight, Plus, Minus, Copy, Move, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface VideoSlot {
@@ -289,7 +289,7 @@ export function CanvasVideoEditor({
       },
       style: {
         font_family: 'Arial',
-        font_size: 8, // 8% de la hauteur vidéo (comme CapCut)
+        font_size: 0.8, // Taille réduite de 10x
         color: '#FFFFFF',
         bold: false,
         italic: false,
@@ -360,94 +360,6 @@ export function CanvasVideoEditor({
         />
       </div>
 
-      {/* Controls pour texte sélectionné */}
-      {selectedTextId && (
-        <div className="flex justify-center">
-          <div className="flex items-center gap-2 bg-white border rounded-lg p-2 shadow-lg">
-            {/* Alignement */}
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => updateTextAlign(selectedTextId, 'left')}
-              >
-                <AlignLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => updateTextAlign(selectedTextId, 'center')}
-              >
-                <AlignCenter className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => updateTextAlign(selectedTextId, 'right')}
-              >
-                <AlignRight className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {/* Séparateur */}
-            <div className="w-px h-6 bg-gray-300" />
-            
-            {/* Centrage */}
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => centerHorizontally(selectedTextId)}
-                title="Centrer horizontalement"
-              >
-                <div className="w-4 h-4 border-t border-b border-gray-400" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => centerVertically(selectedTextId)}
-                title="Centrer verticalement"
-              >
-                <div className="w-4 h-4 border-l border-r border-gray-400" />
-              </Button>
-            </div>
-            
-            {/* Séparateur */}
-            <div className="w-px h-6 bg-gray-300" />
-            
-            {/* Taille */}
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => updateTextSize(selectedTextId, -1)}
-              >
-                <Minus className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => updateTextSize(selectedTextId, 1)}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {/* Séparateur */}
-            <div className="w-px h-6 bg-gray-300" />
-            
-            {/* Supprimer */}
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => deleteText(selectedTextId)}
-              className="text-red-600 hover:text-red-800"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Contrôles vidéo */}
       <div className="flex items-center justify-center gap-2">

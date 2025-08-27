@@ -29,8 +29,8 @@ export interface TextOverlay {
   start_time: number
   end_time: number
   position: {
-    x: number // Position horizontale (0-100%)  
-    y: number // Position verticale (0-100%)
+    x: number // Position horizontale (0-1080 pixels)  
+    y: number // Position verticale (0-1920 pixels)
     anchor: 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
   }
   style: {
@@ -121,13 +121,13 @@ export function TimelineTextEditor({
     start_time: 0,
     end_time: Math.min(3, totalDuration),
     position: {
-      x: 50,
-      y: 80,
+      x: 540,  // Centre horizontal (1080/2)
+      y: 1536, // 80% de 1920 = 1536px
       anchor: 'bottom-center'
     },
     style: {
       font_family: fonts[0]?.id || 'helvetica',
-      font_size: 48,
+      font_size: 4.8, // Taille réduite de 10x
       color: '#FFFFFF',
       shadow: true,
       outline: false,
@@ -202,9 +202,9 @@ export function TimelineTextEditor({
   }
 
   const presetPositions = [
-    { name: 'Haut centre', anchor: 'top-center' as const, x: 50, y: 20 },
-    { name: 'Centre', anchor: 'center' as const, x: 50, y: 50 },
-    { name: 'Bas centre', anchor: 'bottom-center' as const, x: 50, y: 80 },
+    { name: 'Haut centre', anchor: 'top-center' as const, x: 540, y: 384 },   // 20% de 1920 = 384px
+    { name: 'Centre', anchor: 'center' as const, x: 540, y: 960 },             // 50% de 1920 = 960px
+    { name: 'Bas centre', anchor: 'bottom-center' as const, x: 540, y: 1536 }, // 80% de 1920 = 1536px
   ]
 
   return (
@@ -285,7 +285,7 @@ export function TimelineTextEditor({
                       <div className="text-xs text-gray-500">
                         {text.start_time}s → {text.end_time}s
                         {' • '}
-                        {text.position.anchor} ({text.position.x}%, {text.position.y}%)
+                        {text.position.anchor} ({text.position.x}px, {text.position.y}px)
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -442,7 +442,7 @@ export function TimelineTextEditor({
 
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-sm">Position X - Horizontale ({selectedText.position.x}%)</Label>
+                    <Label className="text-sm">Position X - Horizontale ({selectedText.position.x}px)</Label>
                     <Input
                       type="range"
                       value={selectedText.position.x}
@@ -458,7 +458,7 @@ export function TimelineTextEditor({
                         })
                       }}
                       min={0}
-                      max={100}
+                      max={1080}
                       className="mt-2"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -468,7 +468,7 @@ export function TimelineTextEditor({
                     </div>
                   </div>
                   <div>
-                    <Label className="text-sm">Position Y - Verticale ({selectedText.position.y}%)</Label>
+                    <Label className="text-sm">Position Y - Verticale ({selectedText.position.y}px)</Label>
                     <Input
                       type="range"
                       value={selectedText.position.y}
@@ -484,7 +484,7 @@ export function TimelineTextEditor({
                         })
                       }}
                       min={0}
-                      max={100}
+                      max={1920}
                       className="mt-2"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -500,8 +500,8 @@ export function TimelineTextEditor({
                   <div
                     className="absolute transform -translate-x-1/2 -translate-y-1/2"
                     style={{
-                      left: `${selectedText.position.x}%`,
-                      top: `${selectedText.position.y}%`,
+                      left: `${(selectedText.position.x / 1080) * 100}%`,
+                      top: `${(selectedText.position.y / 1920) * 100}%`,
                       fontFamily: fonts.find(f => f.id === selectedText.style.font_family)?.display_name || 'Helvetica',
                       fontSize: '8px',
                       color: selectedText.style.color,

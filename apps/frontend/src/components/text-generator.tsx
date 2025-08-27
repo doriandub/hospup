@@ -131,7 +131,7 @@ export function TextGenerator({ language, propertyName, onTextsChange, initialTe
       start_time: texts.length * 3, // Décalage de 3 secondes entre chaque texte
       position: 'center',
       font_family: 'system-ui',
-      font_size: 24,
+      font_size: 2.4, // Taille réduite de 10x
       color: '#FFFFFF',
       has_shadow: true,
       has_outline: false
