@@ -457,39 +457,57 @@ def _apply_text_overlays_v3(
         # Combine all text overlays
         all_texts = []
         
-        # Process custom text overlays from timeline
+        # Process custom text overlays from Canvas editor
+        logger.info(f"📝 Processing {len(text_overlays)} text overlays from Canvas editor")
         for text_overlay in text_overlays:
+            logger.info(f"📝 Text overlay raw data: {text_overlay}")
             all_texts.append({
                 "content": text_overlay.get("content", ""),
                 "start_time": text_overlay.get("start_time", 0),
                 "end_time": text_overlay.get("end_time", 3),
-                "x": text_overlay.get("position", {}).get("x", 50) / 100.0,  # Convert % to 0-1
-                "y": text_overlay.get("position", {}).get("y", 80) / 100.0,  # Convert % to 0-1
+                "position": text_overlay.get("position", {}),  # Keep original position data
                 "style": text_overlay.get("style", {})
             })
-        
-        # Skip template texts - only use custom text overlays from timeline editor
         
         if not all_texts:
             logger.info("📝 No text content to apply")
             return input_video_path
+        
+        # Video dimensions (9:16 portrait format)
+        video_width = 1080
+        video_height = 1920
         
         # Build FFmpeg drawtext filters
         text_filters = []
         for i, text_info in enumerate(all_texts):
             content = text_info.get("content", "").strip()
             if not content:
+                logger.warning(f"📝 Skipping empty text content at index {i}")
                 continue
                 
             start_time = text_info.get("start_time", 0)
             end_time = text_info.get("end_time", start_time + 3)
-            x_rel = text_info.get("x", 0.5)
-            y_rel = text_info.get("y", 0.8)
+            position = text_info.get("position", {})
             style = text_info.get("style", {})
             
+            # COORDONNÉES NORMALISÉES Canvas (0-100%) → pixels vidéo
+            x_percent = float(position.get("x", 50))  # Default center (50%)
+            y_percent = float(position.get("y", 50))  # Default center (50%)
+            anchor = position.get("anchor", "center")
+            
+            # Conversion pourcentages → pixels vidéo
+            x_pixels = int((x_percent / 100) * video_width)
+            y_pixels = int((y_percent / 100) * video_height)
+            
+            logger.info(f"🎯 Canvas text '{content}': {x_percent}%,{y_percent}% → {x_pixels}px,{y_pixels}px (anchor: {anchor})")
+            
             # Font configuration
-            font_file = "/System/Library/Fonts/Helvetica.ttc"  # Default font
-            font_size = int(style.get("font_size", 48))  # Default size
+            font_file = "/System/Library/Fonts/Helvetica.ttc"
+            
+            # Taille de police en pourcentage de la hauteur vidéo (comme Canvas editor)
+            font_size_percent = float(style.get("font_size", 8))  # Default 8% de la hauteur
+            font_size = int((font_size_percent / 100) * video_height)
+            
             font_color = style.get("color", "#FFFFFF")
             
             # Convert color format
@@ -498,22 +516,24 @@ def _apply_text_overlays_v3(
             else:
                 font_color = "white"
             
-            # CLEAN AND SIMPLE: Direct percentage to pixel conversion
-            # Video is 1080x1920 (9:16 portrait format for social media)
-            video_width = 1080
-            video_height = 1920
+            # FFmpeg positioning - adjust for anchor center
+            # Canvas uses center-based positioning, FFmpeg uses top-left corner
+            if anchor == "center":
+                # Pour centrer le texte, on utilise FFmpeg's text positioning
+                # x=W/2:y=H/2 avec text_align=center et text_valign=middle
+                ffmpeg_x = f"(w-text_w)/2"  # Centre horizontal
+                ffmpeg_y = f"(h-text_h)/2"  # Centre vertical
+                
+                # Mais on veut placer à une position spécifique, pas au centre de l'écran
+                # Donc on utilise la position directe mais on centre le texte autour de ce point
+                ffmpeg_x = f"{x_pixels}-(text_w/2)"  # Centre le texte horizontalement autour du point
+                ffmpeg_y = f"{y_pixels}-(text_h/2)"  # Centre le texte verticalement autour du point
+            else:
+                # Position top-left classique
+                ffmpeg_x = str(max(0, min(x_pixels, video_width - 50)))
+                ffmpeg_y = str(max(0, min(y_pixels, video_height - 50)))
             
-            # Convert percentage (0-100) to pixels
-            # Adjustments based on user feedback: texte trop à droite et trop haut
-            x_pixels = int((x_rel * video_width)) - 30  # Adjustment: -30px left (était +10)
-            y_pixels = int((y_rel * video_height)) + 50  # Adjustment: +50px down (était +15)
-            
-            # FFmpeg uses top-left corner positioning
-            x_pos = str(max(0, min(x_pixels, video_width - 50)))
-            y_pos = str(max(0, min(y_pixels, video_height - 50)))
-            
-            # Simple debug log
-            logger.info(f"📍 Text '{content}': {x_rel*100:.1f}%,{y_rel*100:.1f}% -> {x_pixels},{y_pixels}px -> FFmpeg({x_pos},{y_pos})")
+            logger.info(f"📍 FFmpeg positioning: '{content}' at ({ffmpeg_x},{ffmpeg_y}) with anchor={anchor}")
             
             # Escape text for FFmpeg
             safe_text = (content
@@ -532,7 +552,7 @@ def _apply_text_overlays_v3(
             alignment_map = {"left": "left", "center": "center", "right": "right"}
             text_alignment = alignment_map.get(text_align, "center")
             
-            text_filter = f"drawtext=text='{safe_text}':fontfile={font_file}:fontsize={font_size}:fontcolor={font_color}:x={x_pos}:y={y_pos}"
+            text_filter = f"drawtext=text='{safe_text}':fontfile={font_file}:fontsize={font_size}:fontcolor={font_color}:x={ffmpeg_x}:y={ffmpeg_y}"
             
             # Add text effects based on style
             if style.get("shadow", True):  # Default shadow on
