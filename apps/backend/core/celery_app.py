@@ -11,15 +11,14 @@ celery_app = Celery(
     broker=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0",
     backend=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0",
     include=[
-        "tasks.video_generation_v2",
-        "tasks.video_generation_v3",
+        "tasks.video_generation_v3",  # Only keep v3 - the active version
         "tasks.video_processing_tasks",
         "tasks.recovery_tasks",
         "tasks.video_recovery_tasks"
     ]
 )
 
-# Robust configuration for production
+# Configuration robuste anti-crash SIGSEGV
 celery_app.conf.update(
     # Serialization
     task_serializer="json",
@@ -30,29 +29,30 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
     
-    # Task execution
+    # Task execution - timeouts réduits pour éviter les blocages
     task_track_started=True,
-    task_time_limit=20 * 60,  # 20 minutes max
-    task_soft_time_limit=18 * 60,  # 18 minutes soft limit
+    task_time_limit=15 * 60,  # 15 minutes max (réduit)
+    task_soft_time_limit=13 * 60,  # 13 minutes soft limit (réduit)
     task_acks_late=True,
     task_reject_on_worker_lost=True,
     
-    # Worker configuration
-    worker_prefetch_multiplier=1,  # One task at a time per worker
-    worker_max_tasks_per_child=50,  # Restart worker after 50 tasks
-    worker_max_memory_per_child=512000,  # 512MB memory limit
+    # Worker configuration anti-crash
+    worker_prefetch_multiplier=1,  # Une tâche à la fois
+    worker_max_tasks_per_child=10,  # Redémarrage fréquent (réduit de 50 à 10)
+    worker_max_memory_per_child=256000,  # 256MB limite (réduit de 512MB)
+    worker_pool='solo',  # Pool solo pour éviter les forks problématiques
+    worker_disable_rate_limits=True,
+    worker_hijack_root_logger=False,
     
     # Results
-    result_expires=3600,  # Results expire after 1 hour
+    result_expires=1800,  # 30 minutes (réduit)
     
-    # Error handling
-    # task_routes={
-    #     "tasks.video_generation_v2.*": {"queue": "video_generation"}
-    # },
+    # Error handling renforcé
+    task_ignore_result=False,
     
     # Retry configuration
-    task_default_retry_delay=60,  # 1 minute
-    task_max_retries=3,
+    task_default_retry_delay=30,  # 30 secondes (réduit)
+    task_max_retries=2,  # Réduit de 3 à 2
     
     # Beat schedule for periodic tasks
     beat_schedule={
@@ -76,6 +76,52 @@ celery_app.conf.update(
 
 @worker_process_init.connect
 def worker_process_init_handler(signal, sender, **kwargs):
-    """Initialize worker process"""
-    logger.info(f"Initializing worker process: {sender}")
-    # Any worker-specific initialization here
+    """Initialize worker process with anti-crash optimizations"""
+    import os
+    import threading
+    
+    logger.info(f"🚀 Initializing worker process: {sender}")
+    
+    # Optimisations environnement pour éviter SIGSEGV
+    os.environ.update({
+        # Threading limits pour éviter les conflits
+        'OMP_NUM_THREADS': '1',
+        'MKL_NUM_THREADS': '1', 
+        'OPENBLAS_NUM_THREADS': '1',
+        'NUMEXPR_NUM_THREADS': '1',
+        
+        # OpenCV optimizations
+        'OPENCV_IO_MAX_IMAGE_PIXELS': str(10**8),
+        'OPENCV_FFMPEG_CAPTURE_OPTIONS': 'rtsp_transport;udp',
+        
+        # FFmpeg stability
+        'FFMPEG_HIDE_BANNER': '1',
+        'AV_LOG_FORCE_NOCOLOR': '1',
+        
+        # Memory management
+        'MALLOC_ARENA_MAX': '2',
+        'MALLOC_TRIM_THRESHOLD_': '131072',
+        
+        # Python optimizations
+        'PYTHONUNBUFFERED': '1',
+        'PYTHONIOENCODING': 'utf-8',
+    })
+    
+    # Forcer un seul thread pour OpenCV
+    try:
+        import cv2
+        cv2.setNumThreads(1)
+        logger.info("✅ OpenCV configuré en single-thread")
+    except ImportError:
+        pass
+        
+    # Limite de mémoire du processus
+    try:
+        import resource
+        # Limite de mémoire virtuelle à 1GB
+        resource.setrlimit(resource.RLIMIT_AS, (1024*1024*1024, 1024*1024*1024))
+        logger.info("✅ Limite mémoire processus configurée (1GB)")
+    except:
+        pass
+        
+    logger.info("✅ Worker process initialized avec optimisations anti-crash")
