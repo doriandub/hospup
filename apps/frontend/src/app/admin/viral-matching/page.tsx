@@ -153,7 +153,7 @@ export default function ViralMatchingPage() {
   }
 
   const getCategoryColor = (category: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       travel: 'bg-blue-100 text-blue-800',
       lifestyle: 'bg-purple-100 text-purple-800',
       hospitality: 'bg-green-100 text-green-800'

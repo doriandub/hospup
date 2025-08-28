@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { VideoTimelineEditor } from '@/components/video-timeline-editor'
+import { VideoGenerationNavbar } from '@/components/video-generation/VideoGenerationNavbar'
 import { useProperties } from '@/hooks/useProperties'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { Loader2, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
 
@@ -48,6 +49,7 @@ export default function ComposePage() {
 
   const templateId = params.templateId as string
   const propertyFromUrl = searchParams.get('property')
+  const promptFromUrl = searchParams.get('prompt')
 
   // Auto-select property from URL parameter
   useEffect(() => {
@@ -105,8 +107,8 @@ export default function ComposePage() {
     try {
       console.log('🔍 Loading content library for property:', selectedProperty)
       
-      // Charge les vidéos uploadées pour cette propriété
-      const response = await api.get(`/api/v1/videos?property_id=${selectedProperty}&status=uploaded&video_type=uploaded`)
+      // Charge les vidéos disponibles pour cette propriété (uploaded, ready, completed)
+      const response = await api.get(`/api/v1/videos?property_id=${selectedProperty}&status=uploaded,ready,completed&video_type=uploaded`)
 
       console.log('📡 Content library response status:', response.status)
 
@@ -139,16 +141,34 @@ export default function ComposePage() {
   const parseTemplateScript = (script: string): TemplateSlot[] => {
     try {
       let cleanScript = script.trim()
-      if (cleanScript.startsWith('=')) {
-        cleanScript = cleanScript.slice(1)
+      
+      // Supprimer les préfixes '=' s'ils existent (peut être == ou =)
+      while (cleanScript.startsWith('=')) {
+        cleanScript = cleanScript.slice(1).trim()
+      }
+      
+      console.log('🔧 Original script:', script.substring(0, 100))
+      console.log('🔧 Cleaned script:', cleanScript.substring(0, 100))
+      
+      // Vérifier si c'est du JSON valide
+      if (!cleanScript.startsWith('{') && !cleanScript.startsWith('[')) {
+        console.warn('Script does not appear to be valid JSON:', cleanScript.substring(0, 100))
+        return []
       }
 
       const scriptData = JSON.parse(cleanScript)
+      console.log('📜 Parsed script data:', scriptData)
       const clips = scriptData.clips || []
+      console.log('🎯 Found clips:', clips.length, clips)
+
+      if (clips.length === 0) {
+        console.warn('⚠️ No clips found in script data')
+        return []
+      }
 
       let currentTime = 0
       return clips.map((clip: any, index: number) => {
-        const duration = clip.duration || 3
+        const duration = clip.duration || clip.end - clip.start || 3
         const slot: TemplateSlot = {
           id: `slot_${index}`,
           order: clip.order || index + 1,
@@ -158,10 +178,12 @@ export default function ComposePage() {
           end_time: currentTime + duration
         }
         currentTime += duration
+        console.log('🎬 Created slot:', slot)
         return slot
       })
     } catch (error) {
       console.error('Error parsing template script:', error)
+      console.error('Original script:', script.substring(0, 200))
       return []
     }
   }
@@ -193,7 +215,10 @@ export default function ComposePage() {
     const texts = textOverlays.map(text => ({
       content: text.content,
       start_time: text.start_time,
-      end_time: text.end_time || text.start_time + 3
+      end_time: text.end_time || text.start_time + 3,
+      // Inclure toutes les données de position et style
+      position: text.position,
+      style: text.style
     }))
 
     return {
@@ -205,6 +230,10 @@ export default function ComposePage() {
 
   const handleGenerate = async (assignments: any[], textOverlays: any[]) => {
     console.log('🎬 handleGenerate called with:', { assignments, textOverlays })
+    console.log('📍 Text overlays positions:')
+    textOverlays.forEach((text, i) => {
+      console.log(`   Text ${i+1}: "${text.content}" -> x:${text.position.x}, y:${text.position.y} (${text.position.anchor})`)
+    })
     try {
       // Créer un script personnalisé basé sur la timeline
       const customScript = createScriptFromTimeline(assignments, textOverlays)
@@ -218,7 +247,8 @@ export default function ComposePage() {
           slot_assignments: assignments,
           text_overlays: textOverlays,
           custom_script: customScript,
-          total_duration: template?.duration || 30
+          total_duration: template?.duration || 30,
+          user_input: promptFromUrl || ''  // Store user's original idea for AI description generation
         },
         language: 'fr'
       }
@@ -284,7 +314,7 @@ export default function ComposePage() {
                   className="p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
                 >
                   <h3 className="font-medium text-gray-900">{property.name}</h3>
-                  <p className="text-sm text-gray-600">{property.location}</p>
+                  <p className="text-sm text-gray-600">{property.city || 'No location'}</p>
                 </div>
               ))}
             </div>
@@ -309,13 +339,37 @@ export default function ComposePage() {
   const selectedPropertyData = properties.find(p => p.id === selectedProperty)
 
   return (
-    <VideoTimelineEditor
-      templateTitle={template.title}
-      templateSlots={templateSlots}
-      contentVideos={contentVideos}
-      onGenerate={handleGenerate}
-      propertyId={selectedProperty}
-      templateId={templateId}
-    />
+    <div className="min-h-screen bg-gray-50">
+      <VideoGenerationNavbar 
+        currentStep={3}
+        propertyId={selectedProperty}
+        templateId={templateId}
+        showGenerationButtons={true}
+        onRandomTemplate={() => {
+          // Add text functionality
+          if ((window as any).videoTimelineAddText) {
+            (window as any).videoTimelineAddText()
+          }
+        }}
+        onGenerateTemplate={() => {
+          // Create video functionality
+          if ((window as any).videoTimelineGenerateVideo) {
+            (window as any).videoTimelineGenerateVideo()
+          }
+        }}
+        isGenerating={false}
+      />
+      
+      <VideoTimelineEditor
+        templateTitle={template.title}
+        templateSlots={templateSlots}
+        contentVideos={contentVideos}
+        onGenerate={handleGenerate}
+        propertyId={selectedProperty}
+        templateId={templateId}
+        onAddText={() => {}}
+        onGenerateVideo={() => {}}
+      />
+    </div>
   )
 }

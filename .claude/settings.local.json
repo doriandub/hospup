@@ -65,7 +65,9 @@
       "Bash(kill:*)",
       "Bash(CORS_ORIGINS=\"http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003\" ALLOWED_HOSTS=\"localhost,127.0.0.1,localhost:3003\" python3 main.py)",
       "Bash(CORS_ORIGINS=\"http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003\" ALLOWED_HOSTS=\"localhost,127.0.0.1,localhost:3003\" python main.py)",
-      "Bash(CORS_ORIGINS=\"http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003\" ALLOWED_HOSTS=\"localhost,127.0.0.1,localhost:3003\" uvicorn main:app --reload --host 0.0.0.0 --port 8000)"
+      "Bash(CORS_ORIGINS=\"http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003\" ALLOWED_HOSTS=\"localhost,127.0.0.1,localhost:3003\" uvicorn main:app --reload --host 0.0.0.0 --port 8000)",
+      "WebSearch",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": [],

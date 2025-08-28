@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useState, useRef, useCallback, useEffect } from 'react'
-import { Play, Pause, Type } from 'lucide-react'
+import { Play, Pause, Type, Copy, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { CanvasVideoEditor } from './canvas-video-editor'
+import { CanvasVideoEditorMasterclass } from './canvas-video-editor-masterclass'
 
 interface VideoSlot {
   id: string
@@ -176,8 +176,8 @@ export function TimelineVideoScrubber({
 
   return (
     <div className="space-y-4">
-      {/* Canvas Video Editor - COMME CAPCUT */}
-      <CanvasVideoEditor
+      {/* Canvas Video Editor Masterclass */}
+      <CanvasVideoEditorMasterclass
         videoSlots={videoSlots}
         textOverlays={textOverlays}
         setTextOverlays={setTextOverlays}
@@ -190,6 +190,7 @@ export function TimelineVideoScrubber({
         onPause={onPause}
         isPlaying={isPlaying}
       />
+
 
       {/* Timeline scrubber */}
       <div className="space-y-2">

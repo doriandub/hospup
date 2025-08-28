@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useProperties } from '@/hooks/useProperties'
 import { api } from '@/lib/api'
+import { VideoGenerationNavbar } from '@/components/video-generation/VideoGenerationNavbar'
 import { 
-  Sparkles,
   Building2,
   Plus,
   Loader2,
@@ -36,7 +36,7 @@ export default function GenerateVideoPage() {
     setPrompt(randomIdea)
   }
 
-  const handleGenerateWithPrompt = async () => {
+  const handleGenerateTemplate = async () => {
     if (!selectedProperty || !prompt.trim()) {
       alert('Please select a property and enter a description')
       return
@@ -50,13 +50,49 @@ export default function GenerateVideoPage() {
       })
       
       if (response.data) {
-        router.push(`/dashboard/compose/${response.data.id}?property=${selectedProperty}&prompt=${encodeURIComponent(prompt)}`)
+        // Redirect to template preview instead of compose
+        const params = new URLSearchParams({
+          property: selectedProperty,
+          description: prompt
+        })
+        router.push(`/dashboard/template-preview/${response.data.id}?${params.toString()}`)
       } else {
         alert('No template found. Please try a different description.')
       }
     } catch (error) {
       console.error('Failed to find template:', error)
       alert('Search failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRandomTemplate = async () => {
+    if (!selectedProperty) {
+      alert('Please select a property')
+      return
+    }
+
+    setLoading(true)
+    try {
+      // Get all templates and pick a random one
+      const response = await api.get('/api/v1/viral-matching/viral-templates')
+      
+      if (response.data && response.data.length > 0) {
+        const randomTemplate = response.data[Math.floor(Math.random() * response.data.length)]
+        
+        // Redirect to template preview with random template
+        const params = new URLSearchParams({
+          property: selectedProperty,
+          description: 'Template choisi aléatoirement'
+        })
+        router.push(`/dashboard/template-preview/${randomTemplate.id}?${params.toString()}`)
+      } else {
+        alert('No templates available.')
+      }
+    } catch (error) {
+      console.error('Failed to get random template:', error)
+      alert('Failed to get random template. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -85,7 +121,16 @@ export default function GenerateVideoPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-inter">
-      <div className="grid grid-cols-1 gap-3 p-8">
+      <VideoGenerationNavbar 
+        currentStep={1}
+        propertyId={selectedProperty}
+        showGenerationButtons={!!selectedProperty && prompt.trim()}
+        onRandomTemplate={handleRandomTemplate}
+        onGenerateTemplate={handleGenerateTemplate}
+        isGenerating={loading}
+      />
+      
+      <div className="grid grid-cols-1 gap-3 px-8 pb-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-8">
           
           {/* Property Selection */}
@@ -118,7 +163,17 @@ export default function GenerateVideoPage() {
 
           {/* Video Description */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>Describe Your Video</h2>
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>Describe Your Video</h2>
+              <Button
+                variant="outline"
+                onClick={generateRandomPrompt}
+                className="flex items-center hover:bg-gray-50"
+              >
+                <Shuffle className="w-4 h-4 mr-2" />
+                Random Idea
+              </Button>
+            </div>
             <div className="space-y-4">
               <textarea
                 value={prompt}
@@ -129,33 +184,14 @@ export default function GenerateVideoPage() {
                 style={{ fontFamily: 'Inter' }}
               />
               
-              <div className="flex justify-between items-center">
-                <Button
-                  variant="outline"
-                  onClick={generateRandomPrompt}
-                  className="flex items-center hover:bg-gray-50"
-                >
-                  <Shuffle className="w-4 h-4 mr-2" />
-                  Random Idea
-                </Button>
-                
-                <Button
-                  onClick={handleGenerateWithPrompt}
-                  disabled={!selectedProperty || !prompt.trim() || loading}
-                  className="bg-[#115446] hover:bg-[#115446]/90"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Finding Template...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Video
-                    </>
-                  )}
-                </Button>
+              <div className="text-center py-4 text-gray-500 text-sm">
+                {!selectedProperty ? (
+                  "Sélectionnez une propriété pour commencer"
+                ) : !prompt.trim() ? (
+                  "Décrivez votre vidéo pour voir les boutons de génération"
+                ) : (
+                  "Utilisez les boutons dans la barre du haut pour générer"
+                )}
               </div>
             </div>
           </div>

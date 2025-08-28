@@ -152,7 +152,7 @@ export default function DatabasePage() {
     try {
       const token = localStorage.getItem('access_token')
       
-      let processedValue = editValue
+      let processedValue: any = editValue
       const column = COLUMNS.find(c => c.key === editingCell.column)
       
       if (column?.type === 'number') {

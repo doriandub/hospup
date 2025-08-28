@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Download, Share2, Play, Loader2, Copy, ExternalLink, Music, Sparkles } from 'lucide-react'
+import { ArrowLeft, Download, Share2, Play, Loader2, Copy, ExternalLink, Music, Sparkles, Languages, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { VideoGenerationNavbar } from '@/components/video-generation/VideoGenerationNavbar'
 import { videosApi, api } from '@/lib/api'
 
@@ -41,6 +42,9 @@ export default function VideoPreviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [regeneratingDescription, setRegeneratingDescription] = useState(false)
+  const [translatingDescription, setTranslatingDescription] = useState(false)
+  const [selectedLanguage, setSelectedLanguage] = useState('fr')
+  const [selectedLength, setSelectedLength] = useState('moyenne')
 
   const videoId = params.videoId as string
 
@@ -121,8 +125,11 @@ export default function VideoPreviewPage() {
     
     setRegeneratingDescription(true)
     try {
-      // Call API to regenerate Instagram description
-      const response = await api.post(`/api/v1/videos/${videoId}/regenerate-description`)
+      // Call API to regenerate Instagram description with selected language and length
+      const response = await api.post(`/api/v1/videos/${videoId}/regenerate-description`, {
+        language: selectedLanguage,
+        length: selectedLength
+      })
       
       if (response.data?.ai_description) {
         setVideo(prev => prev ? {...prev, ai_description: response.data.ai_description} : null)
@@ -132,6 +139,29 @@ export default function VideoPreviewPage() {
       alert('Erreur lors de la régénération de la description')
     } finally {
       setRegeneratingDescription(false)
+    }
+  }
+
+  const handleTranslateDescription = async () => {
+    if (!video?.ai_description) return
+    
+    setTranslatingDescription(true)
+    try {
+      // Call API to translate existing description
+      const response = await api.post(`/api/v1/videos/${videoId}/translate-description`, {
+        current_description: video.ai_description,
+        target_language: selectedLanguage,
+        length: selectedLength
+      })
+      
+      if (response.data?.translated_description) {
+        setVideo(prev => prev ? {...prev, ai_description: response.data.translated_description} : null)
+      }
+    } catch (error) {
+      console.error('Error translating description:', error)
+      alert('Erreur lors de la traduction de la description')
+    } finally {
+      setTranslatingDescription(false)
     }
   }
 
@@ -222,8 +252,8 @@ export default function VideoPreviewPage() {
         templateId={viralTemplate?.id}
         videoId={video.id}
         showGenerationButtons={true}
-        onRandomTemplate={handleRegenerateDescription}
-        onGenerateTemplate={handleViewAudio}
+        onRandomTemplate={handleViewAudio}
+        onGenerateTemplate={() => {}}
         isGenerating={regeneratingDescription}
       />
       
@@ -240,6 +270,11 @@ export default function VideoPreviewPage() {
                     controls
                     className="w-full h-full object-cover"
                     poster={video.thumbnail_url}
+                    onEnded={(e) => {
+                      // Show thumbnail when video ends instead of black screen
+                      const videoElement = e.target as HTMLVideoElement;
+                      videoElement.load(); // This will show the poster again
+                    }}
                   >
                     <source src={video.video_url} type="video/mp4" />
                     Votre navigateur ne supporte pas la lecture vidéo.
@@ -272,19 +307,10 @@ export default function VideoPreviewPage() {
                 <h3 className="text-lg font-semibold text-gray-900">Description Instagram IA</h3>
               </div>
               {video.ai_description ? (
-                <div className="space-y-6 flex-1 flex flex-col">
+                <div className="space-y-4 flex-1 flex flex-col">
                   <div className="bg-gray-50 rounded-xl p-6 border-l-4 border-[#ff914d] flex-1">
                     <p className="text-gray-800 whitespace-pre-wrap text-sm leading-relaxed">{video.ai_description}</p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigator.clipboard.writeText(video.ai_description || '')}
-                    className="w-full"
-                  >
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copier la description
-                  </Button>
                 </div>
               ) : (
                 <div className="text-center py-8 flex-1 flex items-center justify-center">
@@ -297,105 +323,99 @@ export default function VideoPreviewPage() {
             </div>
           </div>
 
-          {/* Colonne de droite: Musique du template viral */}
+          {/* Colonne de droite: Paramètres pour recréer la description */}
           <div className="h-full">
             <div className="bg-white rounded-xl shadow-sm border p-6 h-full flex flex-col">
               <div className="flex items-center gap-3 mb-6">
-                <Music className="w-5 h-5 text-[#115446]" />
-                <h3 className="text-lg font-semibold text-gray-900">Musique du Template Viral</h3>
+                <Languages className="w-5 h-5 text-[#115446]" />
+                <h3 className="text-lg font-semibold text-gray-900">Paramètres de Description</h3>
               </div>
               
               <div className="space-y-6 flex-1">
-                {/* Message principal */}
-                <div className="space-y-6">
-                  <div className="text-sm text-gray-600">
-                    <p className="mb-3">
-                      🎵 J'ai trouvé la <strong>musique originale</strong> de la vidéo virale qui a inspiré votre contenu
-                    </p>
-                    {viralTemplate?.hotel_name && (
-                      <p className="text-xs text-gray-500">
-                        Template original : {viralTemplate.hotel_name}
-                        {viralTemplate.username && ` • @${viralTemplate.username.replace('@', '')}`}
-                      </p>
-                    )}
-                  </div>
-                  
-                  {viralTemplate?.video_link && (
+                {/* Contrôles de langue */}
+                {video.ai_description && (
+                  <div className="space-y-4">
+                    {/* Language Selector */}
                     <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Languages className="w-4 h-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-700">Langue:</span>
+                      </div>
+                      <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Choisir une langue" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fr">🇫🇷 Français</SelectItem>
+                          <SelectItem value="en">🇺🇸 English</SelectItem>
+                          <SelectItem value="es">🇪🇸 Español</SelectItem>
+                          <SelectItem value="it">🇮🇹 Italiano</SelectItem>
+                          <SelectItem value="de">🇩🇪 Deutsch</SelectItem>
+                          <SelectItem value="pt">🇵🇹 Português</SelectItem>
+                          <SelectItem value="nl">🇳🇱 Nederlands</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Length Selector */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-700">Taille:</span>
+                      </div>
+                      <Select value={selectedLength} onValueChange={setSelectedLength}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Choisir une taille" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="courte">📝 Courte (1 phrase)</SelectItem>
+                          <SelectItem value="moyenne">📄 Moyenne (petit paragraphe)</SelectItem>
+                          <SelectItem value="longue">📖 Longue (plusieurs paragraphes)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-1 gap-3">
                       <Button
-                        onClick={() => window.open(viralTemplate.video_link, '_blank')}
-                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRegenerateDescription}
+                        disabled={regeneratingDescription}
+                        className="w-full"
                       >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Voir la vidéo originale
+                        {regeneratingDescription ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                        )}
+                        Nouvelle description ({selectedLength}, {selectedLanguage.toUpperCase()})
                       </Button>
                       
-                      {viralTemplate?.audio_url ? (
-                        <Button
-                          onClick={() => window.open(viralTemplate.audio_url, '_blank')}
-                          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                        >
-                          <Music className="w-4 h-4 mr-2" />
-                          Écouter la musique
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => window.open(viralTemplate.video_link, '_blank')}
-                          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                        >
-                          <Music className="w-4 h-4 mr-2" />
-                          Écouter la musique (depuis vidéo)
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Instagram Audio si disponible */}
-                {video.status === 'completed' && video.instagram_audio_url && (
-                  <div className="space-y-6 border-t pt-6">
-                    <h4 className="font-medium text-gray-900">Audio Instagram Original</h4>
-                    <p className="text-sm text-gray-600">
-                      Retrouvez l'audio original de la vidéo virale
-                    </p>
-                    <Button
-                      onClick={() => window.open(video.instagram_audio_url, '_blank')}
-                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Ouvrir l'audio Instagram
-                    </Button>
-                  </div>
-                )}
-
-                {/* Suggestions Audio */}
-                {video.status === 'completed' && (
-                  <div className="space-y-6 border-t pt-6">
-                    <div className="flex items-center gap-3">
-                      <Music className="w-4 h-4 text-[#ff914d]" />
-                      <h4 className="font-medium text-gray-900">Suggestions Audio</h4>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Audios tendances libres de droits
-                    </p>
-                    <div className="space-y-3">
-                      {[
-                        { name: "Upbeat Energy", mood: "Énergique" },
-                        { name: "Chill Vibes", mood: "Relaxant" },
-                        { name: "Trending Beat", mood: "Tendance" },
-                        { name: "Emotional", mood: "Émotionnel" }
-                      ].map((audio, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <div>
-                            <p className="font-medium text-sm">{audio.name}</p>
-                            <p className="text-xs text-gray-500 mt-1">{audio.mood}</p>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Play className="w-3 h-3 mr-2" />
-                            Écouter
-                          </Button>
-                        </div>
-                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleTranslateDescription}
+                        disabled={translatingDescription}
+                        className="w-full"
+                      >
+                        {translatingDescription ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Languages className="w-4 h-4 mr-2" />
+                        )}
+                        Traduire en {selectedLanguage.toUpperCase()}
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigator.clipboard.writeText(video.ai_description || '')}
+                        className="w-full"
+                      >
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copier la description
+                      </Button>
                     </div>
                   </div>
                 )}

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Sparkles, Shuffle } from 'lucide-react'
+import { ArrowLeft, Sparkles, Shuffle, Music } from 'lucide-react'
 
 interface VideoGenerationNavbarProps {
   currentStep: 1 | 2 | 3 | 4
@@ -80,12 +80,19 @@ export function VideoGenerationNavbar({
             <Button
               onClick={onRandomTemplate}
               disabled={isGenerating || !propertyId}
-              variant="outline"
+              variant={currentStep === 4 ? "default" : "outline"}
               size="sm"
-              className="border-[#115446] text-[#115446] hover:bg-[#115446]/10 disabled:opacity-50 px-4 py-2"
+              className={currentStep === 4 ? 
+                "bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 text-white border-0 disabled:opacity-50 px-4 py-2" : 
+                "border-[#115446] text-[#115446] hover:bg-[#115446]/10 disabled:opacity-50 px-4 py-2"
+              }
             >
-              <Shuffle className="w-4 h-4 mr-2" />
-              {currentStep === 2 ? "Another Template" : currentStep === 3 ? "Add Text" : currentStep === 4 ? "New Description" : "Random Template"}
+              {currentStep === 4 ? (
+                <Music className="w-4 h-4 mr-2" />
+              ) : (
+                <Shuffle className="w-4 h-4 mr-2" />
+              )}
+              {currentStep === 2 ? "Another Template" : currentStep === 3 ? "Add Text" : currentStep === 4 ? "Publier sur Instagram avec la musique" : "Random Template"}
             </Button>
             
             <Button

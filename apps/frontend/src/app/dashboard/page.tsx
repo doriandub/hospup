@@ -108,19 +108,21 @@ export default function DashboardPage() {
           </Link>
 
           {/* Total Videos */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
-            <div className="flex items-center space-x-3">
-              <div className="bg-gray-100 p-2 rounded-lg">
-                <Video className="w-4 h-4 text-gray-700" />
-              </div>
-              <div>
-                <div className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
-                  {stats?.total_videos ?? 0}
+          <Link href="/dashboard/videos">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8 cursor-pointer">
+              <div className="flex items-center space-x-3">
+                <div className="bg-gray-100 p-2 rounded-lg">
+                  <Video className="w-4 h-4 text-gray-700" />
                 </div>
-                <div className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Total Videos</div>
+                <div>
+                  <div className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
+                    {stats?.total_videos ?? 0}
+                  </div>
+                  <div className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Total Videos</div>
+                </div>
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Videos Remaining */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
@@ -138,22 +140,24 @@ export default function DashboardPage() {
           </div>
 
           {/* Total Properties */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
-            <div className="flex items-center space-x-3">
-              <div className="bg-gray-100 p-2 rounded-lg">
-                <Building2 className="w-4 h-4 text-gray-700" />
-              </div>
-              <div>
-                <div className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
-                  {stats?.total_properties ?? 0}
+          <Link href="/dashboard/properties">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8 cursor-pointer">
+              <div className="flex items-center space-x-3">
+                <div className="bg-gray-100 p-2 rounded-lg">
+                  <Building2 className="w-4 h-4 text-gray-700" />
                 </div>
-                <div className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Total Properties</div>
+                <div>
+                  <div className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
+                    {stats?.total_properties ?? 0}
+                  </div>
+                  <div className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Total Properties</div>
+                </div>
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Add Property */}
-          <Link href="/dashboard/properties">
+          <Link href="/dashboard/properties/new">
             <div className="bg-[#115446]/5 border border-[#115446]/30 rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#115446]/10 hover:shadow-md transition-all duration-200 h-full">
               <div className="flex items-center space-x-3 h-full">
                 <div className="bg-[#115446]/10 rounded-full p-3 group-hover:bg-[#115446]/20 transition-all">

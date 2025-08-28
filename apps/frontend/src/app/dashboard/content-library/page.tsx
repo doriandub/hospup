@@ -62,7 +62,7 @@ export default function ContentLibraryPage() {
       console.log(`🔄 Fast status check (10s interval) for ${processingVideos.length} videos...`)
       
       let needsFullRefresh = false
-      let statusChanges = []
+      let statusChanges: any[] = []
       
       // Check status for each processing video
       const statusChecks = processingVideos.map(async (video) => {
@@ -276,72 +276,43 @@ export default function ContentLibraryPage() {
   }, [])
 
   const uploadSingleFile = async (file: File, propertyId: string) => {
+    console.log('🎬 Direct upload started:', file.name, 'propertyId:', propertyId)
     const token = localStorage.getItem('access_token')
     
-    // Step 1: Get presigned URL
-    const presignedResponse = await fetch('http://localhost:8000/api/v1/upload/presigned-url', {
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+    
+    if (!propertyId) {
+      throw new Error('No property ID provided')
+    }
+    
+    // Simple direct upload - the system that worked before!
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('property_id', propertyId)
+    formData.append('title', file.name.split('.')[0])
+
+    console.log('📤 Uploading directly to /api/v1/upload/')
+    
+    const response = await fetch('http://localhost:8000/api/v1/upload/', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({
-        file_name: file.name,
-        content_type: file.type,
-        property_id: propertyId,
-        file_size: file.size
-      })
-    })
-
-    if (!presignedResponse.ok) {
-      const errorText = await presignedResponse.text()
-      throw new Error(`Failed to get presigned URL for ${file.name}: ${presignedResponse.status} ${errorText}`)
-    }
-
-    const presignedData = await presignedResponse.json()
-    
-    // Step 2: Upload to S3/storage using presigned URL
-    const formData = new FormData()
-    
-    // Add fields from presigned response
-    Object.keys(presignedData.fields || {}).forEach(key => {
-      formData.append(key, presignedData.fields[key])
-    })
-    
-    // Add the file last
-    formData.append('file', file)
-
-    const uploadResponse = await fetch(presignedData.upload_url, {
-      method: 'POST',
       body: formData
     })
 
-    if (!uploadResponse.ok) {
-      throw new Error(`Upload failed for ${file.name}: ${uploadResponse.status} ${uploadResponse.statusText}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`❌ Upload failed for ${file.name}:`, response.status, errorText)
+      throw new Error(`Upload failed for ${file.name}: ${response.status} ${response.statusText}`)
     }
 
-    // Step 3: Complete upload by creating video record
-    const completeResponse = await fetch('http://localhost:8000/api/v1/upload/complete', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        property_id: propertyId,
-        s3_key: presignedData.s3_key,
-        file_name: file.name,
-        file_size: file.size,
-        content_type: file.type
-      })
-    })
+    const result = await response.json()
+    console.log('✅ Upload successful:', file.name, result)
 
-    if (!completeResponse.ok) {
-      const errorText = await completeResponse.text()
-      throw new Error(`Failed to complete upload for ${file.name}: ${completeResponse.status} ${errorText}`)
-    }
-
-    return await completeResponse.json()
+    return result
   }
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
@@ -364,20 +335,27 @@ export default function ContentLibraryPage() {
     setIsUploading(true)
 
     try {
+      console.log(`📂 Starting upload of ${videoFiles.length} files to property:`, activePropertyId)
       for (let i = 0; i < videoFiles.length; i++) {
         const file = videoFiles[i]
-        console.log(`Uploading ${file.name}...`)
+        console.log(`📤 [${i + 1}/${videoFiles.length}] Uploading ${file.name}...`)
         
         await uploadSingleFile(file, activePropertyId)
-        console.log(`Successfully uploaded: ${file.name}`)
+        console.log(`✅ [${i + 1}/${videoFiles.length}] Successfully uploaded: ${file.name}`)
       }
 
       // Refresh videos list
       await refetchVideos()
     } catch (error) {
-      console.error('Upload error:', error)
+      console.error('❌ Upload error:', error)
       const errorMessage = error instanceof Error ? error.message : 'Upload failed. Please try again.'
-      alert(errorMessage)
+      console.log('💡 Error details:', {
+        message: errorMessage,
+        activePropertyId,
+        tokenExists: !!localStorage.getItem('access_token'),
+        error
+      })
+      alert(`Upload failed: ${errorMessage}`)
     } finally {
       setIsUploading(false)
     }
@@ -511,22 +489,12 @@ export default function ContentLibraryPage() {
 
       {/* Videos Grid/List */}
       {activePropertyId ? (
-        filteredVideos.length === 0 ? (
-          <div className="text-center py-12">
-            <FolderOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No videos for this property</h3>
-            <p className="text-gray-600 mb-6">Upload or generate videos for this property to see them here</p>
-            <Button onClick={() => window.location.href = '/dashboard/generate'}>
-              Generate Video
-            </Button>
-          </div>
-        ) : (
-          <div className={
-            viewMode === 'grid'
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-3'
-              : 'space-y-3'
-          }>
-            {/* Upload Content Card */}
+        <div className={
+          viewMode === 'grid'
+            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-3'
+            : 'space-y-3'
+        }>
+          {/* Upload Content Card - Always visible */}
             {viewMode === 'grid' ? (
               <div 
                 className={`border border-dashed rounded-xl shadow-sm p-6 cursor-pointer transition-all duration-200 group flex items-center justify-center min-h-[400px] ${
@@ -629,6 +597,7 @@ export default function ContentLibraryPage() {
               </div>
             )}
             
+            {/* Show videos if any exist */}
             {filteredVideos.map((video) => {
               const property = properties.find(p => p.id === video.property_id)
               return (
@@ -641,8 +610,24 @@ export default function ContentLibraryPage() {
                 />
               )
             })}
-          </div>
-        )
+            
+            {/* Empty state message when no videos - but upload card still visible */}
+            {filteredVideos.length === 0 && (
+              <div className="col-span-full text-center py-8">
+                <Video className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <h3 className="text-base font-medium text-gray-600 mb-2">No videos uploaded yet</h3>
+                <p className="text-sm text-gray-500">Use the upload card to add your first videos, or 
+                  <Button 
+                    variant="link" 
+                    className="text-[#115446] p-0 h-auto font-medium ml-1"
+                    onClick={() => window.location.href = '/dashboard/generate'}
+                  >
+                    generate new content
+                  </Button>
+                </p>
+              </div>
+            )}
+        </div>
       ) : (
         <div className="text-center py-12">
           <FolderOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
