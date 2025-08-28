@@ -317,3 +317,142 @@ async def get_processing_status(
             "error": str(e)
         }
 
+@router.post("/", response_model=VideoResponse)
+async def upload_video_direct(
+    file: UploadFile = File(...),
+    property_id: str = Form(...),
+    title: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Direct video upload endpoint - scalable version
+    Upload via backend → Stream to S3 → Process automatically → Optimize
+    Scalable car pas de stockage local + traitement async
+    """
+    
+    logger.info(f"🎬 Direct upload started: {file.filename} for property {property_id}")
+    
+    # Validate property ownership
+    property = db.query(Property).filter(
+        Property.id == property_id,
+        Property.user_id == current_user.id
+    ).first()
+    
+    if not property:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    
+    # Validate file type
+    allowed_video_types = [
+        'video/mp4', 'video/quicktime', 'video/x-msvideo', 
+        'video/x-ms-wmv', 'video/avi', 'video/mov',
+        'application/octet-stream'
+    ]
+    
+    is_video = (
+        file.content_type in allowed_video_types or
+        any(file.filename.lower().endswith(ext) for ext in ['.mp4', '.mov', '.avi', '.wmv'])
+    )
+    
+    if not is_video:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file type: {file.content_type}. Only video files are allowed."
+        )
+    
+    try:
+        # Generate unique file key
+        import uuid
+        file_extension = file.filename.split('.')[-1] if '.' in file.filename else 'mp4'
+        unique_filename = f"{uuid.uuid4()}.{file_extension}"
+        s3_key = f"properties/{property_id}/videos/{unique_filename}"
+        
+        # Stream directly to S3 (scalable - pas de stockage local)
+        logger.info(f"☁️ Streaming to S3: {s3_key}")
+        
+        # Reset file pointer to beginning
+        await file.seek(0)
+        
+        # Upload file stream directly to S3
+        upload_result = s3_service.upload_file_direct(
+            file.file,  # Direct file stream, pas de .read() en mémoire
+            s3_key, 
+            file.content_type or 'video/mp4'
+        )
+        
+        if not upload_result['success']:
+            raise Exception(f"S3 upload failed: {upload_result.get('error')}")
+        
+        # Get file size (approximation if not available)
+        file_size = getattr(file, 'size', 0) or 0
+        if file_size == 0:
+            # Try to get size from file if possible
+            try:
+                await file.seek(0, 2)  # Seek to end
+                file_size = await file.tell()
+                await file.seek(0)     # Reset to beginning
+            except:
+                file_size = 1024 * 1024  # Default 1MB if can't determine
+        
+        video_url = f"s3://{s3_service.bucket_name}/{s3_key}"
+        
+        # Create video record with "processing" status
+        # This will trigger the automatic processing pipeline
+        video = Video(
+            title=title or file.filename,
+            video_url=video_url,
+            format=file_extension,
+            size=file_size,
+            status="processing",  # Key: starts as processing, will be auto-processed
+            user_id=current_user.id,
+            property_id=property_id,
+            description=f"Uploaded video: {file.filename}"
+        )
+        
+        db.add(video)
+        db.commit()
+        db.refresh(video)
+        
+        # Trigger automatic processing
+        logger.info(f"🚀 Triggering video processing for {video.id}")
+        
+        # Auto-detect environment and choose appropriate processing method
+        from core.deployment import deployment_config
+        config = deployment_config.get_processing_config()
+        
+        if config["use_async_processing"]:
+            # Celery processing - the recovery system will handle stuck videos
+            try:
+                from tasks.video_processing_tasks import process_uploaded_video
+                task = process_uploaded_video.delay(str(video.id), s3_key)
+                video.generation_job_id = task.id
+                db.commit()
+                logger.info(f"🔄 Async processing task {task.id} started for video {video.id}")
+            except Exception as e:
+                logger.warning(f"❌ Async processing failed, recovery system will handle: {e}")
+        else:
+            # Synchronous processing fallback
+            logger.info(f"⚡ Synchronous processing for video {video.id}")
+            try:
+                from api.v1.upload_vercel import process_video_sync
+                processed = await process_video_sync(video, s3_key, db, config)
+                if processed:
+                    logger.info(f"✅ Sync processing completed for video {video.id}")
+            except Exception as e:
+                logger.error(f"❌ Sync processing failed: {e}")
+                # Keep as processing - recovery system will handle
+        
+        logger.info(f"✅ Direct upload successful: {video.id} ({file.filename})")
+        
+        return VideoResponse.from_orm(video)
+        
+    except Exception as e:
+        logger.error(f"❌ Direct upload failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Upload failed: {str(e)}"
+        )
+

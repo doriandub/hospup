@@ -11,7 +11,11 @@ from models.user import User
 from models.video import Video
 from models.property import Property
 from services.s3_service import s3_service
+from services.instagram_description_service import instagram_service
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -49,7 +53,15 @@ class VideoGenerationResponse(BaseModel):
     job_id: str
     status: str
     estimated_time: int = None
-    video_id: str = None
+
+class RegenerateDescriptionRequest(BaseModel):
+    language: str = "fr"
+    length: str = "moyenne"
+
+class TranslateDescriptionRequest(BaseModel):
+    current_description: str
+    target_language: str
+    length: str = "moyenne"
 
 @router.get("/", response_model=List[VideoResponse])
 async def get_videos(
@@ -455,5 +467,163 @@ async def restart_video_processing(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to restart processing: {str(e)}"
+        )
+
+@router.post("/{video_id}/regenerate-description")
+async def regenerate_description(
+    video_id: str,
+    request: RegenerateDescriptionRequest = RegenerateDescriptionRequest(),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Generate a new Instagram description for a video using AI"""
+    
+    # Verify video belongs to user
+    video = db.query(Video).filter(
+        Video.id == video_id,
+        Video.user_id == current_user.id
+    ).first()
+    
+    if not video:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Video not found"
+        )
+    
+    # Get property information
+    property_obj = db.query(Property).filter(
+        Property.id == video.property_id
+    ).first()
+    
+    if not property_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    
+    try:
+        # Extract user's original idea from video source_data
+        user_idea = "Créer une vidéo engageante pour l'hôtel"  # Default fallback
+        template_info = None
+        
+        if video.source_data:
+            try:
+                source_data = json.loads(video.source_data)
+                
+                # Try to get user description from various possible sources
+                if isinstance(source_data, dict):
+                    user_idea = (
+                        source_data.get('user_description') or 
+                        source_data.get('user_input') or
+                        source_data.get('description') or 
+                        source_data.get('prompt') or
+                        source_data.get('input_data') or
+                        user_idea
+                    )
+                    
+                    # Get template info if available
+                    template_id = source_data.get('template_id')
+                    if template_id:
+                        # Try to load template info for better context
+                        try:
+                            from models.viral_video_template import ViralVideoTemplate
+                            template_obj = db.query(ViralVideoTemplate).filter(
+                                ViralVideoTemplate.id == template_id
+                            ).first()
+                            if template_obj:
+                                template_info = {
+                                    'title': getattr(template_obj, 'title', ''),
+                                    'hotel_name': getattr(template_obj, 'hotel_name', ''),
+                                    'property': getattr(template_obj, 'property', '')
+                                }
+                        except Exception as e:
+                            logger.warning(f"Could not load template info: {e}")
+                            pass  # Continue without template info if unavailable
+                            
+            except json.JSONDecodeError:
+                # If source_data is not JSON, try to use it directly as user idea
+                user_idea = str(video.source_data)
+        
+        # Prepare property data
+        property_data = {
+            'name': property_obj.name,
+            'city': property_obj.city,
+            'country': property_obj.country,
+            'description': property_obj.description or ''
+        }
+        
+        # Generate new description using AI
+        new_description = instagram_service.generate_description(
+            property_data=property_data,
+            user_idea=user_idea,
+            template_info=template_info,
+            language=request.language,
+            length=request.length
+        )
+        
+        # Update video with new description
+        video.ai_description = new_description
+        db.commit()
+        
+        logger.info(f"Generated new Instagram description for video {video_id}")
+        
+        return {
+            "ai_description": new_description,
+            "message": "Description generated successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating description for video {video_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate description: {str(e)}"
+        )
+
+@router.post("/{video_id}/translate-description")
+async def translate_description(
+    video_id: str,
+    request: TranslateDescriptionRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Translate an existing Instagram description to a target language"""
+    
+    # Verify video belongs to user
+    video = db.query(Video).filter(
+        Video.id == video_id,
+        Video.user_id == current_user.id
+    ).first()
+    
+    if not video:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Video not found"
+        )
+    
+    try:
+        # Translate description using AI
+        translated_description = instagram_service.translate_description(
+            current_description=request.current_description,
+            target_language=request.target_language,
+            length=request.length
+        )
+        
+        # Update video with translated description
+        video.ai_description = translated_description
+        db.commit()
+        
+        logger.info(f"Translated Instagram description for video {video_id} to {request.target_language}")
+        
+        return {
+            "translated_description": translated_description,
+            "message": "Description translated successfully",
+            "target_language": request.target_language
+        }
+        
+    except Exception as e:
+        logger.error(f"Error translating description for video {video_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to translate description: {str(e)}"
         )
 

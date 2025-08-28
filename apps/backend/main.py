@@ -15,7 +15,7 @@ from core.config import settings
 from core.database import get_db
 from core.security import verify_jwt_token
 from core.rate_limiter import RateLimiter
-from api.v1 import auth, properties, videos, upload, dashboard, video_generation, websocket, video_analysis, viral_matching, video_reconstruction, health, text_customization, text_suggestions, instagram_proxy, ai_templates
+from api.v1 import auth, properties, videos, upload, dashboard, video_generation, websocket, video_analysis, viral_matching, video_reconstruction, health, text_customization, text_suggestions, instagram_proxy, ai_templates, preview
 from api import instagram_templates
 from routers import video_recovery
 from models.user import User
@@ -214,6 +214,12 @@ app.include_router(
     ai_templates.router, 
     prefix="/api/v1/ai-templates", 
     tags=["ai-templates"],
+    dependencies=[Depends(get_current_user)]
+)
+# Preview endpoints for FFmpeg text overlay generation  
+app.include_router(
+    preview.router,
+    tags=["preview"],
     dependencies=[Depends(get_current_user)]
 )
 
