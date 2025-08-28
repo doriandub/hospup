@@ -4,7 +4,7 @@ from core.database import get_db
 from models.video import Video
 from models.property import Property
 from services.s3_service import s3_service
-from services.local_storage_service import local_storage_service
+# Local storage service removed - using S3 only
 from services.video_conversion_service import video_conversion_service
 from services.blip_analysis_service import blip_analysis_service
 from core.config import settings
@@ -612,11 +612,9 @@ def _generate_video_thumbnail(video_path: str, video_id: str, temp_dir: str) -> 
                 logger.error("❌ Failed to upload thumbnail to S3")
                 return None
         else:
-            # Local storage
-            local_storage_service.save_file_from_path(thumbnail_path, thumbnail_s3_key)
-            thumbnail_url = f"http://localhost:8000/uploads/{thumbnail_s3_key}"
-            logger.info(f"✅ Thumbnail saved locally: {thumbnail_url}")
-            return thumbnail_url
+            # S3 only - local storage removed
+            logger.error("❌ S3 storage not configured properly")
+            return None
             
     except subprocess.TimeoutExpired:
         logger.error("❌ Thumbnail generation timed out")

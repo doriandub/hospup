@@ -10,7 +10,7 @@ from models.property import Property
 from models.user import User
 from api.dependencies.auth import get_current_user
 from services.s3_service import s3_service
-from services.local_storage_service import local_storage_service
+# Local storage service removed - using S3 only
 from services.video_conversion_service import video_conversion_service
 from services.blip_analysis_service import blip_analysis_service
 from core.config import settings
