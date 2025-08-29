@@ -1,0 +1,21 @@
+[phases.setup]
+nixPkgs = ['python39', 'ffmpeg', 'redis']
+
+[phases.install]
+cmds = [
+  'cd apps/backend && pip install --upgrade pip',
+  'cd apps/backend && pip install -r requirements.txt'
+]
+
+[phases.build]
+cmds = [
+  'chmod +x start-railway.sh',
+  'echo "Build phase completed for Railway backend deployment"'
+]
+
+[start]
+cmd = './start-railway.sh'
+
+[variables]
+PYTHONPATH = 'apps/backend'
+PORT = '8000'
