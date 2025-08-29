@@ -425,7 +425,7 @@ export default function ContentLibraryPage() {
                       onClick={() => handlePropertyChange(property.id)}
                       className={`flex items-center space-x-2 py-2 cursor-pointer transition-all duration-200 whitespace-nowrap border-b-2 ${
                         activePropertyId === property.id
-                          ? 'text-[#115446] border-[#115446] font-semibold'
+                          ? 'text-[#09725c] border-[#09725c] font-semibold'
                           : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-200'
                       }`}
                     >
@@ -435,7 +435,7 @@ export default function ContentLibraryPage() {
                       </span>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${
                         activePropertyId === property.id
-                          ? 'bg-[#115446]/10 text-[#115446]'
+                          ? 'bg-[#09725c]/10 text-[#09725c]'
                           : 'bg-gray-100 text-gray-500'
                       }`}>
                         {getVideosCount(property.id)}
@@ -499,8 +499,8 @@ export default function ContentLibraryPage() {
               <div 
                 className={`border border-dashed rounded-xl shadow-sm p-6 cursor-pointer transition-all duration-200 group flex items-center justify-center min-h-[400px] ${
                   isDragOver || isUploading
-                    ? 'bg-[#115446]/20 border-[#115446]/60'
-                    : 'bg-[#115446]/5 border-[#115446]/30 hover:bg-[#115446]/10 hover:shadow-md'
+                    ? 'bg-[#09725c]/20 border-[#09725c]/60'
+                    : 'bg-[#09725c]/5 border-[#09725c]/30 hover:bg-[#09725c]/10 hover:shadow-md'
                 }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -529,17 +529,17 @@ export default function ContentLibraryPage() {
                 <div className="text-center">
                   <div className={`rounded-full p-4 transition-all mb-4 mx-auto w-16 h-16 flex items-center justify-center ${
                     isDragOver || isUploading
-                      ? 'bg-[#115446]/30'
-                      : 'bg-[#115446]/10 group-hover:bg-[#115446]/20'
+                      ? 'bg-[#09725c]/30'
+                      : 'bg-[#09725c]/10 group-hover:bg-[#09725c]/20'
                   }`}>
-                    <Upload className={`w-8 h-8 text-[#115446] ${
+                    <Upload className={`w-8 h-8 text-[#09725c] ${
                       isUploading ? 'animate-bounce' : ''
                     }`} />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2 text-[#115446]" style={{ fontFamily: 'Inter' }}>
+                  <h3 className="text-xl font-semibold mb-2 text-[#09725c]" style={{ fontFamily: 'Inter' }}>
                     {isUploading ? 'Uploading...' : isDragOver ? 'Drop videos here' : 'Upload Content'}
                   </h3>
-                  <p className="text-base font-medium text-[#115446]/80" style={{ fontFamily: 'Inter' }}>
+                  <p className="text-base font-medium text-[#09725c]/80" style={{ fontFamily: 'Inter' }}>
                     {isUploading ? 'Upload in progress...' : 'Drag & drop or click to add videos'}
                   </p>
                 </div>
@@ -548,8 +548,8 @@ export default function ContentLibraryPage() {
               <div 
                 className={`border border-dashed rounded-xl shadow-sm p-4 cursor-pointer transition-all duration-200 group ${
                   isDragOver || isUploading
-                    ? 'bg-[#115446]/20 border-[#115446]/60'
-                    : 'bg-[#115446]/5 border-[#115446]/30 hover:bg-[#115446]/10 hover:shadow-md'
+                    ? 'bg-[#09725c]/20 border-[#09725c]/60'
+                    : 'bg-[#09725c]/5 border-[#09725c]/30 hover:bg-[#09725c]/10 hover:shadow-md'
                 }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -578,18 +578,18 @@ export default function ContentLibraryPage() {
                 <div className="flex items-center space-x-4">
                   <div className={`flex-shrink-0 w-24 h-16 rounded-lg flex items-center justify-center ${
                     isDragOver || isUploading
-                      ? 'bg-[#115446]/30'
-                      : 'bg-[#115446]/10'
+                      ? 'bg-[#09725c]/30'
+                      : 'bg-[#09725c]/10'
                   }`}>
-                    <Upload className={`w-8 h-8 text-[#115446] ${
+                    <Upload className={`w-8 h-8 text-[#09725c] ${
                       isUploading ? 'animate-bounce' : ''
                     }`} />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-[#115446] mb-1" style={{ fontFamily: 'Inter' }}>
+                    <h3 className="text-lg font-semibold text-[#09725c] mb-1" style={{ fontFamily: 'Inter' }}>
                       {isUploading ? 'Uploading...' : isDragOver ? 'Drop videos here' : 'Upload Content'}
                     </h3>
-                    <p className="text-sm text-[#115446]/80" style={{ fontFamily: 'Inter' }}>
+                    <p className="text-sm text-[#09725c]/80" style={{ fontFamily: 'Inter' }}>
                       {isUploading ? 'Upload in progress...' : 'Drag & drop or click to add videos'}
                     </p>
                   </div>
@@ -619,7 +619,7 @@ export default function ContentLibraryPage() {
                 <p className="text-sm text-gray-500">Use the upload card to add your first videos, or 
                   <Button 
                     variant="link" 
-                    className="text-[#115446] p-0 h-auto font-medium ml-1"
+                    className="text-[#09725c] p-0 h-auto font-medium ml-1"
                     onClick={() => window.location.href = '/dashboard/generate'}
                   >
                     generate new content

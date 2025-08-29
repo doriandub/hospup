@@ -152,7 +152,7 @@ export function CanvasVideoEditorPro({
     } else {
       // Gradient de fallback seulement si pas d'image
       const gradient = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
-      gradient.addColorStop(0, '#115446')
+      gradient.addColorStop(0, '#09725c')
       gradient.addColorStop(1, '#ff914d')
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)

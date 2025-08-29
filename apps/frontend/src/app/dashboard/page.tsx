@@ -64,8 +64,8 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#115446] mx-auto mb-4"></div>
-          <p className="text-[#115446]">Loading metrics...</p>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#09725c] mx-auto mb-4"></div>
+          <p className="text-[#09725c]">Loading metrics...</p>
         </div>
       </div>
     )
@@ -79,8 +79,8 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Create New Video */}
           <Link href="/dashboard/generate" className="md:col-span-2">
-            <div className="bg-gradient-to-tl from-[#115446] to-[#138a73] rounded-xl shadow-sm p-8 text-white cursor-pointer hover:shadow-md hover:brightness-110 transition-all duration-200 group h-full">
-              <div className="flex items-center justify-between">
+            <div className="bg-futuristic rounded-xl shadow-sm p-8 text-white cursor-pointer hover:shadow-md transition-all duration-200 group h-full">
+              <div className="flex items-center justify-between relative z-10">
                 <div>
                   <h1 className="text-xl font-semibold mb-2" style={{ fontFamily: 'Inter' }}>Create New Video</h1>
                   <p className="text-base font-medium text-white/90" style={{ fontFamily: 'Inter' }}>Start creating</p>
@@ -93,15 +93,15 @@ export default function DashboardPage() {
           </Link>
           
           {/* Upload Content */}
-          <Link href="/dashboard/properties" className="md:col-span-2">
-            <div className="bg-[#115446]/5 border border-dashed border-[#115446] rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#115446]/10 hover:shadow-md transition-all duration-200 group h-full">
+          <Link href="/dashboard/content-library" className="md:col-span-2">
+            <div className="bg-[#09725c]/5 border border-dashed border-[#09725c] rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#09725c]/10 hover:shadow-md transition-all duration-200 group h-full">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-xl font-semibold mb-2 text-[#115446]" style={{ fontFamily: 'Inter' }}>Upload Content</h1>
-                  <p className="text-base font-medium text-[#115446]/80" style={{ fontFamily: 'Inter' }}>Drag & drop</p>
+                  <h1 className="text-xl font-semibold mb-2 text-[#09725c]" style={{ fontFamily: 'Inter' }}>Upload Content</h1>
+                  <p className="text-base font-medium text-[#09725c]/80" style={{ fontFamily: 'Inter' }}>Drag & drop</p>
                 </div>
-                <div className="bg-[#115446]/10 rounded-full p-3 group-hover:bg-[#115446]/20 transition-all">
-                  <Upload className="w-5 h-5 text-[#115446]" />
+                <div className="bg-[#09725c]/10 rounded-full p-3 group-hover:bg-[#09725c]/20 transition-all">
+                  <Upload className="w-5 h-5 text-[#09725c]" />
                 </div>
               </div>
             </div>
@@ -109,8 +109,8 @@ export default function DashboardPage() {
 
           {/* Total Videos */}
           <Link href="/dashboard/videos">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8 cursor-pointer">
-              <div className="flex items-center space-x-3">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8 cursor-pointer h-full">
+              <div className="flex items-center space-x-3 h-full">
                 <div className="bg-gray-100 p-2 rounded-lg">
                   <Video className="w-4 h-4 text-gray-700" />
                 </div>
@@ -125,8 +125,8 @@ export default function DashboardPage() {
           </Link>
 
           {/* Videos Remaining */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
-            <div className="flex items-center space-x-3">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8 h-full">
+            <div className="flex items-center space-x-3 h-full">
               <div className="bg-gray-100 p-2 rounded-lg">
                 <BarChart3 className="w-4 h-4 text-gray-700" />
               </div>
@@ -141,8 +141,8 @@ export default function DashboardPage() {
 
           {/* Total Properties */}
           <Link href="/dashboard/properties">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8 cursor-pointer">
-              <div className="flex items-center space-x-3">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8 cursor-pointer h-full">
+              <div className="flex items-center space-x-3 h-full">
                 <div className="bg-gray-100 p-2 rounded-lg">
                   <Building2 className="w-4 h-4 text-gray-700" />
                 </div>
@@ -158,12 +158,12 @@ export default function DashboardPage() {
 
           {/* Add Property */}
           <Link href="/dashboard/properties/new">
-            <div className="bg-[#115446]/5 border border-[#115446]/30 rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#115446]/10 hover:shadow-md transition-all duration-200 h-full">
+            <div className="bg-[#09725c]/5 border border-[#09725c]/30 rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#09725c]/10 hover:shadow-md transition-all duration-200 h-full">
               <div className="flex items-center space-x-3 h-full">
-                <div className="bg-[#115446]/10 rounded-full p-3 group-hover:bg-[#115446]/20 transition-all">
-                  <Plus className="w-5 h-5 text-[#115446]" />
+                <div className="bg-[#09725c]/10 rounded-full p-3 group-hover:bg-[#09725c]/20 transition-all">
+                  <Plus className="w-5 h-5 text-[#09725c]" />
                 </div>
-                <span className="text-sm font-medium text-[#115446]" style={{ fontFamily: 'Inter' }}>Add Property</span>
+                <span className="text-sm font-medium text-[#09725c]" style={{ fontFamily: 'Inter' }}>Add Property</span>
               </div>
             </div>
           </Link>
@@ -188,22 +188,22 @@ export default function DashboardPage() {
               <h3 className="text-xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>Get Started in 3 Steps</h3>
               <div className="relative">
                 {/* Progress Line */}
-                <div className="absolute left-4 top-8 bottom-8 w-0.5 bg-[#115446]/20"></div>
+                <div className="absolute left-4 top-8 bottom-8 w-0.5 bg-[#09725c]/20"></div>
                 
                 <div className="space-y-8">
                   {/* Step 1 */}
                   <div className="flex items-start relative">
-                    <div className="flex items-center justify-center w-8 h-8 bg-[#115446] text-white rounded-full font-semibold text-xs z-10">
+                    <div className="flex items-center justify-center w-8 h-8 bg-[#09725c] text-white rounded-full font-semibold text-xs z-10">
                       1
                     </div>
                     <div className="ml-3 flex-1">
-                      <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Add Your Hotel</span>
+                      <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Add Your Property</span>
                     </div>
                   </div>
 
                   {/* Step 2 */}
                   <div className="flex items-start relative">
-                    <div className="flex items-center justify-center w-8 h-8 bg-[#115446] text-white rounded-full font-semibold text-xs z-10">
+                    <div className="flex items-center justify-center w-8 h-8 bg-[#09725c] text-white rounded-full font-semibold text-xs z-10">
                       2
                     </div>
                     <div className="ml-3 flex-1">
@@ -213,7 +213,7 @@ export default function DashboardPage() {
 
                   {/* Step 3 */}
                   <div className="flex items-start relative">
-                    <div className="flex items-center justify-center w-8 h-8 bg-[#115446] text-white rounded-full font-semibold text-xs z-10">
+                    <div className="flex items-center justify-center w-8 h-8 bg-[#09725c] text-white rounded-full font-semibold text-xs z-10">
                       3
                     </div>
                     <div className="ml-3 flex-1">
@@ -247,7 +247,7 @@ export default function DashboardPage() {
                     className={`h-2 rounded-full transition-all duration-300 ${
                       (stats?.videos_used ?? 0) > 50 
                         ? 'bg-gradient-to-r from-red-500 to-red-600' 
-                        : 'bg-gradient-to-r from-[#115446] to-[#0f4a3d]'
+                        : 'bg-gradient-to-r from-[#09725c] to-[#09725c]'
                     }`}
                     style={{ width: `${Math.min(((stats?.videos_used ?? 0) / 50) * 100, 100)}%` }}
                   />
@@ -263,7 +263,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200">
                   <div 
-                    className="bg-gradient-to-r from-[#115446] to-[#0f4a3d] h-2 rounded-full transition-all duration-300" 
+                    className="bg-gradient-to-r from-[#09725c] to-[#09725c] h-2 rounded-full transition-all duration-300" 
                     style={{ width: `${((stats?.total_properties ?? 0) / 5) * 100}%` }}
                   />
                 </div>
@@ -283,7 +283,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200">
                   <div 
-                    className="bg-gradient-to-r from-[#115446] to-[#0f4a3d] h-2 rounded-full transition-all duration-300" 
+                    className="bg-gradient-to-r from-[#09725c] to-[#09725c] h-2 rounded-full transition-all duration-300" 
                     style={{ 
                       width: `${(() => {
                         const now = new Date()
@@ -305,10 +305,10 @@ export default function DashboardPage() {
             <h3 className="text-xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>Need Help?</h3>
             <div className="space-y-3">
               <p className="text-sm text-gray-600" style={{ fontFamily: 'Inter' }}>
-                Our support team is here to help you create amazing viral videos.
+                Our support team is here to help you create amazing videos.
               </p>
               <div className="flex items-center space-x-3 p-8 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                <div className="bg-[#115446] p-2 rounded-lg">
+                <div className="bg-[#09725c] p-2 rounded-lg">
                   <Headphones className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Contact Support</span>

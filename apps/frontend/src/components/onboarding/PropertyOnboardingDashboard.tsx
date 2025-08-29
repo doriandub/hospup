@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { FileUpload } from '@/components/upload/file-upload'
 import { useProperties } from '@/hooks/useProperties'
 import { PROPERTY_TYPES, SUPPORTED_LANGUAGES } from '@/types'
 import { 
@@ -15,13 +14,12 @@ import {
   ArrowRight, 
   Building2, 
   Globe,
-  Camera,
   CheckCircle,
-  Sparkles,
   MapPin,
   Phone,
   Instagram,
-  Loader2
+  Loader2,
+  Upload
 } from 'lucide-react'
 
 interface PropertyFormData {
@@ -34,10 +32,6 @@ interface PropertyFormData {
   instagram: string
   language: string
   description: string
-  brandFont: string
-  brandColor: string
-  textOutline: boolean
-  outlineColor: string
 }
 
 export function PropertyOnboardingDashboard() {
@@ -46,6 +40,7 @@ export function PropertyOnboardingDashboard() {
   const [currentStep, setCurrentStep] = useState(1)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [createdProperty, setCreatedProperty] = useState<any>(null)
   
   const [formData, setFormData] = useState<PropertyFormData>({
     name: '',
@@ -56,11 +51,7 @@ export function PropertyOnboardingDashboard() {
     phone: '',
     instagram: '',
     language: 'fr',
-    description: '',
-    brandFont: 'Inter',
-    brandColor: '#115446',
-    textOutline: true,
-    outlineColor: '#FFFFFF'
+    description: ''
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -88,9 +79,27 @@ export function PropertyOnboardingDashboard() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep === 1 && !validateStep1()) return
-    setCurrentStep(prev => Math.min(prev + 1, 5))
+    
+    // Si on quitte l'étape 3, on crée la propriété
+    if (currentStep === 3 && !createdProperty) {
+      await createPropertyFromForm()
+    }
+    setCurrentStep(prev => Math.min(prev + 1, 4)) // Maximum 4 étapes maintenant
+  }
+
+  const createPropertyFromForm = async () => {
+    setIsSubmitting(true)
+    try {
+      const propertyData = { ...formData }
+      const newProperty = await createProperty(propertyData)
+      setCreatedProperty(newProperty)
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handlePrev = () => {
@@ -103,28 +112,6 @@ export function PropertyOnboardingDashboard() {
     }, 0)
   }, [])
 
-  const handleFinish = async () => {
-    if (uploadedFiles.length === 0) {
-      alert('Please add at least one photo or video')
-      return
-    }
-    
-    setIsSubmitting(true)
-    try {
-      const propertyData = { ...formData }
-      const newProperty = await createProperty(propertyData)
-      
-      if (newProperty && newProperty.id) {
-        await uploadFilesToProperty(newProperty.id, uploadedFiles)
-      }
-      
-      router.push('/dashboard/properties')
-    } catch (err: any) {
-      alert(err.message)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
 
   const uploadFilesToProperty = async (propertyId: string, files: File[]) => {
     const token = localStorage.getItem('access_token')
@@ -229,7 +216,7 @@ export function PropertyOnboardingDashboard() {
     return SUPPORTED_LANGUAGES.find(lang => lang.value === value)?.label || value
   }
 
-  const progressWidth = (currentStep / 5) * 100
+  const progressWidth = ((currentStep > 3 ? 3 : currentStep) / 3) * 100
 
   return (
     <div className="min-h-screen bg-gray-50 font-inter">
@@ -251,14 +238,14 @@ export function PropertyOnboardingDashboard() {
                 <div className="w-32">
                   <div className="bg-gray-100 rounded-xl h-2 overflow-hidden">
                     <div 
-                      className="h-full bg-[#115446] rounded-xl transition-all duration-500 ease-out"
+                      className="h-full bg-[#09725c] rounded-xl transition-all duration-500 ease-out"
                       style={{ width: `${progressWidth}%` }}
                     />
                   </div>
                 </div>
               </div>
-              <p className="text-[#115446] font-semibold text-lg">
-                Step {currentStep} of 5
+              <p className="text-[#09725c] font-semibold text-lg">
+                Step {currentStep > 3 ? 3 : currentStep} of 3
               </p>
             </div>
 
@@ -282,7 +269,7 @@ export function PropertyOnboardingDashboard() {
                         value={formData.name}
                         onChange={(e) => handleInputChange('name', e.target.value)}
                         placeholder="e.g. Grand Hotel Paris"
-                        className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
+                        className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#09725c] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
                           errors.name ? 'border-red-500 focus:border-red-500' : ''
                         }`}
                       />
@@ -294,7 +281,7 @@ export function PropertyOnboardingDashboard() {
                         Property Type *
                       </Label>
                       <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
-                        <SelectTrigger className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
+                        <SelectTrigger className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#09725c] focus:ring-0 focus:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
                           errors.type ? 'border-red-500' : ''
                         }`}>
                           <SelectValue placeholder="Select property type" />
@@ -321,7 +308,7 @@ export function PropertyOnboardingDashboard() {
                           value={formData.city}
                           onChange={(e) => handleInputChange('city', e.target.value)}
                           placeholder="Paris"
-                          className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
+                          className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#09725c] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
                             errors.city ? 'border-red-500 focus:border-red-500' : ''
                           }`}
                         />
@@ -338,7 +325,7 @@ export function PropertyOnboardingDashboard() {
                           value={formData.country}
                           onChange={(e) => handleInputChange('country', e.target.value)}
                           placeholder="France"
-                          className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
+                          className={`px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#09725c] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 ${
                             errors.country ? 'border-red-500 focus:border-red-500' : ''
                           }`}
                         />
@@ -351,7 +338,7 @@ export function PropertyOnboardingDashboard() {
                   <div className="flex justify-end mt-6">
                     <Button 
                       onClick={handleNext} 
-                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
+                      className="px-6 py-3 bg-gradient-to-r from-[#09725c] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
                     >
                       Continue
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -378,7 +365,7 @@ export function PropertyOnboardingDashboard() {
                         value={formData.website}
                         onChange={(e) => handleInputChange('website', e.target.value)}
                         placeholder="https://www.your-hotel.com"
-                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
+                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#09725c] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
                       />
                     </div>
 
@@ -392,7 +379,7 @@ export function PropertyOnboardingDashboard() {
                         value={formData.phone}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
                         placeholder="+33 1 23 45 67 89"
-                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
+                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#09725c] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
                       />
                     </div>
 
@@ -406,7 +393,7 @@ export function PropertyOnboardingDashboard() {
                         value={formData.instagram}
                         onChange={(e) => handleInputChange('instagram', e.target.value)}
                         placeholder="@your_hotel"
-                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
+                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#09725c] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
                       />
                     </div>
 
@@ -423,7 +410,7 @@ export function PropertyOnboardingDashboard() {
                     </Button>
                     <Button 
                       onClick={handleNext} 
-                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
+                      className="px-6 py-3 bg-gradient-to-r from-[#09725c] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
                     >
                       Continue
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -450,7 +437,7 @@ export function PropertyOnboardingDashboard() {
                         onChange={(e) => handleInputChange('description', e.target.value)}
                         placeholder="Describe your hotel, its atmosphere, specialties, unique features..."
                         rows={6}
-                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 resize-none"
+                        className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#09725c] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200 resize-none"
                       />
                       <p className="text-sm text-gray-500 mt-2">This will be used to generate engaging Instagram descriptions for your videos.</p>
                     </div>
@@ -467,7 +454,7 @@ export function PropertyOnboardingDashboard() {
                     </Button>
                     <Button 
                       onClick={handleNext} 
-                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
+                      className="px-6 py-3 bg-gradient-to-r from-[#09725c] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
                     >
                       Continue
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -476,231 +463,59 @@ export function PropertyOnboardingDashboard() {
                 </div>
               )}
 
-              {/* Step 4: Text Styling */}
+              {/* Step 4: Confirmation */}
               {currentStep === 4 && (
                 <div>
-                  <div className="text-center mb-4">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Inter' }}>Brand Text Styling</h2>
-                    <p className="text-base font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>
-                      Choose your brand fonts and colors for video text overlays
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    {/* Font Selection */}
-                    <div>
-                      <Label htmlFor="brandFont" className="text-sm font-medium text-gray-700 mb-2 block">
-                        Brand Font
-                      </Label>
-                      <Select value={formData.brandFont} onValueChange={(value) => handleInputChange('brandFont', value)}>
-                        <SelectTrigger className="px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus:ring-offset-0 focus:shadow-sm transition-all duration-200">
-                          <SelectValue placeholder="Select font" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          <SelectItem value="Inter" className="rounded-lg">Inter (Modern & Clean)</SelectItem>
-                          <SelectItem value="Montserrat" className="rounded-lg">Montserrat (Bold & Strong)</SelectItem>
-                          <SelectItem value="Poppins" className="rounded-lg">Poppins (Friendly & Round)</SelectItem>
-                          <SelectItem value="Playfair Display" className="rounded-lg">Playfair Display (Elegant & Luxury)</SelectItem>
-                          <SelectItem value="Oswald" className="rounded-lg">Oswald (Impact & Bold)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  {!createdProperty ? (
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#09725c] mx-auto mb-4"></div>
+                      <p className="text-gray-600">Création de la propriété en cours...</p>
                     </div>
-
-                    {/* Brand Color */}
-                    <div>
-                      <Label htmlFor="brandColor" className="text-sm font-medium text-gray-700 mb-2 block">
-                        Brand Color
-                      </Label>
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="color"
-                          id="brandColor"
-                          value={formData.brandColor}
-                          onChange={(e) => handleInputChange('brandColor', e.target.value)}
-                          className="w-12 h-12 rounded-lg border border-gray-200 cursor-pointer"
-                        />
-                        <input
-                          type="text"
-                          value={formData.brandColor}
-                          onChange={(e) => handleInputChange('brandColor', e.target.value)}
-                          placeholder="#115446"
-                          className="flex-1 px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
-                        />
+                  ) : (
+                    <>
+                      {/* Success Icon */}
+                      <div className="flex justify-center mb-6">
+                        <div className="w-16 h-16 bg-[#09725c] bg-opacity-10 rounded-full flex items-center justify-center">
+                          <CheckCircle className="w-8 h-8 text-[#09725c]" />
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Text Outline Toggle */}
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="textOutline" className="text-sm font-medium text-gray-700">
-                          Add Text Outline
-                        </Label>
-                        <button
-                          type="button"
-                          onClick={() => handleInputChange('textOutline', (!formData.textOutline).toString())}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            formData.textOutline ? 'bg-[#115446]' : 'bg-gray-200'
-                          }`}
+                      {/* Success Message */}
+                      <div className="text-center mb-8">
+                        <h2 className="text-2xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>
+                          Propriété créée avec succès !
+                        </h2>
+                        <p className="text-base text-gray-600 mb-8" style={{ fontFamily: 'Inter' }}>
+                          <strong>{formData.name}</strong> a été enregistrée. Vous pouvez maintenant ajouter vos photos et vidéos pour créer du contenu viral.
+                        </p>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="space-y-3">
+                        <Button 
+                          onClick={() => router.push(`/dashboard/content-library?property=${createdProperty.id}`)}
+                          className="w-full px-6 py-4 bg-futuristic text-white rounded-xl font-medium text-base transition-all duration-200 hover:scale-[1.02] border-0"
                         >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              formData.textOutline ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">Helps text stand out on various backgrounds</p>
-                    </div>
+                          <Upload className="w-5 h-5 mr-2" />
+                          Uploader mes vidéos
+                        </Button>
 
-                    {/* Outline Color (if outline is enabled) */}
-                    {formData.textOutline && (
-                      <div>
-                        <Label htmlFor="outlineColor" className="text-sm font-medium text-gray-700 mb-2 block">
-                          Outline Color
-                        </Label>
-                        <div className="flex items-center space-x-3">
-                          <input
-                            type="color"
-                            id="outlineColor"
-                            value={formData.outlineColor}
-                            onChange={(e) => handleInputChange('outlineColor', e.target.value)}
-                            className="w-12 h-12 rounded-lg border border-gray-200 cursor-pointer"
-                          />
-                          <input
-                            type="text"
-                            value={formData.outlineColor}
-                            onChange={(e) => handleInputChange('outlineColor', e.target.value)}
-                            placeholder="#FFFFFF"
-                            className="flex-1 px-4 py-3 rounded-xl border-gray-200 focus:outline-none focus:border-[#115446] focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-sm transition-all duration-200"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Preview */}
-                    <div className="mt-6 p-6 bg-gray-900 rounded-xl">
-                      <div className="text-center">
-                        <h3 className="text-sm font-medium text-gray-400 mb-3">Preview</h3>
-                        <div
-                          className="text-2xl font-bold"
-                          style={{
-                            fontFamily: formData.brandFont,
-                            color: formData.brandColor,
-                            textShadow: formData.textOutline ? `2px 2px 0px ${formData.outlineColor}, -2px -2px 0px ${formData.outlineColor}, 2px -2px 0px ${formData.outlineColor}, -2px 2px 0px ${formData.outlineColor}` : 'none'
-                          }}
+                        <Button 
+                          variant="outline"
+                          onClick={() => router.push('/dashboard/properties')}
+                          className="w-full px-6 py-3 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl font-medium text-base transition-all duration-200"
                         >
-                          {formData.name || 'Your Hotel Name'}
-                        </div>
-                        <p className="text-gray-400 text-sm mt-2">This is how text will appear on your videos</p>
+                          Passer pour l'instant
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="flex justify-between mt-6">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePrev}
-                      className="px-6 py-3 rounded-xl border-gray-200 hover:bg-gray-50 font-medium text-base transition-all duration-200"
-                    >
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleNext} 
-                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
-                    >
-                      Continue
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 5: Media Upload */}
-              {currentStep === 5 && (
-                <div>
-                  <div className="text-center mb-4">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Inter' }}>Photos & Videos</h2>
-                    <p className="text-base font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>
-                      Add your best photos and videos to create viral content
-                    </p>
-                  </div>
-
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-[#115446] transition-all duration-200">
-                    <FileUpload
-                      accept={{ 
-                        'image/*': ['.jpg', '.jpeg', '.png', '.webp'],
-                        'video/*': ['.mp4', '.mov', '.avi', '.mkv'] 
-                      }}
-                      maxFiles={20}
-                      maxSize={100 * 1024 * 1024}
-                      onFilesChange={handleFilesChange}
-                    />
-                  </div>
-
-                  {uploadedFiles.length > 0 && (
-                    <div className="mt-6 p-4 bg-[#115446] bg-opacity-5 border border-[#115446] border-opacity-20 rounded-xl">
-                      <div className="flex items-center">
-                        <CheckCircle className="w-5 h-5 text-[#115446] mr-3" />
-                        <span className="text-[#115446] font-medium">
-                          {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''} added
-                        </span>
-                      </div>
-                    </div>
+                      {/* Help Text */}
+                      <p className="text-sm text-gray-500 mt-6 text-center" style={{ fontFamily: 'Inter' }}>
+                        Vous pourrez toujours ajouter vos contenus plus tard depuis la Content Library.
+                      </p>
+                    </>
                   )}
-
-                  {/* Summary */}
-                  {uploadedFiles.length > 0 && (
-                    <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-100">
-                      <h3 className="font-semibold text-gray-900 mb-4">Summary</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                        <div>
-                          <span className="text-gray-600">Property:</span>
-                          <p className="font-medium text-gray-900">{formData.name}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Type:</span>
-                          <p className="font-medium text-gray-900">{getPropertyTypeLabel(formData.type)}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Location:</span>
-                          <p className="font-medium text-gray-900">{formData.city}, {formData.country}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Media:</span>
-                          <p className="font-medium text-gray-900">{uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between mt-6">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePrev}
-                      className="px-6 py-3 rounded-xl border-gray-200 hover:bg-gray-50 font-medium text-base transition-all duration-200"
-                    >
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleFinish}
-                      disabled={isSubmitting || uploadedFiles.length === 0}
-                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Creating...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          Finish
-                        </>
-                      )}
-                    </Button>
-                  </div>
                 </div>
               )}
             </div>

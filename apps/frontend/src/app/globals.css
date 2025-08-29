@@ -35,6 +35,9 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+    
+    --green-main: #09725c;   /* vert dominant */
+    --green-accent: #138a73; /* vert secondaire */
   }
 
   .dark {
@@ -153,5 +156,114 @@
 
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Futuristic background - multi-directional with flashes and grain */
+  .bg-futuristic {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .bg-futuristic::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background:
+      /* Light zones dispersées partout - PLUS PETITES */
+      radial-gradient(300px 350px at 20% 30%, rgba(255,255,255,.14) 0%, transparent 65%),
+      radial-gradient(250px 300px at 80% 20%, rgba(255,255,255,.12) 0%, transparent 70%),
+      radial-gradient(200px 250px at 70% 80%, rgba(255,255,255,.13) 0%, transparent 60%),
+      radial-gradient(350px 200px at 30% 70%, rgba(255,255,255,.11) 0%, transparent 75%),
+      radial-gradient(150px 400px at 50% 10%, rgba(255,255,255,.1) 0%, transparent 65%),
+      
+      /* Zones sombres dispersées pour contraste */
+      radial-gradient(400px 300px at 10% 80%, rgba(0,0,0,.08) 0%, transparent 50%),
+      radial-gradient(300px 500px at 90% 30%, rgba(0,0,0,.06) 0%, transparent 55%),
+      radial-gradient(500px 200px at 60% 90%, rgba(0,0,0,.07) 0%, transparent 60%),
+      
+      /* Streaks diagonaux étendus */
+      linear-gradient(35deg, transparent 20%, rgba(255,255,255,.06) 40%, transparent 45%, rgba(0,0,0,.04) 55%, transparent 80%),
+      linear-gradient(125deg, transparent 25%, rgba(0,0,0,.05) 35%, transparent 40%, rgba(255,255,255,.07) 60%, transparent 85%),
+      linear-gradient(-45deg, transparent 30%, rgba(255,255,255,.05) 50%, transparent 55%, rgba(0,0,0,.03) 70%, transparent 90%),
+      
+      /* Base gradient */
+      linear-gradient(135deg, var(--green-main) 0%, var(--green-accent) 100%),
+      
+      /* Grain texture subtil */
+      repeating-linear-gradient(
+        117deg,
+        rgba(255,255,255,.02) 0 1px,
+        rgba(0,0,0,.015) 1px 2px,
+        transparent 2px 4px
+      ),
+      repeating-linear-gradient(
+        -63deg,
+        rgba(0,0,0,.018) 0 1px,
+        rgba(255,255,255,.015) 1px 2px,
+        transparent 2px 3px
+      );
+    background-blend-mode: 
+      screen, screen, screen, screen, screen,  /* zones claires */
+      multiply, multiply, multiply,            /* zones sombres */
+      screen, overlay, screen,                 /* streaks */
+      normal,                                  /* base */
+      overlay, overlay;                        /* grain */
+    filter: saturate(1.05);
+  }
+
+  .bg-futuristic:hover::before {
+    filter: saturate(1.08) brightness(1.02);
+  }
+
+  /* Version adaptée pour petits éléments (boutons, logos) */
+  .bg-futuristic-small {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .bg-futuristic-small::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background:
+      /* Flashs lumineux PLUS PETITS et MOINS INTENSES pour petits éléments */
+      radial-gradient(80px 60px at 25% 25%, rgba(255,255,255,.08) 0%, transparent 60%),
+      radial-gradient(60px 80px at 75% 30%, rgba(255,255,255,.06) 0%, transparent 65%),
+      radial-gradient(70px 50px at 70% 75%, rgba(255,255,255,.07) 0%, transparent 55%),
+      
+      /* Zones sombres MICRO pour contraste subtil */
+      radial-gradient(90px 70px at 15% 80%, rgba(0,0,0,.04) 0%, transparent 50%),
+      radial-gradient(80px 90px at 85% 20%, rgba(0,0,0,.03) 0%, transparent 45%),
+      
+      /* Streaks FINS pour texture */
+      linear-gradient(45deg, transparent 35%, rgba(255,255,255,.03) 50%, transparent 65%),
+      linear-gradient(-45deg, transparent 40%, rgba(0,0,0,.02) 55%, transparent 70%),
+      
+      /* Base gradient bien visible - INVERSÉ (foncé à droite) */
+      linear-gradient(135deg, var(--green-accent) 0%, var(--green-main) 100%),
+      
+      /* Grain très subtil */
+      repeating-linear-gradient(
+        120deg,
+        rgba(255,255,255,.01) 0 1px,
+        transparent 1px 3px
+      );
+    background-blend-mode: 
+      screen, screen, screen,     /* flashs légers */
+      multiply, multiply,         /* zones sombres subtiles */
+      screen, overlay,            /* streaks fins */
+      normal,                     /* base gradient visible */
+      overlay;                    /* grain léger */
+    filter: saturate(1.08);
+  }
+
+  .bg-futuristic-small:hover::before {
+    filter: saturate(1.12) brightness(1.02);
   }
 }

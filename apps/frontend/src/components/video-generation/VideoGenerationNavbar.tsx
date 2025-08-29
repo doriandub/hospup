@@ -68,7 +68,7 @@ export function VideoGenerationNavbar({
             <div className="w-48">
               <div className="bg-gray-100 rounded-xl h-2 overflow-hidden">
                 <div 
-                  className="h-full bg-[#115446] rounded-xl transition-all duration-500 ease-out"
+                  className="h-full bg-[#09725c] rounded-xl transition-all duration-500 ease-out"
                   style={{ width: `${progressWidth}%` }}
                 />
               </div>
@@ -84,7 +84,7 @@ export function VideoGenerationNavbar({
               size="sm"
               className={currentStep === 4 ? 
                 "bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 text-white border-0 disabled:opacity-50 px-4 py-2" : 
-                "border-[#115446] text-[#115446] hover:bg-[#115446]/10 disabled:opacity-50 px-4 py-2"
+                "border-[#09725c] text-[#09725c] hover:bg-[#09725c]/10 disabled:opacity-50 px-4 py-2"
               }
             >
               {currentStep === 4 ? (
@@ -99,7 +99,7 @@ export function VideoGenerationNavbar({
               onClick={onGenerateTemplate}
               disabled={isGenerating || !showGenerationButtons}
               size="sm"
-              className="bg-[#115446] hover:bg-[#115446]/90 disabled:opacity-50 px-4 py-2"
+              className="bg-[#09725c] hover:bg-[#09725c]/90 disabled:opacity-50 px-4 py-2"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               {currentStep === 2 ? "Create This Video" : currentStep === 3 ? "Create Video" : currentStep === 4 ? "Créer une autre vidéo" : "Generate Template"}

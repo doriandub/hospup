@@ -159,16 +159,16 @@ export default function PropertiesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Add Property Card - Always first */}
           <div 
-            className="bg-[#115446]/5 border border-[#115446]/30 rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#115446]/10 hover:shadow-md transition-all duration-200 group"
+            className="bg-[#09725c]/5 border border-[#09725c]/30 rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#09725c]/10 hover:shadow-md transition-all duration-200 group"
             onClick={() => router.push('/dashboard/properties/new')}
           >
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-xl font-semibold mb-2 text-[#115446]" style={{ fontFamily: 'Inter' }}>Add Property</h1>
-                <p className="text-base font-medium text-[#115446]/80" style={{ fontFamily: 'Inter' }}>Create new property</p>
+                <h1 className="text-xl font-semibold mb-2 text-[#09725c]" style={{ fontFamily: 'Inter' }}>Add Property</h1>
+                <p className="text-base font-medium text-[#09725c]/80" style={{ fontFamily: 'Inter' }}>Create new property</p>
               </div>
-              <div className="bg-[#115446]/10 rounded-full p-3 group-hover:bg-[#115446]/20 transition-all">
-                <Plus className="w-5 h-5 text-[#115446]" />
+              <div className="bg-[#09725c]/10 rounded-full p-3 group-hover:bg-[#09725c]/20 transition-all">
+                <Plus className="w-5 h-5 text-[#09725c]" />
               </div>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function PropertiesPage() {
                 </div>
               </div>
             ) : (
-              <div className="relative aspect-[16/9] bg-gradient-to-br from-[#115446]/10 to-[#ff914d]/10 flex items-center justify-center">
+              <div className="relative aspect-[16/9] bg-gradient-to-br from-[#09725c]/10 to-[#ff914d]/10 flex items-center justify-center">
                 <div className="text-center">
                   <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500 text-sm">No videos yet</p>
@@ -218,7 +218,7 @@ export default function PropertiesPage() {
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#115446]/10 text-[#115446] capitalize mb-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#09725c]/10 text-[#09725c] capitalize mb-2">
                     {property.property_type?.replace('_', ' ') || 'Property'}
                   </span>
                 </div>
@@ -255,7 +255,7 @@ export default function PropertiesPage() {
                       href={property.website_url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-[#115446] hover:text-[#115446]/80 truncate"
+                      className="text-[#09725c] hover:text-[#09725c]/80 truncate"
                     >
                       {property.website_url.replace(/^https?:\/\//, '')}
                     </a>

@@ -7,8 +7,8 @@ const landingData = {
   "brand": "Hospup",
   "navbar": ["Features", "Pricing", "Resources", "About"],
   "hero": {
-    "title": "Becoming Instagram's next viral property made easy",
-    "subtitle": "Drive more direct bookings in just 3 minutes a day. Hospup makes content creation accessible to all with videos, captions, and music ready to post.",
+    "title": "Going Viral Made Easy",
+    "subtitle": "Content creation made accessible to all. Videos, captions, and music - ready to post in just 3 minutes a day.",
     "starsLabel": "Used by 1,500+ hotels worldwide",
     "cta": "Start Creating Today"
   },
@@ -108,65 +108,49 @@ const Navbar = () => {
 // Hero Section
 const Hero = () => {
   return (
-    <section className="relative py-24 bg-white overflow-hidden">
-      {/* Subtle Background Effects */}
-      <div className="absolute inset-0">
-        {/* Light Grid Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <svg width="100%" height="100%" className="absolute top-0 left-0">
-            <defs>
-              <pattern id="heroGrid" patternUnits="userSpaceOnUse" width="60" height="60">
-                <rect width="60" height="60" fill="none" stroke="#09725c" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#heroGrid)" />
-          </svg>
-        </div>
-        
-        {/* Subtle Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 via-transparent to-gray-50/50"></div>
+    <section className="relative py-20 bg-gray-50 overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <svg width="100%" height="100%" className="absolute top-0 left-0">
+          <defs>
+            <pattern id="dots" patternUnits="userSpaceOnUse" width="20" height="20">
+              <circle cx="10" cy="10" r="1" fill="#09725c" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dots)" />
+        </svg>
       </div>
       
-      <div className="container max-w-[1200px] mx-auto px-6 md:px-12 relative z-10">
-        <div className="text-center">
-          
-          {/* Badge */}
-          <div className="inline-flex items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2 mb-8">
-            <div className="w-2 h-2 bg-[#09725c] rounded-full mr-3 animate-pulse"></div>
-            <span className="text-gray-700 text-sm font-medium" style={{ fontFamily: 'Inter' }}>Powered by AI</span>
-          </div>
-          
-          {/* Main Title */}
-          <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-8 leading-tight max-w-4xl mx-auto" style={{ fontFamily: 'Inter' }} dangerouslySetInnerHTML={{ __html: landingData.hero.title }}>
-          </h1>
-          
-          {/* Subtitle */}
-          <p className="text-xl lg:text-2xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto" style={{ fontFamily: 'Inter' }}>
-            {landingData.hero.subtitle}
-          </p>
-          
-          {/* CTA Section */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-20">
-            <a href="/auth/signup" 
-              className="bg-futuristic text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:scale-[1.02] transition-all duration-200 shadow-lg border-0 inline-flex items-center gap-3"
-              style={{ fontFamily: 'Inter' }}
-            >
-              <span className="relative z-10">{landingData.hero.cta}</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+      <div className="container max-w-[1200px] mx-auto px-4 md:px-6 text-center">
+        {/* Social Proof Badge */}
+        <div className="inline-flex items-center bg-white rounded-full px-4 py-2 mb-8 shadow-sm">
+          <div className="flex text-yellow-400 mr-2">
+            {[...Array(5)].map((_, i) => (
+              <svg key={i} width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 1l2.5 5.5L16 8l-5.5 2.5L8 16l-2.5-5.5L0 8l5.5-2.5L8 1z" />
               </svg>
-            </a>
-            
-            <button className="text-gray-600 hover:text-gray-900 px-6 py-5 rounded-2xl text-lg font-medium hover:bg-gray-50 transition-all duration-200 inline-flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h6" />
-              </svg>
-              Watch Demo
-            </button>
+            ))}
           </div>
-          
-          
+          <span className="text-gray-600 text-sm">{landingData.hero.starsLabel}</span>
         </div>
+        
+        {/* Main Title */}
+        <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+          {landingData.hero.title}
+        </h1>
+        
+        {/* Subtitle */}
+        <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+          {landingData.hero.subtitle}
+        </p>
+        
+        {/* CTA Button */}
+        <a href="/auth/signup" 
+          className="inline-block bg-futuristic text-white px-8 py-4 rounded-2xl text-lg font-medium hover:scale-[1.02] transition-all duration-200 shadow-lg border-0"
+          aria-label="Start creating viral hotel content today"
+        >
+          <span className="relative z-10">{landingData.hero.cta}</span>
+        </a>
       </div>
     </section>
   )
@@ -177,31 +161,12 @@ const VideosGenerated = () => {
   return (
     <section className="py-20 bg-white" aria-labelledby="videos-title">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
-        {/* Data Stats - Featured First */}
+        {/* Title */}
         <div className="text-center mb-12">
-          <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 inline-block mb-8">
-            <div className="flex items-center justify-center gap-12">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Inter' }}>1B+</div>
-                <div className="text-gray-600 text-base" style={{ fontFamily: 'Inter' }}>Views</div>
-              </div>
-              <div className="w-px h-12 bg-gray-300"></div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Inter' }}>10M+</div>
-                <div className="text-gray-600 text-base" style={{ fontFamily: 'Inter' }}>Followers</div>
-              </div>
-              <div className="w-px h-12 bg-gray-300"></div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Inter' }}>500+</div>
-                <div className="text-gray-600 text-base" style={{ fontFamily: 'Inter' }}>Hotels</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Description */}
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Our AI analyzed this massive dataset to identify the most successful viral patterns. Based on your property and content goals, we automatically match and recreate the formats that have already proven to work, so you don't have to guess what goes viral.
-          </p>
+          <h2 id="videos-title" className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <span className="text-[#09725c]">1+ Billion Views Generated</span>
+          </h2>
+          <p className="text-lg text-gray-600">We&apos;ve analyzed thousands of viral videos totaling billions of views. Based on what you want to showcase, we match the most relevant formats so you can recreate what already works.</p>
         </div>
         
         {/* Video Gallery */}
@@ -270,15 +235,15 @@ const Steps = () => {
       case 0:
         return (
           <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{step.title}</h3>
-            <p className="text-gray-600 mb-6">{step.body}</p>
+            <h3 className="text-2xl font-bold text-[var(--ink)] mb-2">{step.title}</h3>
+            <p className="text-[var(--muted)] mb-6">{step.body}</p>
             
             {/* Property Selection + Description Interface like /generate */}
             <div className="space-y-6">
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">Sélectionnez votre propriété</h4>
+                <h4 className="text-lg font-semibold text-[var(--ink)] mb-3">Sélectionnez votre propriété</h4>
                 <div className="relative">
-                  <select className="w-full p-4 pr-12 border border-gray-200 rounded-lg bg-white text-gray-900 appearance-none focus:ring-2 focus:ring-[#09725c] focus:border-transparent">
+                  <select className="w-full p-4 pr-12 border border-gray-200 rounded-lg bg-white text-gray-900 appearance-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent">
                     <option value="">Choisissez une propriété...</option>
                     <option value="1">Hôtel Le Magnifique - Paris, France</option>
                     <option value="2">Resort Paradise - Nice, France</option>
@@ -296,7 +261,7 @@ const Steps = () => {
               
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <h4 className="text-lg font-semibold text-gray-900">Décrivez votre vidéo</h4>
+                  <h4 className="text-lg font-semibold text-[var(--ink)]">Décrivez votre vidéo</h4>
                   <button className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
@@ -306,7 +271,7 @@ const Steps = () => {
                 </div>
                 <textarea
                   placeholder="Que souhaitez-vous mettre en avant ? (ex: 'Dîner romantique au coucher de soleil sur notre terrasse')"
-                  className="w-full p-4 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-[#09725c] focus:border-transparent"
+                  className="w-full p-4 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
                   rows={4}
                 />
               </div>
@@ -317,8 +282,8 @@ const Steps = () => {
       case 1:
         return (
           <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{step.title}</h3>
-            <p className="text-gray-600 mb-6">{step.body}</p>
+            <h3 className="text-2xl font-bold text-[var(--ink)] mb-2">{step.title}</h3>
+            <p className="text-[var(--muted)] mb-6">{step.body}</p>
             
             {/* Template Preview Interface like /template-preview */}
             <div className="grid grid-cols-3 gap-6">
@@ -406,7 +371,7 @@ const Steps = () => {
                   <div className="text-lg font-bold text-blue-600">26x</div>
                   <div className="text-xs text-gray-600">Ratio Performance</div>
                 </div>
-                <button className="w-full bg-[#09725c] text-white py-2 px-4 rounded-lg text-sm font-medium">
+                <button className="w-full bg-[var(--brand)] text-white py-2 px-4 rounded-lg text-sm font-medium">
                   Utiliser ce template
                 </button>
               </div>
@@ -417,39 +382,39 @@ const Steps = () => {
       case 2:
         return (
           <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{step.title}</h3>
-            <p className="text-gray-600 mb-6">{step.body}</p>
+            <h3 className="text-2xl font-bold text-[var(--ink)] mb-2">{step.title}</h3>
+            <p className="text-[var(--muted)] mb-6">{step.body}</p>
             
             {/* Video Composition Interface like /compose */}
             <div className="space-y-6">
               {/* Timeline Preview */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-900 mb-3">Timeline de votre vidéo</h4>
+                <h4 className="text-sm font-semibold text-[var(--ink)] mb-3">Timeline de votre vidéo</h4>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 p-2 bg-white rounded border">
                     <div className="w-12 h-8 bg-blue-200 rounded flex items-center justify-center text-xs">0-3s</div>
                     <span className="text-sm flex-1">Vue aérienne de la piscine</span>
-                    <button className="text-xs text-[#09725c]">Modifier</button>
+                    <button className="text-xs text-[var(--brand)]">Modifier</button>
                   </div>
                   <div className="flex items-center gap-3 p-2 bg-white rounded border">
                     <div className="w-12 h-8 bg-green-200 rounded flex items-center justify-center text-xs">3-8s</div>
                     <span className="text-sm flex-1">Détail de l'eau cristalline</span>
-                    <button className="text-xs text-[#09725c]">Modifier</button>
+                    <button className="text-xs text-[var(--brand)]">Modifier</button>
                   </div>
                   <div className="flex items-center gap-3 p-2 bg-white rounded border">
                     <div className="w-12 h-8 bg-purple-200 rounded flex items-center justify-center text-xs">8-12s</div>
                     <span className="text-sm flex-1">Clients se relaxant</span>
-                    <button className="text-xs text-[#09725c]">Modifier</button>
+                    <button className="text-xs text-[var(--brand)]">Modifier</button>
                   </div>
                 </div>
               </div>
               
               {/* Content Library */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-900 mb-3">Votre bibliothèque de contenu</h4>
+                <h4 className="text-sm font-semibold text-[var(--ink)] mb-3">Votre bibliothèque de contenu</h4>
                 <div className="grid grid-cols-4 gap-3">
                   {[1,2,3,4].map(i => (
-                    <div key={i} className="aspect-video bg-gray-200 rounded cursor-pointer hover:ring-2 hover:ring-[#09725c]">
+                    <div key={i} className="aspect-video bg-gray-200 rounded cursor-pointer hover:ring-2 hover:ring-[var(--brand)]">
                       <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
                         Vidéo {i}
                       </div>
@@ -460,7 +425,7 @@ const Steps = () => {
               
               {/* Text Overlay */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-900 mb-3">Texte et sous-titres</h4>
+                <h4 className="text-sm font-semibold text-[var(--ink)] mb-3">Texte et sous-titres</h4>
                 <textarea 
                   className="w-full p-3 border border-gray-200 rounded-lg text-sm" 
                   rows={2}
@@ -474,8 +439,8 @@ const Steps = () => {
       case 3:
         return (
           <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{step.title}</h3>
-            <p className="text-gray-600 mb-6">{step.body}</p>
+            <h3 className="text-2xl font-bold text-[var(--ink)] mb-2">{step.title}</h3>
+            <p className="text-[var(--muted)] mb-6">{step.body}</p>
             
             {/* Final Video Preview + Publishing */}
             <div className="grid grid-cols-2 gap-8">
@@ -509,7 +474,7 @@ const Steps = () => {
               <div className="space-y-6">
                 {/* Generated content summary */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-3">Contenu généré :</h4>
+                  <h4 className="font-semibold text-[var(--ink)] mb-3">Contenu généré :</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-green-500" viewBox="0 0 24 24" fill="currentColor">
@@ -540,9 +505,9 @@ const Steps = () => {
                 
                 {/* Instagram Caption Preview */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Caption générée :</h4>
+                  <h4 className="font-semibold text-[var(--ink)] mb-2">Caption générée :</h4>
                   <p className="text-sm text-gray-600 italic mb-2">"🏊‍♀️ Plongez dans le luxe absolu ! Notre piscine à débordement vous offre une vue imprenable sur l'océan..."</p>
-                  <p className="text-xs text-[#09725c]">#luxury #hotel #piscine #vue #relaxation</p>
+                  <p className="text-xs text-[var(--brand)]">#luxury #hotel #piscine #vue #relaxation</p>
                 </div>
                 
                 {/* Publishing buttons */}
@@ -555,7 +520,7 @@ const Steps = () => {
                     </svg>
                     Publier sur Instagram
                   </button>
-                  <button className="w-full border-2 border-[#09725c] text-[#09725c] py-3 px-4 rounded-xl font-medium">
+                  <button className="w-full border-2 border-[var(--brand)] text-[var(--brand)] py-3 px-4 rounded-xl font-medium">
                     💾 Télécharger la vidéo
                   </button>
                 </div>
@@ -570,13 +535,13 @@ const Steps = () => {
   }
   
   return (
-    <section className="py-20 bg-gray-50" aria-labelledby="steps-title">
+    <section className="py-20 bg-[var(--bg)]" aria-labelledby="steps-title">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--ink)] mb-4">
             Comment ça marche ?
           </h2>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-[var(--muted)]">
             De votre propriété à du contenu viral en 4 étapes simples
           </p>
         </div>
@@ -593,8 +558,8 @@ const Steps = () => {
                 onClick={() => setActiveStep(index)}
                 className={`px-6 py-3 rounded-xl font-medium transition-all ${
                   activeStep === index
-                    ? 'bg-[#09725c] text-white'
-                    : 'text-gray-600 hover:text-[#09725c]'
+                    ? 'bg-[var(--brand)] text-white'
+                    : 'text-[var(--muted)] hover:text-[var(--brand)]'
                 }`}
               >
                 {step.tab}
@@ -621,7 +586,7 @@ const Testimonials = () => {
   return (
     <section className="py-20 bg-white" aria-labelledby="testimonials-title">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
-        <h2 id="testimonials-title" className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
+        <h2 id="testimonials-title" className="text-3xl md:text-4xl font-bold text-center text-[var(--ink)] mb-12">
           Loved by hoteliers worldwide
         </h2>
         
@@ -629,7 +594,7 @@ const Testimonials = () => {
           {landingData.testimonials.map((testimonial, index) => (
             <div
               key={index}
-              className="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-shadow"
+              className="bg-[var(--bg)] rounded-2xl p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-center mb-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-[#09725c] to-[#0f4a3d] rounded-full flex items-center justify-center text-white font-bold mr-4">
@@ -729,17 +694,19 @@ const Benefits = () => {
   return (
     <section className="py-16 bg-white border-b border-gray-100">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--ink)] mb-4">
+            Créer du contenu viral en quelques clics
+          </h2>
+        </div>
         
         {/* Mobile-first visual process */}
-        <div className="max-w-6xl mx-auto mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start justify-items-center">
+        <div className="max-w-7xl mx-auto mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
             
-            {/* Step 1: Upload Content */}
+            {/* Step 1: Select Property */}
             <div className="text-center relative">
-              <div className="flex flex-col items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#09725c] text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
-                <h3 className="text-lg font-bold text-gray-900 text-center">Import all your property footage</h3>
-              </div>
+              <h3 className="text-xl font-bold text-[var(--ink)] mb-6">Sélectionnez votre propriété</h3>
               
               <div className="relative mx-auto w-64 h-96 bg-gray-100 rounded-3xl p-3 shadow-lg">
                 <div className="w-full h-full bg-white rounded-2xl overflow-hidden">
@@ -778,10 +745,7 @@ const Benefits = () => {
 
             {/* Step 2: Template Selection - Tablet mockup */}
             <div className="text-center relative">
-              <div className="flex flex-col items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#09725c] text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
-                <h3 className="text-lg font-bold text-gray-900 text-center">Validate the best video idea</h3>
-              </div>
+              <h3 className="text-2xl font-bold text-[var(--ink)] mb-6">Validez la meilleure idée</h3>
               
               <div className="relative mx-auto w-72 h-96 bg-gray-100 rounded-2xl p-2 shadow-lg">
                 <div className="w-full h-full bg-white rounded-xl overflow-hidden">
@@ -840,10 +804,7 @@ const Benefits = () => {
 
             {/* Step 3: Generated Result - Phone mockup */}
             <div className="text-center">
-              <div className="flex flex-col items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#09725c] text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
-                <h3 className="text-lg font-bold text-gray-900 text-center">Your post is ready in one minute</h3>
-              </div>
+              <h3 className="text-2xl font-bold text-[var(--ink)] mb-6">Votre vidéo est prête en une minute</h3>
               
               <div className="relative mx-auto w-64 h-96 bg-gray-100 rounded-3xl p-3 shadow-lg">
                 <div className="w-full h-full bg-white rounded-2xl overflow-hidden">
@@ -882,7 +843,7 @@ const Benefits = () => {
         
         
         <div className="text-center">
-          <button className="bg-futuristic text-white px-8 py-3 rounded-2xl font-medium hover:scale-[1.02] transition-all duration-200 border-0">
+          <button className="bg-[var(--accent)] text-white px-8 py-3 rounded-2xl font-medium hover:scale-[1.01] transition-transform">
             Essayer maintenant
           </button>
         </div>
@@ -906,27 +867,27 @@ const FeaturesDetailed = () => {
   ]
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 bg-[var(--bg)]">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--ink)] mb-4">
             Tout ce dont votre hôtel a besoin
           </h2>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-[var(--muted)]">
             Une suite complète d'outils pour créer des contenus qui convertissent
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">
+            <h3 className="text-2xl font-bold text-[var(--ink)] mb-6">
               Fonctionnalités incluses
             </h3>
             <div className="space-y-4">
               {features.map((feature, index) => (
                 <div key={index} className="flex items-center">
                   <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-3 ${
-                    feature.included ? 'bg-[#09725c]' : 'bg-gray-300'
+                    feature.included ? 'bg-[var(--brand)]' : 'bg-gray-300'
                   }`}>
                     {feature.included ? (
                       <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="currentColor">
@@ -938,7 +899,7 @@ const FeaturesDetailed = () => {
                       </svg>
                     )}
                   </div>
-                  <span className={feature.included ? 'text-gray-900' : 'text-gray-600'}>
+                  <span className={feature.included ? 'text-[var(--ink)]' : 'text-[var(--muted)]'}>
                     {feature.name}
                   </span>
                 </div>
@@ -947,7 +908,7 @@ const FeaturesDetailed = () => {
           </div>
           
           <div className="bg-white rounded-2xl p-8 shadow-sm border">
-            <div className="aspect-video bg-gradient-to-br from-[#09725c] to-[#0f4a3d] rounded-xl mb-6 flex items-center justify-center">
+            <div className="aspect-video bg-gradient-to-br from-[var(--brand)] to-[var(--accent)] rounded-xl mb-6 flex items-center justify-center">
               <div className="text-white text-center">
                 <svg className="w-16 h-16 mx-auto mb-2" viewBox="0 0 64 64" fill="currentColor">
                   <path d="M32 4L12 20v32l20 8 20-8V20L32 4z"/>
@@ -955,11 +916,11 @@ const FeaturesDetailed = () => {
                 <p className="text-sm opacity-90">Aperçu de l'interface</p>
               </div>
             </div>
-            <h4 className="font-semibold text-gray-900 mb-2">Interface intuitive</h4>
-            <p className="text-gray-600 text-sm mb-6">
+            <h4 className="font-semibold text-[var(--ink)] mb-2">Interface intuitive</h4>
+            <p className="text-[var(--muted)] text-sm mb-6">
               Créez vos vidéos en quelques clics grâce à notre interface pensée pour les professionnels de l'hôtellerie
             </p>
-            <button className="w-full bg-futuristic-small text-white py-3 rounded-xl font-medium hover:scale-[1.02] transition-all duration-200 border-0">
+            <button className="w-full bg-[var(--brand)] text-white py-3 rounded-xl font-medium hover:scale-[1.01] transition-transform">
               Essayer gratuitement
             </button>
           </div>
@@ -996,29 +957,29 @@ const WhoIsThisFor = () => {
     <section className="py-20 bg-white">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--ink)] mb-4">
             Fait pour qui ?
           </h2>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-[var(--muted)]">
             Hospup s'adapte à tous les professionnels de l'hôtellerie
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {personas.map((persona, index) => (
-            <div key={index} className="bg-gray-50 rounded-2xl p-8 text-center">
+            <div key={index} className="bg-[var(--bg)] rounded-2xl p-8 text-center">
               <div className="text-4xl mb-4">{persona.icon}</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">{persona.title}</h3>
-              <p className="text-gray-600 mb-6">{persona.description}</p>
-              <ul className="space-y-2 text-sm text-gray-600 mb-6">
+              <h3 className="text-xl font-bold text-[var(--ink)] mb-3">{persona.title}</h3>
+              <p className="text-[var(--muted)] mb-6">{persona.description}</p>
+              <ul className="space-y-2 text-sm text-[var(--muted)] mb-6">
                 {persona.features.map((feature, fIndex) => (
                   <li key={fIndex} className="flex items-center justify-center">
-                    <span className="w-2 h-2 bg-[#0f4a3d] rounded-full mr-2"></span>
+                    <span className="w-2 h-2 bg-[var(--accent)] rounded-full mr-2"></span>
                     {feature}
                   </li>
                 ))}
               </ul>
-              <button className="bg-futuristic-small text-white px-6 py-2 rounded-xl text-sm font-medium hover:scale-[1.02] transition-all duration-200 border-0">
+              <button className="bg-[var(--brand)] text-white px-6 py-2 rounded-xl text-sm font-medium hover:scale-[1.01] transition-transform">
                 En savoir plus
               </button>
             </div>
@@ -1026,14 +987,14 @@ const WhoIsThisFor = () => {
         </div>
         
         <div className="text-center">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          <h3 className="text-2xl font-bold text-[var(--ink)] mb-4">
             Prêt à commencer ?
           </h3>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-futuristic text-white px-8 py-3 rounded-2xl font-medium hover:scale-[1.02] transition-all duration-200 border-0">
+            <button className="bg-[var(--accent)] text-white px-8 py-3 rounded-2xl font-medium hover:scale-[1.01] transition-transform">
               Démarrer maintenant
             </button>
-            <button className="border-2 border-[#09725c] text-[#09725c] px-8 py-3 rounded-2xl font-medium hover:scale-[1.01] transition-transform">
+            <button className="border-2 border-[var(--brand)] text-[var(--brand)] px-8 py-3 rounded-2xl font-medium hover:scale-[1.01] transition-transform">
               Programmer une démo
             </button>
           </div>
@@ -1131,26 +1092,26 @@ const Pricing = () => {
   ]
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 bg-[var(--bg)]">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--ink)] mb-4">
             Tarifs transparents
           </h2>
-          <p className="text-lg text-gray-600 mb-8">
+          <p className="text-lg text-[var(--muted)] mb-8">
             Choisissez le plan qui correspond à vos besoins. Changez quand vous voulez.
           </p>
           
           {/* Monthly/Annual Toggle */}
           <div className="flex items-center justify-center gap-4 mb-8">
-            <span className={`text-sm ${!isAnnual ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+            <span className={`text-sm ${!isAnnual ? 'text-[var(--ink)] font-medium' : 'text-[var(--muted)]'}`}>
               Mensuel
             </span>
             <button
               onClick={() => setIsAnnual(!isAnnual)}
               className="relative w-12 h-6 bg-gray-200 rounded-full transition-colors duration-200 focus:outline-none"
               style={{
-                backgroundColor: isAnnual ? "#09725c" : "#e5e7eb"
+                backgroundColor: isAnnual ? 'var(--brand)' : '#e5e7eb'
               }}
             >
               <div
@@ -1160,7 +1121,7 @@ const Pricing = () => {
                 }}
               />
             </button>
-            <span className={`text-sm ${isAnnual ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+            <span className={`text-sm ${isAnnual ? 'text-[var(--ink)] font-medium' : 'text-[var(--muted)]'}`}>
               Annuel
             </span>
             {isAnnual && (
@@ -1174,24 +1135,24 @@ const Pricing = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((plan, index) => (
             <div key={index} className={`bg-white rounded-2xl p-8 relative ${
-              plan.popular ? 'border-2 border-[#0f4a3d] shadow-lg' : 'border border-gray-200'
+              plan.popular ? 'border-2 border-[var(--accent)] shadow-lg' : 'border border-gray-200'
             }`}>
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-[#0f4a3d] text-white px-4 py-2 rounded-full text-sm font-medium">
+                  <span className="bg-[var(--accent)] text-white px-4 py-2 rounded-full text-sm font-medium">
                     Plus populaire
                   </span>
                 </div>
               )}
               
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                <p className="text-gray-600 mb-4">{plan.description}</p>
+                <h3 className="text-2xl font-bold text-[var(--ink)] mb-2">{plan.name}</h3>
+                <p className="text-[var(--muted)] mb-4">{plan.description}</p>
                 
                 {/* Custom counter for flexible plan */}
                 {plan.customizable && (
                   <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <label className="block text-sm font-medium text-gray-900 mb-4">
+                    <label className="block text-sm font-medium text-[var(--ink)] mb-4">
                       Nombre d'établissements
                     </label>
                     
@@ -1200,16 +1161,16 @@ const Pricing = () => {
                       <button
                         onClick={() => setSelectedPlan(Math.max(1, selectedPlan - 1))}
                         disabled={selectedPlan <= 1}
-                        className="w-10 h-10 rounded-full border-2 border-[#09725c] text-[#09725c] font-bold text-xl flex items-center justify-center hover:bg-[#09725c] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#09725c]"
+                        className="w-10 h-10 rounded-full border-2 border-[var(--brand)] text-[var(--brand)] font-bold text-xl flex items-center justify-center hover:bg-[var(--brand)] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--brand)]"
                       >
                         −
                       </button>
                       
                       <div className="text-center">
-                        <div className="text-3xl font-bold text-gray-900 mb-1">
+                        <div className="text-3xl font-bold text-[var(--ink)] mb-1">
                           {selectedTier.establishments}
                         </div>
-                        <div className="text-xs text-gray-600">
+                        <div className="text-xs text-[var(--muted)]">
                           établissement{selectedTier.establishments > 1 ? 's' : ''}
                         </div>
                       </div>
@@ -1217,14 +1178,14 @@ const Pricing = () => {
                       <button
                         onClick={() => setSelectedPlan(Math.min(20, selectedPlan + 1))}
                         disabled={selectedPlan >= 20}
-                        className="w-10 h-10 rounded-full border-2 border-[#09725c] text-[#09725c] font-bold text-xl flex items-center justify-center hover:bg-[#09725c] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#09725c]"
+                        className="w-10 h-10 rounded-full border-2 border-[var(--brand)] text-[var(--brand)] font-bold text-xl flex items-center justify-center hover:bg-[var(--brand)] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--brand)]"
                       >
                         +
                       </button>
                     </div>
                     
                     <div className="text-center">
-                      <span className="text-sm font-medium text-[#09725c]">
+                      <span className="text-sm font-medium text-[var(--brand)]">
                         {selectedTier.label} • {selectedTier.videos} vidéos/mois
                       </span>
                     </div>
@@ -1234,8 +1195,8 @@ const Pricing = () => {
                 <div className="mb-4">
                   {plan.customizable ? (
                     <div className="text-center">
-                      <span className="text-4xl font-bold text-gray-900">€{selectedTier.price}</span>
-                      <span className="text-gray-600">{isAnnual ? '/an' : '/mois'}</span>
+                      <span className="text-4xl font-bold text-[var(--ink)]">€{selectedTier.price}</span>
+                      <span className="text-[var(--muted)]">{isAnnual ? '/an' : '/mois'}</span>
                       {isAnnual && (
                         <div className="text-sm text-green-600 mt-1">
                           au lieu de €{selectedTier.monthlyPrice * 12}/an
@@ -1243,20 +1204,20 @@ const Pricing = () => {
                       )}
                     </div>
                   ) : typeof plan.price === 'string' && plan.price !== 'Sur mesure' && plan.price !== '0' ? (
-                    <span className="text-4xl font-bold text-gray-900">€{plan.price}</span>
+                    <span className="text-4xl font-bold text-[var(--ink)]">€{plan.price}</span>
                   ) : plan.price === '0' ? (
-                    <span className="text-4xl font-bold text-[#09725c]">Gratuit</span>
+                    <span className="text-4xl font-bold text-[var(--brand)]">Gratuit</span>
                   ) : (
-                    <span className="text-2xl font-bold text-gray-900">{plan.price}</span>
+                    <span className="text-2xl font-bold text-[var(--ink)]">{plan.price}</span>
                   )}
-                  {plan.period && !plan.customizable && <span className="text-gray-600">{plan.period}</span>}
+                  {plan.period && !plan.customizable && <span className="text-[var(--muted)]">{plan.period}</span>}
                 </div>
               </div>
 
               <ul className="space-y-3 mb-8">
                 {plan.features.map((feature, fIndex) => (
-                  <li key={fIndex} className="flex items-center text-gray-900">
-                    <svg className="w-5 h-5 text-[#09725c] mr-3" viewBox="0 0 20 20" fill="currentColor">
+                  <li key={fIndex} className="flex items-center text-[var(--ink)]">
+                    <svg className="w-5 h-5 text-[var(--brand)] mr-3" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     {feature}
@@ -1264,10 +1225,10 @@ const Pricing = () => {
                 ))}
               </ul>
 
-              <button className={`w-full py-3 px-6 rounded-2xl font-medium transition-all duration-200 border-0 ${
+              <button className={`w-full py-3 px-6 rounded-2xl font-medium transition-all ${
                 plan.popular 
-                  ? 'bg-futuristic text-white hover:scale-[1.02]' 
-                  : 'bg-futuristic-small text-white hover:scale-[1.02]'
+                  ? 'bg-[var(--accent)] text-white hover:scale-[1.01]' 
+                  : 'bg-[var(--brand)] text-white hover:scale-[1.01]'
               }`}>
                 {plan.cta}
               </button>
@@ -1276,10 +1237,10 @@ const Pricing = () => {
         </div>
         
         <div className="text-center mt-12">
-          <p className="text-gray-600 mb-6">
+          <p className="text-[var(--muted)] mb-6">
             Tous les plans incluent un essai gratuit de 14 jours • Aucune carte bancaire requise
           </p>
-          <button className="bg-white text-[#09725c] px-8 py-3 rounded-2xl font-medium border-2 border-[#09725c] hover:scale-[1.02] transition-all duration-200">
+          <button className="bg-white text-[var(--brand)] px-8 py-3 rounded-2xl font-medium border-2 border-[var(--brand)] hover:scale-[1.01] transition-transform">
             Voir la démonstration
           </button>
         </div>
@@ -1310,17 +1271,17 @@ const Footer = () => {
               La plateforme qui transforme vos vidéos d'hôtel en contenu viral pour Instagram et TikTok. IA, templates et automatisation.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center hover:bg-[#09725c] transition-colors">
+              <a href="#" className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center hover:bg-[var(--brand)] transition-colors">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
                 </svg>
               </a>
-              <a href="#" className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center hover:bg-[#09725c] transition-colors">
+              <a href="#" className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center hover:bg-[var(--brand)] transition-colors">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
                 </svg>
               </a>
-              <a href="#" className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center hover:bg-[#09725c] transition-colors">
+              <a href="#" className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center hover:bg-[var(--brand)] transition-colors">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                 </svg>

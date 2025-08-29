@@ -243,7 +243,7 @@ export default function ViralInspirationPage() {
                           {template.hotel_name}
                         </h3>
                         {template.property && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[#115446]/10 text-[#115446] ml-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[#09725c]/10 text-[#09725c] ml-2">
                             {template.property}
                           </span>
                         )}
@@ -257,7 +257,7 @@ export default function ViralInspirationPage() {
 
                     <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 mb-4">
                       <div className="flex items-center">
-                        <Eye className="w-3 h-3 mr-1 text-[#115446]" />
+                        <Eye className="w-3 h-3 mr-1 text-[#09725c]" />
                         <span>{formatNumber(template.views)}</span>
                       </div>
                       <div className="flex items-center">

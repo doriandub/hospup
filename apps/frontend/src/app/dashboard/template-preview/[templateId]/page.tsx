@@ -345,7 +345,7 @@ export default function TemplatePreviewPage({ params }: { params: Promise<{ temp
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center space-x-2">
-                        <Eye className="w-4 h-4 text-[#115446]" />
+                        <Eye className="w-4 h-4 text-[#09725c]" />
                         <span className="text-sm text-gray-600">Vues</span>
                       </div>
                       <span className="font-bold text-gray-900">{formatNumber(selectedTemplate.views)}</span>
@@ -409,8 +409,8 @@ export default function TemplatePreviewPage({ params }: { params: Promise<{ temp
                 <div className="h-full flex flex-col justify-center space-y-6">
                   {selectedTemplate.likes && selectedTemplate.followers && (
                     <div className="bg-white rounded-lg p-6 text-center border border-gray-200">
-                      <TrendingUp className="w-6 h-6 text-[#115446] mx-auto mb-3" />
-                      <div className="text-xl font-bold text-[#115446] mb-1">
+                      <TrendingUp className="w-6 h-6 text-[#09725c] mx-auto mb-3" />
+                      <div className="text-xl font-bold text-[#09725c] mb-1">
                         {((selectedTemplate.likes / selectedTemplate.followers) * 100).toFixed(1)}%
                       </div>
                       <div className="text-sm text-gray-600 mb-1">Taux d'engagement</div>

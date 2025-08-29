@@ -140,7 +140,7 @@ export default function GenerateVideoPage() {
               <select 
                 value={selectedProperty}
                 onChange={(e) => setSelectedProperty(e.target.value)}
-                className="w-full p-4 pr-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#115446] focus:border-transparent bg-white text-gray-900 appearance-none cursor-pointer"
+                className="w-full p-4 pr-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#09725c] focus:border-transparent bg-white text-gray-900 appearance-none cursor-pointer"
                 style={{ fontFamily: 'Inter' }}
               >
                 <option value="">Choose a property...</option>
@@ -179,7 +179,7 @@ export default function GenerateVideoPage() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="What would you like to showcase? (e.g., 'Romantic dinner at sunset on our terrace')"
-                className="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#115446] focus:border-transparent resize-none"
+                className="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#09725c] focus:border-transparent resize-none"
                 rows={4}
                 style={{ fontFamily: 'Inter' }}
               />

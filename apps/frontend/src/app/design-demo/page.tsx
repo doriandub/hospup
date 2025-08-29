@@ -33,7 +33,7 @@ export default function DesignDemo() {
       <div className="max-w-6xl mx-auto p-6">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#115446] text-white rounded-lg mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#09725c] text-white rounded-lg mb-4">
             <Sparkles className="w-4 h-4" />
             <span className="text-sm font-medium">HOSPUP DESIGN SYSTEM</span>
           </div>
@@ -54,7 +54,7 @@ export default function DesignDemo() {
                 onClick={() => setActiveTab(tab)}
                 className={`px-6 py-2 rounded-md font-medium text-sm transition-colors capitalize ${
                   activeTab === tab 
-                    ? 'bg-[#115446] text-white' 
+                    ? 'bg-[#09725c] text-white' 
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
@@ -148,9 +148,9 @@ export default function DesignDemo() {
                 <h3 className="text-lg font-semibold text-slate-800 mb-6">Couleurs Principales</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   <div className="text-center">
-                    <div className="w-20 h-20 bg-[#115446] rounded-2xl mx-auto mb-3 shadow-lg"></div>
+                    <div className="w-20 h-20 bg-[#09725c] rounded-2xl mx-auto mb-3 shadow-lg"></div>
                     <p className="font-medium text-slate-800">Vert Hospup</p>
-                    <p className="text-sm text-slate-500">#115446</p>
+                    <p className="text-sm text-slate-500">#09725c</p>
                   </div>
                   <div className="text-center">
                     <div className="w-20 h-20 bg-[#FF6B35] rounded-2xl mx-auto mb-3 shadow-lg"></div>
@@ -210,7 +210,7 @@ export default function DesignDemo() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="bg-[#115446] p-2 rounded-lg">
+                      <div className="bg-[#09725c] p-2 rounded-lg">
                         <Video className="w-5 h-5 text-white" />
                       </div>
                       <div className="text-right">
@@ -299,7 +299,7 @@ export default function DesignDemo() {
                     <label className="block text-sm font-medium text-slate-700 mb-2">Nom de l'hôtel</label>
                     <input 
                       type="text" 
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#115446] focus:border-[#115446] transition-all"
+                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#09725c] focus:border-[#09725c] transition-all"
                       placeholder="Le Meurice"
                     />
                   </div>
@@ -307,14 +307,14 @@ export default function DesignDemo() {
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
                     <textarea 
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#115446] focus:border-[#115446] transition-all h-24 resize-none"
+                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#09725c] focus:border-[#09725c] transition-all h-24 resize-none"
                       placeholder="Décrivez votre établissement..."
                     ></textarea>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Catégorie</label>
-                    <select className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#115446] focus:border-[#115446] transition-all">
+                    <select className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#09725c] focus:border-[#09725c] transition-all">
                       <option>Hôtel de luxe</option>
                       <option>Boutique hotel</option>
                       <option>Resort</option>
@@ -322,7 +322,7 @@ export default function DesignDemo() {
                   </div>
                   
                   <div className="flex gap-4 pt-4">
-                    <button className="flex-1 bg-[#115446] text-white py-3 px-6 rounded-xl font-medium hover:bg-[#115446]/90 transition-all">
+                    <button className="flex-1 bg-[#09725c] text-white py-3 px-6 rounded-xl font-medium hover:bg-[#09725c]/90 transition-all">
                       Sauvegarder
                     </button>
                     <button className="px-6 py-3 border border-slate-300 rounded-xl font-medium hover:bg-slate-100 transition-all">
@@ -338,7 +338,7 @@ export default function DesignDemo() {
         {/* Footer */}
         <div className="text-center mt-20 pt-12 border-t border-slate-200/60">
           <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-2 h-2 bg-[#115446] rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-[#09725c] rounded-full animate-pulse"></div>
             <p className="text-slate-600 font-medium tracking-wider">
               HOSPUP AI DESIGN SYSTEM
             </p>

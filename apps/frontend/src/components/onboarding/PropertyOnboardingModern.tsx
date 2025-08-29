@@ -181,7 +181,7 @@ export function PropertyOnboardingModern() {
                 Retour
               </Button>
               <div className="text-right">
-                <p className="text-[#115446] font-semibold text-lg">
+                <p className="text-[#09725c] font-semibold text-lg">
                   Step {currentStep} of {steps.length}
                 </p>
               </div>
@@ -192,7 +192,7 @@ export function PropertyOnboardingModern() {
               <div className="w-full max-w-xs">
                 <div className="bg-gray-100 rounded-xl h-2 overflow-hidden">
                   <div 
-                    className="h-full bg-[#115446] rounded-xl transition-all duration-500 ease-out"
+                    className="h-full bg-[#09725c] rounded-xl transition-all duration-500 ease-out"
                     style={{ width: `${progressWidth}%` }}
                   />
                 </div>
@@ -205,8 +205,8 @@ export function PropertyOnboardingModern() {
               {currentStep === 1 && (
                 <div>
                   <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#115446] bg-opacity-10 rounded-2xl mb-6">
-                      <Building2 className="w-8 h-8 text-[#115446]" />
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#09725c] bg-opacity-10 rounded-2xl mb-6">
+                      <Building2 className="w-8 h-8 text-[#09725c]" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Informations de base</h2>
                     <p className="text-gray-600 mb-6">Parlez-nous de votre établissement</p>
@@ -225,7 +225,7 @@ export function PropertyOnboardingModern() {
                           value={formData.name}
                           onChange={(e) => handleInputChange('name', e.target.value)}
                           placeholder="ex: Hôtel des Champs-Élysées"
-                          className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
+                          className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#09725c] focus:border-[#09725c] transition-all duration-200 ${
                             errors.name ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
                           }`}
                         />
@@ -238,7 +238,7 @@ export function PropertyOnboardingModern() {
                         Type d'établissement *
                       </Label>
                       <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
-                        <SelectTrigger className={`px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
+                        <SelectTrigger className={`px-4 py-3 rounded-xl border-gray-200 focus:ring-[#09725c] focus:border-[#09725c] transition-all duration-200 ${
                           errors.type ? 'border-red-500' : ''
                         }`}>
                           <SelectValue placeholder="Sélectionnez le type" />
@@ -267,7 +267,7 @@ export function PropertyOnboardingModern() {
                             value={formData.city}
                             onChange={(e) => handleInputChange('city', e.target.value)}
                             placeholder="Paris"
-                            className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
+                            className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#09725c] focus:border-[#09725c] transition-all duration-200 ${
                               errors.city ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
                             }`}
                           />
@@ -287,7 +287,7 @@ export function PropertyOnboardingModern() {
                             value={formData.country}
                             onChange={(e) => handleInputChange('country', e.target.value)}
                             placeholder="France"
-                            className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 ${
+                            className={`pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#09725c] focus:border-[#09725c] transition-all duration-200 ${
                               errors.country ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
                             }`}
                           />
@@ -301,7 +301,7 @@ export function PropertyOnboardingModern() {
                         Langue principale
                       </Label>
                       <Select value={formData.language} onValueChange={(value) => handleInputChange('language', value)}>
-                        <SelectTrigger className="px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200">
+                        <SelectTrigger className="px-4 py-3 rounded-xl border-gray-200 focus:ring-[#09725c] focus:border-[#09725c] transition-all duration-200">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
@@ -318,7 +318,7 @@ export function PropertyOnboardingModern() {
                   <div className="flex justify-end mt-8">
                     <Button 
                       onClick={handleNextStep} 
-                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
+                      className="px-6 py-3 bg-gradient-to-r from-[#09725c] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
                     >
                       Continuer
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -331,8 +331,8 @@ export function PropertyOnboardingModern() {
               {currentStep === 2 && (
                 <div>
                   <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#115446] bg-opacity-10 rounded-2xl mb-6">
-                      <Globe className="w-8 h-8 text-[#115446]" />
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#09725c] bg-opacity-10 rounded-2xl mb-6">
+                      <Globe className="w-8 h-8 text-[#09725c]" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Coordonnées & Réseaux</h2>
                     <p className="text-gray-600 mb-6">Aidez vos clients à vous trouver</p>
@@ -351,7 +351,7 @@ export function PropertyOnboardingModern() {
                           value={formData.website}
                           onChange={(e) => handleInputChange('website', e.target.value)}
                           placeholder="https://www.votre-hotel.com"
-                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200"
+                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#09725c] focus:border-[#09725c] transition-all duration-200"
                         />
                       </div>
                     </div>
@@ -368,7 +368,7 @@ export function PropertyOnboardingModern() {
                           value={formData.phone}
                           onChange={(e) => handleInputChange('phone', e.target.value)}
                           placeholder="+33 1 23 45 67 89"
-                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200"
+                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#09725c] focus:border-[#09725c] transition-all duration-200"
                         />
                       </div>
                     </div>
@@ -385,7 +385,7 @@ export function PropertyOnboardingModern() {
                           value={formData.instagram}
                           onChange={(e) => handleInputChange('instagram', e.target.value)}
                           placeholder="@votre_hotel"
-                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200"
+                          className="pl-12 px-4 py-3 rounded-xl border-gray-200 focus:ring-[#09725c] focus:border-[#09725c] transition-all duration-200"
                         />
                       </div>
                     </div>
@@ -400,7 +400,7 @@ export function PropertyOnboardingModern() {
                         onChange={(e) => handleInputChange('description', e.target.value)}
                         placeholder="Décrivez votre établissement, son ambiance, ses spécialités..."
                         rows={4}
-                        className="px-4 py-3 rounded-xl border-gray-200 focus:ring-[#115446] focus:border-[#115446] transition-all duration-200 resize-none"
+                        className="px-4 py-3 rounded-xl border-gray-200 focus:ring-[#09725c] focus:border-[#09725c] transition-all duration-200 resize-none"
                       />
                     </div>
                   </div>
@@ -416,7 +416,7 @@ export function PropertyOnboardingModern() {
                     </Button>
                     <Button 
                       onClick={handleNextStep} 
-                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
+                      className="px-6 py-3 bg-gradient-to-r from-[#09725c] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105"
                     >
                       Continuer
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -429,8 +429,8 @@ export function PropertyOnboardingModern() {
               {currentStep === 3 && (
                 <div>
                   <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#115446] bg-opacity-10 rounded-2xl mb-6">
-                      <Camera className="w-8 h-8 text-[#115446]" />
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#09725c] bg-opacity-10 rounded-2xl mb-6">
+                      <Camera className="w-8 h-8 text-[#09725c]" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Photos & Vidéos</h2>
                     <p className="text-gray-600 mb-6">
@@ -438,7 +438,7 @@ export function PropertyOnboardingModern() {
                     </p>
                   </div>
 
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-[#115446] transition-all duration-200">
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-[#09725c] transition-all duration-200">
                     <FileUpload
                       accept={{ 
                         'image/*': ['.jpg', '.jpeg', '.png', '.webp'],
@@ -451,10 +451,10 @@ export function PropertyOnboardingModern() {
                   </div>
 
                   {uploadedFiles.length > 0 && (
-                    <div className="mt-6 p-4 bg-[#115446] bg-opacity-5 border border-[#115446] border-opacity-20 rounded-xl">
+                    <div className="mt-6 p-4 bg-[#09725c] bg-opacity-5 border border-[#09725c] border-opacity-20 rounded-xl">
                       <div className="flex items-center">
-                        <CheckCircle className="w-5 h-5 text-[#115446] mr-3" />
-                        <span className="text-[#115446] font-medium">
+                        <CheckCircle className="w-5 h-5 text-[#09725c] mr-3" />
+                        <span className="text-[#09725c] font-medium">
                           {uploadedFiles.length} fichier{uploadedFiles.length > 1 ? 's' : ''} ajouté{uploadedFiles.length > 1 ? 's' : ''}
                         </span>
                       </div>
@@ -498,7 +498,7 @@ export function PropertyOnboardingModern() {
                     <Button 
                       onClick={handleFinish}
                       disabled={isSubmitting || uploadedFiles.length === 0}
-                      className="px-6 py-3 bg-gradient-to-r from-[#115446] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="px-6 py-3 bg-gradient-to-r from-[#09725c] to-[#0f4a3d] hover:shadow-lg rounded-xl font-medium text-base transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                       {isSubmitting ? (
                         <>

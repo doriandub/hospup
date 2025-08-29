@@ -7,8 +7,8 @@ const landingData = {
   "brand": "Hospup",
   "navbar": ["Features", "Pricing", "Resources", "About"],
   "hero": {
-    "title": "Becoming Instagram's next viral property made easy",
-    "subtitle": "Drive more direct bookings in just 3 minutes a day. Hospup makes content creation accessible to all with videos, captions, and music ready to post.",
+    "title": "Going Viral Made Easy",
+    "subtitle": "Content creation made accessible to all. Videos, captions, and music - ready to post in just 3 minutes a day.",
     "starsLabel": "Used by 1,500+ hotels worldwide",
     "cta": "Start Creating Today"
   },
@@ -108,65 +108,49 @@ const Navbar = () => {
 // Hero Section
 const Hero = () => {
   return (
-    <section className="relative py-24 bg-white overflow-hidden">
-      {/* Subtle Background Effects */}
-      <div className="absolute inset-0">
-        {/* Light Grid Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <svg width="100%" height="100%" className="absolute top-0 left-0">
-            <defs>
-              <pattern id="heroGrid" patternUnits="userSpaceOnUse" width="60" height="60">
-                <rect width="60" height="60" fill="none" stroke="#09725c" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#heroGrid)" />
-          </svg>
-        </div>
-        
-        {/* Subtle Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 via-transparent to-gray-50/50"></div>
+    <section className="relative py-20 bg-gray-50 overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <svg width="100%" height="100%" className="absolute top-0 left-0">
+          <defs>
+            <pattern id="dots" patternUnits="userSpaceOnUse" width="20" height="20">
+              <circle cx="10" cy="10" r="1" fill="#09725c" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dots)" />
+        </svg>
       </div>
       
-      <div className="container max-w-[1200px] mx-auto px-6 md:px-12 relative z-10">
-        <div className="text-center">
-          
-          {/* Badge */}
-          <div className="inline-flex items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2 mb-8">
-            <div className="w-2 h-2 bg-[#09725c] rounded-full mr-3 animate-pulse"></div>
-            <span className="text-gray-700 text-sm font-medium" style={{ fontFamily: 'Inter' }}>Powered by AI</span>
-          </div>
-          
-          {/* Main Title */}
-          <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-8 leading-tight max-w-4xl mx-auto" style={{ fontFamily: 'Inter' }} dangerouslySetInnerHTML={{ __html: landingData.hero.title }}>
-          </h1>
-          
-          {/* Subtitle */}
-          <p className="text-xl lg:text-2xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto" style={{ fontFamily: 'Inter' }}>
-            {landingData.hero.subtitle}
-          </p>
-          
-          {/* CTA Section */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-20">
-            <a href="/auth/signup" 
-              className="bg-futuristic text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:scale-[1.02] transition-all duration-200 shadow-lg border-0 inline-flex items-center gap-3"
-              style={{ fontFamily: 'Inter' }}
-            >
-              <span className="relative z-10">{landingData.hero.cta}</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+      <div className="container max-w-[1200px] mx-auto px-4 md:px-6 text-center">
+        {/* Social Proof Badge */}
+        <div className="inline-flex items-center bg-white rounded-full px-4 py-2 mb-8 shadow-sm">
+          <div className="flex text-yellow-400 mr-2">
+            {[...Array(5)].map((_, i) => (
+              <svg key={i} width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 1l2.5 5.5L16 8l-5.5 2.5L8 16l-2.5-5.5L0 8l5.5-2.5L8 1z" />
               </svg>
-            </a>
-            
-            <button className="text-gray-600 hover:text-gray-900 px-6 py-5 rounded-2xl text-lg font-medium hover:bg-gray-50 transition-all duration-200 inline-flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h6" />
-              </svg>
-              Watch Demo
-            </button>
+            ))}
           </div>
-          
-          
+          <span className="text-gray-600 text-sm">{landingData.hero.starsLabel}</span>
         </div>
+        
+        {/* Main Title */}
+        <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+          {landingData.hero.title}
+        </h1>
+        
+        {/* Subtitle */}
+        <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+          {landingData.hero.subtitle}
+        </p>
+        
+        {/* CTA Button */}
+        <a href="/auth/signup" 
+          className="inline-block bg-futuristic text-white px-8 py-4 rounded-2xl text-lg font-medium hover:scale-[1.02] transition-all duration-200 shadow-lg border-0"
+          aria-label="Start creating viral hotel content today"
+        >
+          <span className="relative z-10">{landingData.hero.cta}</span>
+        </a>
       </div>
     </section>
   )
@@ -177,31 +161,12 @@ const VideosGenerated = () => {
   return (
     <section className="py-20 bg-white" aria-labelledby="videos-title">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
-        {/* Data Stats - Featured First */}
+        {/* Title */}
         <div className="text-center mb-12">
-          <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 inline-block mb-8">
-            <div className="flex items-center justify-center gap-12">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Inter' }}>1B+</div>
-                <div className="text-gray-600 text-base" style={{ fontFamily: 'Inter' }}>Views</div>
-              </div>
-              <div className="w-px h-12 bg-gray-300"></div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Inter' }}>10M+</div>
-                <div className="text-gray-600 text-base" style={{ fontFamily: 'Inter' }}>Followers</div>
-              </div>
-              <div className="w-px h-12 bg-gray-300"></div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Inter' }}>500+</div>
-                <div className="text-gray-600 text-base" style={{ fontFamily: 'Inter' }}>Hotels</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Description */}
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Our AI analyzed this massive dataset to identify the most successful viral patterns. Based on your property and content goals, we automatically match and recreate the formats that have already proven to work, so you don't have to guess what goes viral.
-          </p>
+          <h2 id="videos-title" className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <span className="text-[#09725c]">1+ Billion Views Generated</span>
+          </h2>
+          <p className="text-lg text-gray-600">We&apos;ve analyzed thousands of viral videos totaling billions of views. Based on what you want to showcase, we match the most relevant formats so you can recreate what already works.</p>
         </div>
         
         {/* Video Gallery */}
@@ -729,17 +694,19 @@ const Benefits = () => {
   return (
     <section className="py-16 bg-white border-b border-gray-100">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Créer du contenu viral en quelques clics
+          </h2>
+        </div>
         
         {/* Mobile-first visual process */}
-        <div className="max-w-6xl mx-auto mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start justify-items-center">
+        <div className="max-w-7xl mx-auto mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
             
-            {/* Step 1: Upload Content */}
+            {/* Step 1: Select Property */}
             <div className="text-center relative">
-              <div className="flex flex-col items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#09725c] text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
-                <h3 className="text-lg font-bold text-gray-900 text-center">Import all your property footage</h3>
-              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Sélectionnez votre propriété</h3>
               
               <div className="relative mx-auto w-64 h-96 bg-gray-100 rounded-3xl p-3 shadow-lg">
                 <div className="w-full h-full bg-white rounded-2xl overflow-hidden">
@@ -778,10 +745,7 @@ const Benefits = () => {
 
             {/* Step 2: Template Selection - Tablet mockup */}
             <div className="text-center relative">
-              <div className="flex flex-col items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#09725c] text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
-                <h3 className="text-lg font-bold text-gray-900 text-center">Validate the best video idea</h3>
-              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Validez la meilleure idée</h3>
               
               <div className="relative mx-auto w-72 h-96 bg-gray-100 rounded-2xl p-2 shadow-lg">
                 <div className="w-full h-full bg-white rounded-xl overflow-hidden">
@@ -840,10 +804,7 @@ const Benefits = () => {
 
             {/* Step 3: Generated Result - Phone mockup */}
             <div className="text-center">
-              <div className="flex flex-col items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#09725c] text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
-                <h3 className="text-lg font-bold text-gray-900 text-center">Your post is ready in one minute</h3>
-              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Votre vidéo est prête en une minute</h3>
               
               <div className="relative mx-auto w-64 h-96 bg-gray-100 rounded-3xl p-3 shadow-lg">
                 <div className="w-full h-full bg-white rounded-2xl overflow-hidden">
@@ -882,7 +843,7 @@ const Benefits = () => {
         
         
         <div className="text-center">
-          <button className="bg-futuristic text-white px-8 py-3 rounded-2xl font-medium hover:scale-[1.02] transition-all duration-200 border-0">
+          <button className="bg-[var(--accent)] text-white px-8 py-3 rounded-2xl font-medium hover:scale-[1.01] transition-transform">
             Essayer maintenant
           </button>
         </div>
@@ -947,7 +908,7 @@ const FeaturesDetailed = () => {
           </div>
           
           <div className="bg-white rounded-2xl p-8 shadow-sm border">
-            <div className="aspect-video bg-gradient-to-br from-[#09725c] to-[#0f4a3d] rounded-xl mb-6 flex items-center justify-center">
+            <div className="aspect-video bg-gradient-to-br from-[var(--brand)] to-[var(--accent)] rounded-xl mb-6 flex items-center justify-center">
               <div className="text-white text-center">
                 <svg className="w-16 h-16 mx-auto mb-2" viewBox="0 0 64 64" fill="currentColor">
                   <path d="M32 4L12 20v32l20 8 20-8V20L32 4z"/>
@@ -959,7 +920,7 @@ const FeaturesDetailed = () => {
             <p className="text-gray-600 text-sm mb-6">
               Créez vos vidéos en quelques clics grâce à notre interface pensée pour les professionnels de l'hôtellerie
             </p>
-            <button className="w-full bg-futuristic-small text-white py-3 rounded-xl font-medium hover:scale-[1.02] transition-all duration-200 border-0">
+            <button className="w-full bg-[#09725c] text-white py-3 rounded-xl font-medium hover:scale-[1.01] transition-transform">
               Essayer gratuitement
             </button>
           </div>
@@ -1013,12 +974,12 @@ const WhoIsThisFor = () => {
               <ul className="space-y-2 text-sm text-gray-600 mb-6">
                 {persona.features.map((feature, fIndex) => (
                   <li key={fIndex} className="flex items-center justify-center">
-                    <span className="w-2 h-2 bg-[#0f4a3d] rounded-full mr-2"></span>
+                    <span className="w-2 h-2 bg-[var(--accent)] rounded-full mr-2"></span>
                     {feature}
                   </li>
                 ))}
               </ul>
-              <button className="bg-futuristic-small text-white px-6 py-2 rounded-xl text-sm font-medium hover:scale-[1.02] transition-all duration-200 border-0">
+              <button className="bg-[#09725c] text-white px-6 py-2 rounded-xl text-sm font-medium hover:scale-[1.01] transition-transform">
                 En savoir plus
               </button>
             </div>
@@ -1030,7 +991,7 @@ const WhoIsThisFor = () => {
             Prêt à commencer ?
           </h3>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-futuristic text-white px-8 py-3 rounded-2xl font-medium hover:scale-[1.02] transition-all duration-200 border-0">
+            <button className="bg-[var(--accent)] text-white px-8 py-3 rounded-2xl font-medium hover:scale-[1.01] transition-transform">
               Démarrer maintenant
             </button>
             <button className="border-2 border-[#09725c] text-[#09725c] px-8 py-3 rounded-2xl font-medium hover:scale-[1.01] transition-transform">
@@ -1150,7 +1111,7 @@ const Pricing = () => {
               onClick={() => setIsAnnual(!isAnnual)}
               className="relative w-12 h-6 bg-gray-200 rounded-full transition-colors duration-200 focus:outline-none"
               style={{
-                backgroundColor: isAnnual ? "#09725c" : "#e5e7eb"
+                backgroundColor: isAnnual ? 'var(--brand)' : '#e5e7eb'
               }}
             >
               <div
@@ -1174,11 +1135,11 @@ const Pricing = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((plan, index) => (
             <div key={index} className={`bg-white rounded-2xl p-8 relative ${
-              plan.popular ? 'border-2 border-[#0f4a3d] shadow-lg' : 'border border-gray-200'
+              plan.popular ? 'border-2 border-[var(--accent)] shadow-lg' : 'border border-gray-200'
             }`}>
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-[#0f4a3d] text-white px-4 py-2 rounded-full text-sm font-medium">
+                  <span className="bg-[var(--accent)] text-white px-4 py-2 rounded-full text-sm font-medium">
                     Plus populaire
                   </span>
                 </div>
@@ -1264,10 +1225,10 @@ const Pricing = () => {
                 ))}
               </ul>
 
-              <button className={`w-full py-3 px-6 rounded-2xl font-medium transition-all duration-200 border-0 ${
+              <button className={`w-full py-3 px-6 rounded-2xl font-medium transition-all ${
                 plan.popular 
-                  ? 'bg-futuristic text-white hover:scale-[1.02]' 
-                  : 'bg-futuristic-small text-white hover:scale-[1.02]'
+                  ? 'bg-[var(--accent)] text-white hover:scale-[1.01]' 
+                  : 'bg-[#09725c] text-white hover:scale-[1.01]'
               }`}>
                 {plan.cta}
               </button>
@@ -1279,7 +1240,7 @@ const Pricing = () => {
           <p className="text-gray-600 mb-6">
             Tous les plans incluent un essai gratuit de 14 jours • Aucune carte bancaire requise
           </p>
-          <button className="bg-white text-[#09725c] px-8 py-3 rounded-2xl font-medium border-2 border-[#09725c] hover:scale-[1.02] transition-all duration-200">
+          <button className="bg-white text-[#09725c] px-8 py-3 rounded-2xl font-medium border-2 border-[#09725c] hover:scale-[1.01] transition-transform">
             Voir la démonstration
           </button>
         </div>

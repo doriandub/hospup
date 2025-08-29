@@ -74,7 +74,7 @@ export function VideoEditorComplete({
         }
       }
     }
-    return 'linear-gradient(135deg, #115446 0%, #ff914d 100%)'
+    return 'linear-gradient(135deg, #09725c 0%, #ff914d 100%)'
   }, [videoSlots])
 
   // Obtenir les textes visibles au temps actuel

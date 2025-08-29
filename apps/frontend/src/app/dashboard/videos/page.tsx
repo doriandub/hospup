@@ -189,7 +189,7 @@ export default function VideosPage() {
                       onClick={() => handlePropertyChange(property.id)}
                       className={`flex items-center space-x-2 py-2 cursor-pointer transition-all duration-200 whitespace-nowrap border-b-2 ${
                         activePropertyId === property.id
-                          ? 'text-[#115446] border-[#115446] font-semibold'
+                          ? 'text-[#09725c] border-[#09725c] font-semibold'
                           : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-200'
                       }`}
                     >
@@ -199,7 +199,7 @@ export default function VideosPage() {
                       </span>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${
                         activePropertyId === property.id
-                          ? 'bg-[#115446]/10 text-[#115446]'
+                          ? 'bg-[#09725c]/10 text-[#09725c]'
                           : 'bg-gray-100 text-gray-500'
                       }`}>
                         {getVideosCount(property.id)}
@@ -298,11 +298,20 @@ export default function VideosPage() {
             <span> for {properties.find(p => p.id === activePropertyId)?.name}</span>
           )}
           {hasProcessingVideos && (
-            <div className="mt-2 flex items-center justify-center text-blue-600">
+            <div className="mt-2 flex items-center justify-center space-x-4 text-blue-600">
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
                 <span className="text-xs">Processing videos detected</span>
               </div>
+              <button
+                onClick={() => {
+                  console.log('Force refresh triggered')
+                  refetchVideos()
+                }}
+                className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+              >
+                🔄 Force Refresh
+              </button>
             </div>
           )}
         </div>

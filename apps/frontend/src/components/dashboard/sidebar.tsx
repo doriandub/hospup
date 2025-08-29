@@ -84,18 +84,20 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
           {/* Logo */}
           <div className="flex items-center justify-center lg:justify-center xl:justify-between h-20 px-6 border-b border-gray-200">
             <div className="flex items-center lg:justify-center xl:justify-start">
-              <div className="w-10 h-10 xl:w-10 xl:h-10 lg:w-12 lg:h-12 bg-gradient-to-tl from-[#115446] to-[#138a73] rounded-lg flex items-center justify-center transition-all duration-300">
-                <Image 
-                  src="/logo.png" 
-                  alt="Hospup Logo" 
-                  width={24} 
-                  height={24}
-                  className="xl:w-6 xl:h-6 lg:w-7 lg:h-7 object-contain"
-                />
-              </div>
-              <span className="ml-5 font-bold bg-gradient-to-tl from-[#115446] to-[#138a73] bg-clip-text text-transparent xl:block lg:hidden block" style={{ fontFamily: 'Inter', fontSize: '24pt' }}>
-                Hospup
-              </span>
+              <Image 
+                src="/Design sans titre (70) (1).png" 
+                alt="Hospup Logo" 
+                width={48} 
+                height={48}
+                className="w-10 h-10 xl:hidden lg:w-12 lg:h-12 lg:block object-contain transition-all duration-300"
+              />
+              <Image 
+                src="/Hospup logo.png" 
+                alt="Hospup Logo" 
+                width={120} 
+                height={40}
+                className="h-10 w-auto object-contain xl:block lg:hidden hidden transition-all duration-300"
+              />
             </div>
             <div className="flex items-center space-x-2 xl:block lg:hidden">
               {/* Mobile close button */}
@@ -118,7 +120,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
                   href={item.href}
                   className={`flex items-center text-base font-medium rounded-lg transition-colors relative ${
                     isActive
-                      ? 'text-[#115446] bg-[#115446]/5'
+                      ? 'text-[#09725c] bg-[#09725c]/5'
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   } px-4 py-3 xl:px-4 xl:py-3 lg:px-3 lg:py-4 xl:justify-start lg:justify-center`}
                   onClick={() => setIsMobileOpen(false)}
@@ -126,10 +128,10 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
                 >
                   {/* Active indicator */}
                   {isActive && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#115446] rounded-r-full"></div>
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#09725c] rounded-r-full"></div>
                   )}
                   <item.icon className={`h-6 w-6 ${
-                    isActive ? 'text-[#115446]' : 'text-gray-500'
+                    isActive ? 'text-[#09725c]' : 'text-gray-500'
                   } xl:mr-4 lg:mr-0 mr-4`} />
                   <span className="xl:block lg:hidden block text-base font-medium" style={{ fontFamily: 'Inter' }}>{item.name}</span>
                 </Link>
@@ -141,7 +143,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
           <div className="p-4 border-t border-gray-200 xl:block lg:hidden block">
             <div className="bg-gray-50 rounded-lg p-3">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-[#115446] rounded flex items-center justify-center">
+                <div className="w-6 h-6 bg-[#09725c] rounded flex items-center justify-center">
                   <Stars className="w-3 h-3 text-white" />
                 </div>
                 <div className="text-xs text-gray-600">Powered by AI</div>

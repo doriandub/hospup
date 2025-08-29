@@ -798,7 +798,7 @@ export function VideoTimelineEditor({
                       className={`relative border-r border-gray-200 last:border-r-0 h-24 transition-all duration-200 ${
                         video ? 'bg-white' : 'bg-gray-100'
                       } ${
-                        selectedSlot === slot.id ? 'ring-2 ring-[#115446] ring-opacity-50' : ''
+                        selectedSlot === slot.id ? 'ring-2 ring-[#09725c] ring-opacity-50' : ''
                       } ${
                         dragOverSlot === slot.id ? 'ring-2 ring-[#ff914d] bg-orange-50' : ''
                       }`}
@@ -919,7 +919,7 @@ export function VideoTimelineEditor({
                           <div
                             className={`absolute h-5 top-0.5 rounded cursor-pointer border flex items-center text-xs font-medium transition-all group ${
                               selectedTextId === text.id 
-                                ? 'border-[#115446] bg-[#115446] text-white'
+                                ? 'border-[#09725c] bg-[#09725c] text-white'
                                 : 'border-[#ff914d] bg-[#ff914d]/20 hover:bg-[#ff914d]/30 text-[#ff914d]'
                             }`}
                             style={{ 
@@ -936,7 +936,7 @@ export function VideoTimelineEditor({
                           >
                             {/* Left resize handle */}
                             <div 
-                              className="absolute left-0 top-0 h-full w-1 cursor-ew-resize bg-[#115446] opacity-0 group-hover:opacity-70 transition-opacity"
+                              className="absolute left-0 top-0 h-full w-1 cursor-ew-resize bg-[#09725c] opacity-0 group-hover:opacity-70 transition-opacity"
                               onMouseDown={(e) => {
                                 e.stopPropagation()
                                 setResizingText({ textId: text.id, side: 'start' })
@@ -953,7 +953,7 @@ export function VideoTimelineEditor({
                             
                             {/* Right resize handle */}
                             <div 
-                              className="absolute right-0 top-0 h-full w-1 cursor-ew-resize bg-[#115446] opacity-0 group-hover:opacity-70 transition-opacity"
+                              className="absolute right-0 top-0 h-full w-1 cursor-ew-resize bg-[#09725c] opacity-0 group-hover:opacity-70 transition-opacity"
                               onMouseDown={(e) => {
                                 e.stopPropagation()
                                 setResizingText({ textId: text.id, side: 'end' })

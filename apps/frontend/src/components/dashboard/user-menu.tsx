@@ -22,7 +22,7 @@ export function UserMenu() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 hover:text-gray-900 transition-all duration-200"
       >
-        <div className="w-7 h-7 bg-gradient-to-tl from-[#115446] to-[#138a73] rounded-full flex items-center justify-center">
+        <div className="w-7 h-7 bg-futuristic-small rounded-full flex items-center justify-center">
           <User className="h-4 w-4 text-white" />
         </div>
         <span className="text-sm font-medium" style={{ fontFamily: 'Inter' }}>{user?.name || 'User'}</span>
@@ -41,7 +41,7 @@ export function UserMenu() {
             {/* User Info */}
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-[#115446] rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-futuristic-small rounded-full flex items-center justify-center">
                   <User className="h-5 w-5 text-white" />
                 </div>
                 <div>
