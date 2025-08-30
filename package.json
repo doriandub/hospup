@@ -1,31 +1,8 @@
 {
-  "name": "hospup-saas",
+  "name": "hospup-saas-simple",
   "version": "1.0.0",
-  "private": true,
+  "description": "Hospup SaaS - Simple Static Version",
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "lint": "turbo run lint",
-    "type-check": "turbo run type-check",
-    "clean": "turbo run clean",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "db:migrate": "cd apps/backend && alembic upgrade head",
-    "db:seed": "cd apps/backend && python scripts/seed.py"
-  },
-  "devDependencies": {
-    "turbo": "^2.0.0",
-    "prettier": "^3.0.0",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.2.0"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
-  },
-  "packageManager": "pnpm@8.15.0"
+    "build": "echo 'Static site - no build needed'"
+  }
 }

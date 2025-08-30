@@ -1,6 +1,8 @@
-# 🏨 Hospup-SaaS
+# 🎥 Hospup SaaS - Version Simple
 
-AI-powered video generation platform for properties (hotels, Airbnb, restaurants, vacation rentals).
+**Site statique HTML pur qui fonctionne à 100% sur Vercel**
+
+Site de génération de vidéos virales pour hôtels, restaurants et locations de vacances.
 
 ## ✨ Features
 
