@@ -1,4 +1,8 @@
 {
   "version": 2,
-  "public": true
+  "name": "hospup-simple",
+  "public": true,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

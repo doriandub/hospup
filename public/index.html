@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HOSPUP TEST</title>
+    <style>
+        body { 
+            font-family: Arial; 
+            margin: 50px; 
+            text-align: center; 
+            background: #f0f0f0;
+        }
+        h1 { 
+            color: #333; 
+            font-size: 3em; 
+        }
+        .success { 
+            background: green; 
+            color: white; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 HOSPUP</h1>
+    <div class="success">
+        ✅ DÉPLOIEMENT RÉUSSI!
+    </div>
+    <p>Cette version fonctionne à 100%</p>
+    <p>Timestamp: <span id="time"></span></p>
+    
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString();
+        console.log('✅ Hospup chargé:', new Date());
+    </script>
+</body>
+</html>
