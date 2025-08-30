@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "name": "hospup-simple",
-  "public": true,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "name": "hospup-frontend",
+  "framework": "nextjs"
 }
