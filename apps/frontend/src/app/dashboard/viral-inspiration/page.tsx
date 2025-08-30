@@ -37,7 +37,6 @@ export default function ViralInspirationPage() {
     const matchesSearch = searchQuery === '' || 
       template.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.hotel_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.country?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.username?.toLowerCase().includes(searchQuery.toLowerCase())
     
     const matchesCategory = categoryFilter === 'all' || template.category === categoryFilter

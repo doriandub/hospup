@@ -42,8 +42,8 @@ interface Video {
 interface Property {
   id: string
   name: string
-  city: string
-  country: string
+  city?: string
+  country?: string
 }
 
 interface VideoCardProps {

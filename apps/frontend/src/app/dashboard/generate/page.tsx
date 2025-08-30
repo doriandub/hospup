@@ -124,7 +124,7 @@ export default function GenerateVideoPage() {
       <VideoGenerationNavbar 
         currentStep={1}
         propertyId={selectedProperty}
-        showGenerationButtons={!!selectedProperty && prompt.trim()}
+        showGenerationButtons={!!selectedProperty && !!prompt.trim()}
         onRandomTemplate={handleRandomTemplate}
         onGenerateTemplate={handleGenerateTemplate}
         isGenerating={loading}

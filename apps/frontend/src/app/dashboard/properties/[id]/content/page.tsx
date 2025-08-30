@@ -20,6 +20,7 @@ interface Video {
   id: string
   title: string
   video_url: string
+  thumbnail_url?: string
   status: string
   size: number
   format: string
@@ -50,7 +51,7 @@ export default function PropertyContentPage() {
   const fetchVideos = useCallback(async () => {
     try {
       const response = await videosApi.getAll(propertyId, 'uploaded')
-      console.log('🔍 Videos fetched:', response.data.map(v => ({ 
+      console.log('🔍 Videos fetched:', response.data.map((v: Video) => ({ 
         title: v.title, 
         thumbnail_url: v.thumbnail_url,
         has_thumbnail: !!v.thumbnail_url

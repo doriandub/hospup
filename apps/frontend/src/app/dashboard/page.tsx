@@ -276,7 +276,7 @@ export default function DashboardPage() {
                     {(() => {
                       const now = new Date()
                       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-                      const daysLeft = Math.ceil((endOfMonth - now) / (1000 * 60 * 60 * 24))
+                      const daysLeft = Math.ceil((endOfMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
                       return daysLeft
                     })()} days
                   </span>

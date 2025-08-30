@@ -3,18 +3,12 @@
 
 echo "🚀 Deploying frontend to Vercel..."
 
-# Check if vercel CLI is installed
-if ! command -v vercel &> /dev/null; then
-    echo "❌ Vercel CLI not found. Installing..."
-    npm install -g vercel
-fi
-
 # Navigate to project root
 cd "$(dirname "$0")"
 
-# Deploy to Vercel
-echo "📦 Deploying to Vercel..."
-vercel --prod
+# Deploy to Vercel using npx (no global installation needed)
+echo "📦 Deploying to Vercel with npx..."
+npx vercel --prod
 
 echo "✅ Frontend deployment completed!"
-echo "🌐 Your app will be available at: https://your-domain.vercel.app"
+echo "🌐 Your app will be available at the URL shown above"

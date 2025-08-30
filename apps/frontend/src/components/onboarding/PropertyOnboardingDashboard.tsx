@@ -57,11 +57,7 @@ export function PropertyOnboardingDashboard() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const handleInputChange = (field: keyof PropertyFormData, value: string | boolean) => {
-    if (field === 'textOutline') {
-      setFormData(prev => ({ ...prev, [field]: value === 'true' || value === true }))
-    } else {
-      setFormData(prev => ({ ...prev, [field]: value as string }))
-    }
+    setFormData(prev => ({ ...prev, [field]: value as string }))
     if (errors[field as string]) {
       setErrors(prev => ({ ...prev, [field as string]: '' }))
     }

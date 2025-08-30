@@ -19,6 +19,9 @@ interface ViralTemplate {
   video_link?: string
   script?: string
   hotel_name?: string
+  created_at?: string
+  property?: string
+  country?: string
 }
 
 export function useViralTemplates() {

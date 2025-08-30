@@ -666,12 +666,12 @@ export function CanvasVideoEditorMasterclass({
     const y = e.clientY - rect.top
 
     // Vérifier s'il y a un texte sous la souris
-    const visibleTexts = getVisibleTexts(currentTime)
+    const visibleTexts = getVisibleTexts()
     let clickedOnText = false
     
     for (const text of visibleTexts) {
       const bounds = getTextBounds(text)
-      if (bounds && x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom) {
+      if (bounds && x >= bounds.x && x <= bounds.x + bounds.width && y >= bounds.y && y <= bounds.y + bounds.height) {
         clickedOnText = true
         break
       }

@@ -134,7 +134,8 @@ export function TimelineTextEditor({
       background: false,
       bold: false,
       italic: false,
-      opacity: 1
+      opacity: 1,
+      text_align: 'center' as const
     }
   })
 

@@ -78,7 +78,7 @@ export default function VideoPreviewPage() {
           console.log('🎵 Viral template response:', templateResponse)
           console.log('🎵 Viral template data:', templateResponse.data)
           setViralTemplate(templateResponse.data)
-        } catch (templateError) {
+        } catch (templateError: any) {
           console.error('❌ Error loading viral template:', templateError)
           console.error('❌ Template error details:', templateError.response?.data)
         }

@@ -1,0 +1,7 @@
+apps/
+packages/
+infrastructure/
+node_modules/
+.turbo/
+*.md
+!README.md

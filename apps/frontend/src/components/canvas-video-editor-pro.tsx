@@ -356,7 +356,7 @@ export function CanvasVideoEditorPro({
       
       if (clickType.type === 'resize') {
         setIsResizing(true)
-        setResizeHandle(clickType.handle || '')
+        setResizeHandle((clickType as any).handle || '')
         setDragStart({ x, y })
         setOriginalTextProps({
           fontSize: clickedText.style.font_size,

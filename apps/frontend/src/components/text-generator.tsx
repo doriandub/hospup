@@ -113,7 +113,7 @@ export function TextGenerator({ language, propertyName, onTextsChange, initialTe
   const [texts, setTexts] = useState<TextItem[]>(initialTexts)
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null)
 
-  const suggestions = TEXT_SUGGESTIONS[language] || TEXT_SUGGESTIONS.fr
+  const suggestions = TEXT_SUGGESTIONS[language as keyof typeof TEXT_SUGGESTIONS] || TEXT_SUGGESTIONS.fr
 
   useEffect(() => {
     onTextsChange(texts)

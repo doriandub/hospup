@@ -134,7 +134,8 @@ export function VideoTimelineEditor({
         shadow: true,
         outline: false,
         background: false,
-        opacity: 1
+        opacity: 1,
+        text_align: 'center' as const
       },
       textAlign: 'center'
     }])
@@ -271,7 +272,7 @@ export function VideoTimelineEditor({
         const fallbackAssignments = autoMatchVideosToSlots()
         setAssignments(fallbackAssignments)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error loading smart assignments:', error)
       console.error('❌ Error details:', error?.response?.data || error?.message || error)
       console.log('🔄 Falling back to basic auto-matching')
