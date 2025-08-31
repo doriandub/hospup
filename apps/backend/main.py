@@ -37,19 +37,37 @@ async def lifespan(app: FastAPI):
     # Startup
     global redis_client, rate_limiter
     logger.info("Starting Hospup-SaaS Backend")
+    
+    # Initialize Redis (non-blocking)
     try:
         redis_client = redis.from_url(settings.REDIS_URL)
         rate_limiter = RateLimiter(redis_client)
-        logger.info("Redis connection established successfully")
+        logger.info("Redis connection initialized")
     except Exception as e:
         logger.warning(f"Redis connection failed: {e}. Continuing without Redis.")
         redis_client = None
         rate_limiter = None
+    
+    # Test database connection (non-blocking)
+    try:
+        from core.database import engine
+        from sqlalchemy import text
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        logger.info("Database connection test successful")
+    except Exception as e:
+        logger.warning(f"Database connection test failed: {e}. Application will continue but database operations may fail.")
+    
+    logger.info("Backend startup complete")
     yield
+    
     # Shutdown
     logger.info("Shutting down Hospup-SaaS Backend")
     if redis_client:
-        await redis_client.close()
+        try:
+            await redis_client.close()
+        except Exception as e:
+            logger.error(f"Error closing Redis connection: {e}")
 
 app = FastAPI(
     title="Hospup-SaaS API",
@@ -128,6 +146,17 @@ async def root():
 @app.get("/test")
 async def test():
     return {"test": "success", "environment": settings.ENVIRONMENT}
+
+# Debug endpoint for deployment
+@app.get("/debug")
+async def debug():
+    return {
+        "app_name": settings.APP_NAME,
+        "environment": settings.ENVIRONMENT,
+        "database_url": settings.DATABASE_URL[:30] + "..." if settings.DATABASE_URL else "None",
+        "redis_connected": redis_client is not None,
+        "status": "running"
+    }
 
 # Validation error handler
 @app.exception_handler(RequestValidationError)
