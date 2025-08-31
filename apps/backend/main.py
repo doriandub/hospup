@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -124,6 +123,11 @@ async def health_check():
 @app.get("/")
 async def root():
     return {"message": "Hospup-SaaS Backend is running", "status": "ok"}
+
+# Test endpoint
+@app.get("/test")
+async def test():
+    return {"test": "success", "environment": settings.ENVIRONMENT}
 
 # Validation error handler
 @app.exception_handler(RequestValidationError)
