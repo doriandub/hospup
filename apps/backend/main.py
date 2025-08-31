@@ -96,6 +96,12 @@ app.add_middleware(
 async def rate_limit_middleware(request: Request, call_next):
     client_ip = request.client.host
     
+    # Debug all requests to understand what's happening
+    print(f"DEBUG - Request URL: {request.url}")
+    print(f"DEBUG - Method: {request.method}")
+    print(f"DEBUG - Headers: {dict(request.headers)}")
+    print(f"DEBUG - Client: {request.client}")
+    
     # Debug upload requests
     if "upload/presigned-url" in str(request.url):
         body = await request.body()
@@ -290,5 +296,7 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=settings.ENVIRONMENT == "development"
+        reload=settings.ENVIRONMENT == "development",
+        proxy_headers=True,
+        forwarded_allow_ips="*"
     )
