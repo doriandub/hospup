@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     
     # Security
-    ALLOWED_HOSTS: str = "localhost,127.0.0.1,localhost:3000,localhost:3001,localhost:3002"
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,http://localhost:3002"
+    ALLOWED_HOSTS: str = "localhost,127.0.0.1,localhost:3000,localhost:3001,localhost:3002,hospup-backend.onrender.com"
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,http://localhost:3002,https://hospup-backend.onrender.com"
     
     @property
     def allowed_hosts_list(self) -> List[str]:
