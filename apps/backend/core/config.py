@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "your-secret-key-change-in-production"
     
     # Database
-    DATABASE_URL: str = "postgresql://username:password@localhost:5432/hospup_saas"
+    DATABASE_URL: str = "sqlite:///./hospup_local.db"  # Local SQLite for development
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
