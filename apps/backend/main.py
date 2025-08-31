@@ -55,11 +55,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Security middleware
-app.add_middleware(
-    TrustedHostMiddleware, 
-    allowed_hosts=settings.allowed_hosts_list
-)
+# Security middleware - temporarily disabled for debugging
+# app.add_middleware(
+#     TrustedHostMiddleware, 
+#     allowed_hosts=settings.allowed_hosts_list
+# )
 
 app.add_middleware(
     CORSMiddleware,
