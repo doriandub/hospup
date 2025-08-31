@@ -22,3 +22,6 @@ weaviate-client>=4.9.0
 numpy==1.26.4
 tiktoken==0.8.0
 email-validator>=2.0.0
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.30.0
