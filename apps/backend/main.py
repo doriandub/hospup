@@ -38,8 +38,14 @@ async def lifespan(app: FastAPI):
     # Startup
     global redis_client, rate_limiter
     logger.info("Starting Hospup-SaaS Backend")
-    redis_client = redis.from_url(settings.REDIS_URL)
-    rate_limiter = RateLimiter(redis_client)
+    try:
+        redis_client = redis.from_url(settings.REDIS_URL)
+        rate_limiter = RateLimiter(redis_client)
+        logger.info("Redis connection established successfully")
+    except Exception as e:
+        logger.warning(f"Redis connection failed: {e}. Continuing without Redis.")
+        redis_client = None
+        rate_limiter = None
     yield
     # Shutdown
     logger.info("Shutting down Hospup-SaaS Backend")
@@ -110,8 +116,14 @@ async def health_check():
         "status": "healthy",
         "timestamp": time.time(),
         "version": "1.0.0",
-        "environment": settings.ENVIRONMENT
+        "environment": settings.ENVIRONMENT,
+        "redis_connected": redis_client is not None
     }
+
+# Simple startup check
+@app.get("/")
+async def root():
+    return {"message": "Hospup-SaaS Backend is running", "status": "ok"}
 
 # Validation error handler
 @app.exception_handler(RequestValidationError)
