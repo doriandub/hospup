@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     
     # Security
-    ALLOWED_HOSTS: str = "localhost,127.0.0.1,localhost:3000,localhost:3001,localhost:3002,localhost:3003,hospup-backend.onrender.com,hospup.vercel.app"
+    ALLOWED_HOSTS: str = "localhost,127.0.0.1,localhost:3000,localhost:3001,localhost:3002,localhost:3003,hospup-backend.onrender.com,*.onrender.com,hospup.vercel.app"
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,https://hospup-backend.onrender.com,https://hospup.vercel.app"
     
     @property
