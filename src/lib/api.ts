@@ -35,12 +35,18 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      if (typeof window !== 'undefined') {
+      // Only redirect on auth pages, not during uploads
+      const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
+      const isUploadProcess = currentPath.includes('/content') || currentPath.includes('/properties')
+      
+      if (typeof window !== 'undefined' && !isUploadProcess) {
+        console.warn('⚠️ Authentication error, redirecting to login')
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('user')
         window.location.href = '/auth/login'
+      } else if (isUploadProcess) {
+        console.warn('⚠️ Auth error during upload process - not redirecting')
       }
     }
     return Promise.reject(error)
