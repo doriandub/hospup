@@ -142,7 +142,7 @@ export default function TestIntegration() {
           <h2 className="text-xl font-semibold mb-4">⚙️ Configuration</h2>
           <div className="space-y-2 text-sm text-gray-600">
             <p><strong>Backend URL:</strong> {API_URL}</p>
-            <p><strong>Frontend Origin:</strong> {window.location.origin}</p>
+            <p><strong>Frontend Origin:</strong> {typeof window !== 'undefined' ? window.location.origin : 'Server-side'}</p>
             <p><strong>Environment:</strong> {process.env.NODE_ENV}</p>
           </div>
         </div>
