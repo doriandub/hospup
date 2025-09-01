@@ -52,7 +52,7 @@ class VideoResponse(BaseModel):
     class Config:
         from_attributes = True
 
-@router.post("/upload/presigned-url", response_model=UploadUrlResponse)
+@router.post("/presigned-url", response_model=UploadUrlResponse)
 async def get_upload_url(
     request: UploadUrlRequest,
     current_user: User = Depends(get_current_user),
@@ -132,7 +132,7 @@ async def get_upload_url(
             detail="Failed to generate upload URL"
         )
 
-@router.get("/upload/download-url/{s3_key:path}")
+@router.get("/download-url/{s3_key:path}")
 async def get_download_url(
     s3_key: str,
     current_user: User = Depends(get_current_user),
@@ -180,7 +180,7 @@ async def get_download_url(
             detail="Failed to generate download URL"
         )
 
-@router.post("/upload/complete", response_model=VideoResponse)
+@router.post("/complete", response_model=VideoResponse)
 async def complete_upload(
     request: VideoCreateRequest,
     current_user: User = Depends(get_current_user),
@@ -268,7 +268,7 @@ async def complete_upload(
     
     return VideoResponse.from_orm(video)
 
-@router.get("/upload/status/{video_id}")
+@router.get("/status/{video_id}")
 async def get_processing_status(
     video_id: str,
     current_user: User = Depends(get_current_user),
@@ -303,7 +303,9 @@ async def get_processing_status(
             "error": str(e)
         }
 
-@router.post("/upload", response_model=VideoResponse)
+# Direct upload endpoint - handles both / and without trailing slash
+@router.post("/", response_model=VideoResponse)
+@router.post("", response_model=VideoResponse)  
 async def upload_video_direct(
     file: UploadFile = File(...),
     property_id: str = Form(...),

@@ -174,7 +174,7 @@ app.include_router(
 )
 app.include_router(
     upload.router, 
-    prefix="/api/v1", 
+    prefix="/api/v1/upload", 
     tags=["upload"],
     dependencies=[Depends(get_current_user)]
 )
