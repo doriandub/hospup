@@ -13,9 +13,24 @@ from sqlalchemy.orm import Session
 from models.user import User
 from models.viral_video_template import ViralVideoTemplate
 from models.user_viewed_template import UserViewedTemplate
-from services.viral_matching_service import viral_matching_service
-from services.ai_matching_service import ai_matching_service
-from services.video_reconstruction_service import video_reconstruction_service
+# Import services conditionally to prevent startup crashes
+try:
+    from services.viral_matching_service import viral_matching_service
+except Exception as e:
+    print(f"Warning: Could not import viral matching service: {e}")
+    viral_matching_service = None
+
+try:
+    from services.ai_matching_service import ai_matching_service
+except Exception as e:
+    print(f"Warning: Could not import ai matching service: {e}")
+    ai_matching_service = None
+
+try:
+    from services.video_reconstruction_service import video_reconstruction_service
+except Exception as e:
+    print(f"Warning: Could not import video reconstruction service: {e}")
+    video_reconstruction_service = None
 
 router = APIRouter()
 

@@ -19,8 +19,18 @@ from core.auth import get_current_user
 from models.user import User
 from models.video import Video
 from models.video_segment import VideoSegment
-from services.video_analysis_service import video_analysis_service
-from services.weaviate_service import weaviate_service
+# Import services conditionally to prevent startup crashes
+try:
+    from services.video_analysis_service import video_analysis_service
+except Exception as e:
+    print(f"Warning: Could not import video analysis service: {e}")
+    video_analysis_service = None
+
+try:
+    from services.weaviate_service import weaviate_service  
+except Exception as e:
+    print(f"Warning: Could not import weaviate service: {e}")
+    weaviate_service = None
 
 router = APIRouter()
 
