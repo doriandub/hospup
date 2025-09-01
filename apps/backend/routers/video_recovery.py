@@ -10,7 +10,12 @@ import logging
 
 from core.auth import get_current_user
 from models.user import User
-from tasks.video_recovery_tasks import check_stuck_videos
+# Import Celery tasks conditionally to prevent startup crashes
+try:
+    from tasks.video_recovery_tasks import check_stuck_videos
+except Exception as e:
+    print(f"Warning: Could not import video recovery tasks: {e}")
+    check_stuck_videos = None
 
 router = APIRouter(prefix="/api/v1/video-recovery", tags=["Video Recovery"])
 logger = logging.getLogger(__name__)
