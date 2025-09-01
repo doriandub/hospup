@@ -128,11 +128,17 @@ async def test():
 # Debug endpoint for deployment
 @app.get("/debug")
 async def debug():
+    from core.deployment import deployment_config
+    config = deployment_config.get_processing_config()
+    
     return {
         "app_name": settings.APP_NAME,
         "environment": settings.ENVIRONMENT,
         "database_url": settings.DATABASE_URL[:30] + "..." if settings.DATABASE_URL else "None",
         "redis_connected": redis_client is not None,
+        "deployment_mode": config["mode"],
+        "use_async_processing": config["use_async_processing"],
+        "redis_url_available": bool(settings.REDIS_URL) if hasattr(settings, 'REDIS_URL') else False,
         "status": "running"
     }
 
