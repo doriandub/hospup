@@ -1,5 +1,10 @@
-import boto3
-from botocore.exceptions import ClientError
+try:
+    import boto3
+    from botocore.exceptions import ClientError
+    BOTO3_AVAILABLE = True
+except ImportError:
+    BOTO3_AVAILABLE = False
+    ClientError = Exception
 from typing import Optional, Dict, Any
 import uuid
 import logging
