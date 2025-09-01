@@ -157,10 +157,10 @@ async def db_test(db: Session = Depends(get_db)):
 @app.get("/test")
 async def test():
     try:
-        return {"test": "success", "environment": settings.ENVIRONMENT, "version": "2025-09-01-v3", "timestamp": time.time()}
+        return {"test": "success", "environment": settings.ENVIRONMENT, "version": "2025-09-01-v4", "timestamp": time.time()}
     except Exception as e:
         logger.error(f"Error in test endpoint: {e}")
-        return {"test": "error", "message": str(e), "version": "2025-09-01-v3"}
+        return {"test": "error", "message": str(e), "version": "2025-09-01-v4"}
 
 # Dependencies test endpoint - temporarily disabled to fix 502
 # @app.get("/deps")  
