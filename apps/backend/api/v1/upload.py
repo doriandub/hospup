@@ -10,7 +10,12 @@ from core.auth import get_current_user
 from models.user import User
 from models.property import Property
 from models.video import Video
-from services.s3_service import s3_service
+# Import S3 service conditionally to prevent startup crashes
+try:
+    from services.s3_service import s3_service
+except Exception as e:
+    print(f"Warning: Could not import S3 service: {e}")
+    s3_service = None
 from core.config import settings
 from tasks.video_processing_tasks import get_video_processing_status
 
@@ -104,6 +109,13 @@ async def get_upload_url(
         )
     
     try:
+        # Check if S3 service is available
+        if not s3_service:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="S3 service unavailable"
+            )
+        
         # Use S3 service for presigned URL generation
         upload_data = s3_service.generate_presigned_upload_url(
             file_name=request.file_name,
@@ -148,6 +160,13 @@ async def get_download_url(
                 detail="Video not found or access denied"
             )
         
+        # Check if S3 service is available
+        if not s3_service:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="S3 service unavailable"
+            )
+        
         # Use S3 service for presigned download URL
         download_url = s3_service.generate_presigned_download_url(s3_key)
         
@@ -179,6 +198,13 @@ async def complete_upload(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Property not found"
+        )
+    
+    # Check if S3 service is available
+    if not s3_service:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="S3 service unavailable"
         )
     
     # Create video record with processing status (will be completed once AI description is generated)
@@ -338,8 +364,8 @@ async def upload_video_direct(
         # Reset file pointer to beginning
         await file.seek(0)
         
-        # Check if S3 is configured
-        if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+        # Check if S3 is configured and available
+        if s3_service and settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
             # Production S3 upload
             upload_result = s3_service.upload_file_direct(
                 file.file,  # Direct file stream
@@ -354,7 +380,10 @@ async def upload_video_direct(
             logger.info(f"✅ S3 upload successful: {video_url}")
         else:
             # Development/Testing mode - simulate S3 upload
-            logger.warning("⚠️ S3 credentials not configured, using test mode")
+            if not s3_service:
+                logger.warning("⚠️ S3 service unavailable, using test mode")
+            else:
+                logger.warning("⚠️ S3 credentials not configured, using test mode")
             video_url = f"test://uploads/{s3_key}"
             logger.info(f"✅ TEST upload simulated: {video_url}")
         
