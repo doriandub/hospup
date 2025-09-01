@@ -93,43 +93,11 @@ app.add_middleware(
 )
 
 @app.middleware("http")
-async def rate_limit_middleware(request: Request, call_next):
-    client_ip = request.client.host
-    
-    # Debug all requests to understand what's happening
-    print(f"DEBUG - Request URL: {request.url}")
-    print(f"DEBUG - Method: {request.method}")
-    print(f"DEBUG - Headers: {dict(request.headers)}")
-    print(f"DEBUG - Client: {request.client}")
-    
-    # Debug upload requests
-    if "upload/presigned-url" in str(request.url):
-        body = await request.body()
-        print(f"DEBUG - Upload request URL: {request.url}")
-        print(f"DEBUG - Headers: {dict(request.headers)}")
-        print(f"DEBUG - Body: {body}")
-        print(f"DEBUG - Method: {request.method}")
-        # Reset the request body for downstream consumption
-        request._body = body
-    
-    # Rate limiting (temporarily disabled for debugging)
-    # is_allowed = await rate_limiter.is_allowed(
-    #     key=f"rate_limit:{client_ip}",
-    #     max_requests=settings.RATE_LIMIT_REQUESTS,
-    #     window_seconds=settings.RATE_LIMIT_WINDOW
-    # )
-    # 
-    # if not is_allowed:
-    #     return JSONResponse(
-    #         status_code=429,
-    #         content={"detail": "Rate limit exceeded"}
-    #     )
-    
+async def process_time_middleware(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
-    
     return response
 
 # Health check

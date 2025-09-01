@@ -29,3 +29,4 @@ opencv-python>=4.8.0
 scenedetect==0.6.7
 ffmpeg-python==0.2.0
 groq==0.31.0
+gunicorn==21.2.0
