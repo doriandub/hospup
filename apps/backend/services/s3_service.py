@@ -13,13 +13,24 @@ class S3Service:
     """Service for handling S3 file operations"""
     
     def __init__(self):
-        self.s3_client = boto3.client(
-            's3',
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-            region_name=settings.AWS_REGION
-        )
         self.bucket_name = settings.AWS_S3_BUCKET
+        
+        # Only initialize S3 client if credentials are available
+        if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+            try:
+                self.s3_client = boto3.client(
+                    's3',
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                    region_name=settings.AWS_REGION
+                )
+                logger.info("S3 client initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize S3 client: {e}")
+                self.s3_client = None
+        else:
+            logger.warning("S3 credentials not provided, S3 functionality will be disabled")
+            self.s3_client = None
     
     def generate_presigned_upload_url(
         self, 
@@ -29,6 +40,9 @@ class S3Service:
         expires_in: int = 3600  # 1 hour
     ) -> Dict[str, Any]:
         """Generate a presigned URL for uploading files to S3"""
+        
+        if not self.s3_client:
+            raise Exception("S3 client not initialized - check AWS credentials")
         
         # Generate unique file key
         file_extension = file_name.split('.')[-1] if '.' in file_name else ''
@@ -76,6 +90,9 @@ class S3Service:
         expires_in: int = 3600
     ) -> str:
         """Generate a presigned URL for downloading files from S3"""
+        
+        if not self.s3_client:
+            raise Exception("S3 client not initialized - check AWS credentials")
         
         try:
             url = self.s3_client.generate_presigned_url(
@@ -161,6 +178,12 @@ class S3Service:
     
     def upload_file_direct(self, file_obj, s3_key: str, content_type: str = None, public_read: bool = True) -> Dict[str, Any]:
         """Upload a file directly to S3"""
+        
+        if not self.s3_client:
+            return {
+                'success': False,
+                'error': 'S3 client not initialized - check AWS credentials'
+            }
         
         try:
             extra_args = {}
