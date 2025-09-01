@@ -22,8 +22,9 @@ weaviate-client>=4.9.0
 numpy==1.26.4
 tiktoken==0.8.0
 email-validator>=2.0.0
-# AI/ML Dependencies - will be installed via render.yaml for CPU optimization
-# torch and torchvision installed separately with CPU-only wheels
+# AI/ML Dependencies - CPU-optimized wheels
+torch==2.1.0
+torchvision==0.16.0
 transformers==4.35.0
 opencv-python-headless==4.8.1.78
 accelerate==0.24.1

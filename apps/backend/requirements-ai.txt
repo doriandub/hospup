@@ -1,0 +1,7 @@
+# AI/ML dependencies optimized for CPU deployment
+https://download.pytorch.org/whl/cpu/torch-2.1.0%2Bcpu-cp311-cp311-linux_x86_64.whl
+https://download.pytorch.org/whl/cpu/torchvision-0.16.0%2Bcpu-cp311-cp311-linux_x86_64.whl
+transformers==4.35.0
+accelerate==0.24.1
+sentencepiece==0.1.99
+opencv-python-headless==4.8.1.78
