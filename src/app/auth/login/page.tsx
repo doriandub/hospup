@@ -7,54 +7,34 @@ import { Building, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   
   const router = useRouter()
+  const { login, isLoading } = useAuth()
 
-  // Direct API call bypass useAuth hook
-  const handleDirectLogin = async () => {
-    setIsLoading(true)
+  // Use useAuth hook for proper state management
+  const handleLogin = async () => {
     setError('')
 
     try {
-      const response = await fetch('https://hospup-backend.onrender.com/api/v1/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        // Store tokens
-        localStorage.setItem('access_token', data.access_token)
-        localStorage.setItem('refresh_token', data.refresh_token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        
-        setSuccess(true)
-        setTimeout(() => router.push('/dashboard'), 1500)
-      } else {
-        const errorData = await response.json()
-        setError(errorData.detail || 'Login failed')
-      }
+      await login(email, password)
+      setSuccess(true)
+      setTimeout(() => router.push('/dashboard'), 1500)
     } catch (err: any) {
-      setError('Network error: ' + err.message)
-    } finally {
-      setIsLoading(false)
+      setError(err.response?.data?.detail || err.message || 'Login failed')
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await handleDirectLogin()
+    await handleLogin()
   }
 
   if (success) {
