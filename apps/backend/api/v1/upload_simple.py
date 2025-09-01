@@ -31,15 +31,8 @@ async def process_video_simple(video: Video, s3_key: str, db: Session, config: d
         try:
             # Récupération de la propriété pour contextualiser (avec query explicite)
             property_name = "votre établissement"
-            try:
-                if video.property_id:
-                    from models.property import Property
-                    property = db.query(Property).filter(Property.id == video.property_id).first()
-                    if property:
-                        property_name = property.name
-            except Exception as prop_error:
-                logger.warning(f"Could not load property: {prop_error}")
-                property_name = "votre établissement"
+            # Simplified property handling to avoid import issues
+            property_name = "votre établissement"
             
             # Analyse du nom de fichier pour deviner le contenu
             filename_lower = video.title.lower()
