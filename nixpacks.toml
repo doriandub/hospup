@@ -1,21 +1,11 @@
 [phases.setup]
-nixPkgs = ['python39', 'ffmpeg', 'redis']
+nixPkgs = ["python311", "ffmpeg", "pkg-config", "gcc", "python311Packages.pip"]
 
 [phases.install]
-cmds = [
-  'cd apps/backend && pip install --upgrade pip',
-  'cd apps/backend && pip install -r requirements.txt'
-]
+cmds = ["cd apps/backend && pip install -r requirements.txt"]
 
 [phases.build]
-cmds = [
-  'chmod +x start-railway.sh',
-  'echo "Build phase completed for Railway backend deployment"'
-]
+cmds = ["echo 'Build phase completed'"]
 
 [start]
-cmd = './start-railway.sh'
-
-[variables]
-PYTHONPATH = 'apps/backend'
-PORT = '8000'
+cmd = "cd apps/backend && gunicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 300"

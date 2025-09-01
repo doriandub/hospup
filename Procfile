@@ -1,3 +1,1 @@
-web: python main.py
-worker: celery -A tasks.celery_app worker --loglevel=info
-beat: celery -A tasks.celery_app beat --loglevel=info
+web: cd apps/backend && gunicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 300
