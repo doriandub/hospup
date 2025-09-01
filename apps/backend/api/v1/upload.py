@@ -280,7 +280,7 @@ async def get_processing_status(
 @router.post("/", response_model=VideoResponse)
 async def upload_video_direct(
     file: UploadFile = File(...),
-    property_id: Optional[str] = Form(None),
+    property_id: str = Form(...),
     title: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -293,35 +293,19 @@ async def upload_video_direct(
     
     logger.info(f"🎬 Direct upload started: {file.filename} for user {current_user.id}")
     
-    # Auto-detect property if not provided
-    if not property_id:
-        # Use first available property for the user
-        property = db.query(Property).filter(Property.user_id == current_user.id).first()
-        if not property:
-            # Create a default property if none exists
-            property = Property(
-                name=f"{current_user.name}'s Default Property",
-                user_id=current_user.id,
-                property_type="hotel",
-                description="Auto-created for video uploads"
-            )
-            db.add(property)
-            db.commit()
-            db.refresh(property)
-            logger.info(f"Created auto property {property.id} for user {current_user.id}")
-        property_id = property.id
-    else:
-        # Validate provided property ownership
-        property = db.query(Property).filter(
-            Property.id == property_id,
-            Property.user_id == current_user.id
-        ).first()
-        
-        if not property:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Property not found"
-            )
+    # Property is required - user must create one first
+    
+    # Validate property ownership
+    property = db.query(Property).filter(
+        Property.id == property_id,
+        Property.user_id == current_user.id
+    ).first()
+    
+    if not property:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found or you don't have access to it."
+        )
     
     # Validate file type
     allowed_video_types = [
