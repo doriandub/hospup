@@ -250,16 +250,32 @@ async def complete_upload(
         logger.info(f"🚀 Processing video synchronously (mode: {config['mode']})")
         
         try:
-            # Import the synchronous processing function
-            from api.v1.upload_vercel import process_video_sync
+            # Import the synchronous processing function conditionally
+            try:
+                from api.v1.upload_vercel import process_video_sync
+                use_complex_processing = True
+            except Exception as import_error:
+                logger.warning(f"Complex processing unavailable: {import_error}")
+                # Fallback to simple processing
+                from api.v1.upload_simple import process_video_simple
+                use_complex_processing = False
+                logger.info("Using simplified video processing")
             
             # Process synchronously with timeout
-            processed = await process_video_sync(
-                video=video,
-                s3_key=request.s3_key,
-                db=db,
-                config=config
-            )
+            if use_complex_processing:
+                processed = await process_video_sync(
+                    video=video,
+                    s3_key=request.s3_key,
+                    db=db,
+                    config=config
+                )
+            else:
+                processed = await process_video_simple(
+                    video=video,
+                    s3_key=request.s3_key,
+                    db=db,
+                    config=config
+                )
             
             if processed:
                 logger.info(f"✅ Synchronous processing completed for video {video.id}")
@@ -453,19 +469,35 @@ async def upload_video_direct(
                 # Import the synchronous processing function conditionally
                 try:
                     from api.v1.upload_vercel import process_video_sync
+                    use_complex_processing = True
                 except Exception as import_error:
-                    logger.warning(f"Could not import synchronous processing: {import_error}")
-                    video.status = "uploaded" 
-                    db.commit()
-                    return VideoResponse.from_orm(video)
+                    logger.warning(f"Complex processing unavailable: {import_error}")
+                    # Fallback to simple processing
+                    try:
+                        from api.v1.upload_simple import process_video_simple
+                        use_complex_processing = False
+                        logger.info("Using simplified video processing")
+                    except Exception as simple_error:
+                        logger.error(f"Even simple processing failed: {simple_error}")
+                        video.status = "uploaded" 
+                        db.commit()
+                        return VideoResponse.from_orm(video)
                 
                 # Process synchronously with timeout
-                processed = await process_video_sync(
-                    video=video,
-                    s3_key=s3_key,
-                    db=db,
-                    config=config
-                )
+                if use_complex_processing:
+                    processed = await process_video_sync(
+                        video=video,
+                        s3_key=s3_key,
+                        db=db,
+                        config=config
+                    )
+                else:
+                    processed = await process_video_simple(
+                        video=video,
+                        s3_key=s3_key,
+                        db=db,
+                        config=config
+                    )
                 
                 if processed:
                     logger.info(f"✅ Synchronous processing completed for video {video.id}")
