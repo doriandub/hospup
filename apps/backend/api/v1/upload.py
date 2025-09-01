@@ -17,7 +17,12 @@ except Exception as e:
     print(f"Warning: Could not import S3 service: {e}")
     s3_service = None
 from core.config import settings
-from tasks.video_processing_tasks import get_video_processing_status
+# Import Celery tasks conditionally to prevent startup crashes
+try:
+    from tasks.video_processing_tasks import get_video_processing_status
+except Exception as e:
+    print(f"Warning: Could not import video processing tasks: {e}")
+    get_video_processing_status = None
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -289,6 +294,14 @@ async def get_processing_status(
         )
     
     try:
+        # Check if video processing tasks are available
+        if not get_video_processing_status:
+            return {
+                "video_id": video_id,
+                "status": video.status,
+                "message": "Processing status tracking unavailable"
+            }
+        
         # Get processing status
         status_result = get_video_processing_status.delay(video_id)
         result = status_result.get(timeout=5)
