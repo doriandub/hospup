@@ -24,6 +24,10 @@ class S3Service:
     
     def _init_s3_client(self):
         """Initialize S3 client only when needed"""
+        if not BOTO3_AVAILABLE:
+            logger.info("ℹ️ boto3 not available - S3 service disabled")
+            return
+            
         # Only try to initialize if credentials exist and not empty strings
         if (settings.AWS_ACCESS_KEY_ID and 
             settings.AWS_SECRET_ACCESS_KEY and
