@@ -279,9 +279,9 @@ export default function ContentLibraryPage() {
     formData.append('property_id', propertyId)
     formData.append('title', file.name.split('.')[0])
 
-    console.log('📤 Uploading directly to /api/v1/upload/')
+    console.log('📤 Uploading directly to /api/v1/upload')
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://hospup-backend.onrender.com'}/api/v1/upload/`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://hospup-backend.onrender.com'}/api/v1/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
