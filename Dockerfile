@@ -9,15 +9,8 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     pkg-config \
-    libglib2.0-dev \
-    libcairo2-dev \
-    libpango1.0-dev \
-    libgdk-pixbuf-2.0-dev \
+    libglib2.0-0 \
     libgomp1 \
-    libgl1-mesa-glx \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment
