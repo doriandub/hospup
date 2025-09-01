@@ -332,8 +332,31 @@ async def upload_video_direct(
         unique_filename = f"{uuid.uuid4()}.{file_extension}"
         s3_key = f"properties/{property_id}/videos/{unique_filename}"
         
-        # TEMPORARY: Skip S3 upload, just simulate success for testing
-        logger.info(f"⚡ TESTING MODE: Simulating upload for {s3_key}")
+        # Stream directly to S3 (production scalable storage)
+        logger.info(f"☁️ Streaming to S3: {s3_key}")
+        
+        # Reset file pointer to beginning
+        await file.seek(0)
+        
+        # Check if S3 is configured
+        if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+            # Production S3 upload
+            upload_result = s3_service.upload_file_direct(
+                file.file,  # Direct file stream
+                s3_key, 
+                file.content_type or 'video/mp4'
+            )
+            
+            if not upload_result['success']:
+                raise Exception(f"S3 upload failed: {upload_result.get('error')}")
+            
+            video_url = f"s3://{s3_service.bucket_name}/{s3_key}"
+            logger.info(f"✅ S3 upload successful: {video_url}")
+        else:
+            # Development/Testing mode - simulate S3 upload
+            logger.warning("⚠️ S3 credentials not configured, using test mode")
+            video_url = f"test://uploads/{s3_key}"
+            logger.info(f"✅ TEST upload simulated: {video_url}")
         
         # Get file size
         file_size = 0
@@ -342,11 +365,7 @@ async def upload_video_direct(
             file_size = await file.tell()
             await file.seek(0)     # Reset to beginning
         except:
-            file_size = 1024 * 1024  # Default 1MB if can't determine
-        
-        # Create a test video URL
-        video_url = f"test://{s3_key}"
-        logger.info(f"✅ TEST: Created video record without S3 upload")
+            file_size = 1024 * 1024  # Default 1MB
         
         # Create video record with "processing" status
         # This will trigger the automatic processing pipeline
@@ -365,10 +384,33 @@ async def upload_video_direct(
         db.commit()
         db.refresh(video)
         
-        # TEMPORARY: Skip processing for testing, just mark as uploaded
-        logger.info(f"⚡ TEST MODE: Skipping processing for {video.id}")
-        video.status = "uploaded"  # Direct to uploaded status for testing
-        db.commit()
+        # Trigger automatic video processing
+        logger.info(f"🚀 Triggering video processing for {video.id}")
+        
+        # Auto-detect environment and choose appropriate processing method
+        from core.deployment import deployment_config
+        config = deployment_config.get_processing_config()
+        
+        if config["use_async_processing"]:
+            # Celery async processing (recommended for production)
+            try:
+                from tasks.video_processing_tasks import process_uploaded_video
+                task = process_uploaded_video.delay(str(video.id), s3_key)
+                video.generation_job_id = task.id
+                db.commit()
+                logger.info(f"🔄 Async processing task {task.id} started for video {video.id}")
+            except Exception as e:
+                logger.warning(f"❌ Async processing failed, video will remain as processing: {e}")
+        else:
+            # Synchronous processing fallback for environments without Celery
+            logger.info(f"⚡ Synchronous processing for video {video.id}")
+            try:
+                # Mark as uploaded for now, processing can be triggered later
+                video.status = "uploaded"
+                db.commit()
+                logger.info(f"✅ Video marked as uploaded: {video.id}")
+            except Exception as e:
+                logger.error(f"❌ Error updating video status: {e}")
         
         logger.info(f"✅ Direct upload successful: {video.id} ({file.filename})")
         
