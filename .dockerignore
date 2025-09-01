@@ -1,0 +1,13 @@
+# Ignore non-backend files for faster builds
+src/
+apps/frontend/
+.git
+.github
+node_modules
+.next
+*.md
+*.log
+.env*
+!apps/backend/
+**/__pycache__
+**/*.pyc
