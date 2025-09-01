@@ -162,6 +162,17 @@ async def test():
         logger.error(f"Error in test endpoint: {e}")
         return {"test": "error", "message": str(e), "version": "2025-09-01-v4"}
 
+# Create tables endpoint
+@app.post("/create-tables")
+async def create_database_tables():
+    try:
+        from core.database import create_tables
+        create_tables()
+        return {"success": True, "message": "Database tables created successfully"}
+    except Exception as e:
+        logger.error(f"Error creating tables: {e}")
+        return {"success": False, "error": str(e)}
+
 # Dependencies test endpoint - temporarily disabled to fix 502
 # @app.get("/deps")  
 # async def test_deps():
