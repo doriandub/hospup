@@ -123,7 +123,48 @@ async def root():
 # Test endpoint
 @app.get("/test")
 async def test():
-    return {"test": "success", "environment": settings.ENVIRONMENT}
+    return {"test": "success", "environment": settings.ENVIRONMENT, "version": "2025-09-01-v2"}
+
+# Dependencies test endpoint
+@app.get("/deps")
+async def test_deps():
+    deps = {}
+    
+    # Test FFmpeg
+    try:
+        import subprocess
+        result = subprocess.run(['ffmpeg', '-version'], capture_output=True, timeout=5)
+        deps["ffmpeg_available"] = result.returncode == 0
+        if result.returncode == 0:
+            deps["ffmpeg_version"] = result.stdout.decode().split('\n')[0]
+    except Exception as e:
+        deps["ffmpeg_error"] = str(e)
+    
+    # Test PyTorch
+    try:
+        import torch
+        deps["torch"] = True
+        deps["torch_version"] = torch.__version__
+    except Exception as e:
+        deps["torch"] = False
+        deps["torch_error"] = str(e)
+        
+    # Test services
+    try:
+        from services.video_conversion_service import video_conversion_service
+        deps["video_service"] = True
+    except Exception as e:
+        deps["video_service"] = False
+        deps["video_service_error"] = str(e)
+        
+    try:
+        from services.blip_analysis_service import blip_analysis_service
+        deps["blip_service"] = True  
+    except Exception as e:
+        deps["blip_service"] = False
+        deps["blip_service_error"] = str(e)
+    
+    return deps
 
 # Debug endpoint for deployment
 @app.get("/debug")
