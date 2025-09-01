@@ -120,6 +120,39 @@ async def health_check():
 async def root():
     return {"message": "Hospup-SaaS Backend is running", "status": "ok"}
 
+# Database test endpoint
+@app.get("/db-test")
+async def db_test(db: Session = Depends(get_db)):
+    try:
+        from models.user import User
+        # Test database connection by counting users
+        user_count = db.query(User).count()
+        # Try to find the specific user
+        test_user = db.query(User).filter(User.email == "userproduction@example.com").first()
+        user_exists = test_user is not None
+        user_details = None
+        if test_user:
+            user_details = {
+                "id": test_user.id,
+                "email": test_user.email,
+                "name": test_user.name,
+                "is_active": test_user.is_active,
+                "created_at": str(test_user.created_at)
+            }
+        
+        return {
+            "database_connection": "success",
+            "total_users": user_count,
+            "test_user_exists": user_exists,
+            "user_details": user_details
+        }
+    except Exception as e:
+        return {
+            "database_connection": "failed",
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+
 # Test endpoint (simplified for stability)
 @app.get("/test")
 async def test():
