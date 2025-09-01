@@ -246,11 +246,9 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
             if thumbnail_url:
                 video.thumbnail_url = thumbnail_url
             
-            # Set final status
-            if content_description and not content_description.startswith("Video uploaded successfully"):
-                video.status = "ready"  # Ready with AI description
-            else:
-                video.status = "uploaded"  # Uploaded but basic description
+            # Set final status to completed (as expected by frontend)
+            video.status = "completed"  # Processing completed successfully
+            video.completed_at = datetime.utcnow()  # Mark completion time
             
             # Store processing metadata
             processing_metadata = {
@@ -455,11 +453,9 @@ async def complete_upload_vercel(
             if thumbnail_url:
                 video.thumbnail_url = thumbnail_url
             
-            # Set final status
-            if content_description and not content_description.startswith("Video uploaded successfully"):
-                video.status = "ready"  # Ready with AI description
-            else:
-                video.status = "uploaded"  # Uploaded but basic description
+            # Set final status to completed (as expected by frontend)
+            video.status = "completed"  # Processing completed successfully
+            video.completed_at = datetime.utcnow()  # Mark completion time
             
             # Store processing metadata
             processing_metadata = {
