@@ -250,17 +250,27 @@ async def complete_upload(
         logger.info(f"🚀 Processing video synchronously (mode: {config['mode']})")
         
         try:
-            # Try complex processing first, fallback to simple if needed
+            # Force complex processing - ignore import errors in services
             try:
                 from api.v1.upload_vercel import process_video_sync
                 use_complex_processing = True
-                logger.info("🚀 Using COMPLEX video processing (FFmpeg + AI)")
+                logger.info("🚀 FORCING COMPLEX video processing (FFmpeg + AI analysis)")
             except Exception as import_error:
-                logger.warning(f"Complex processing unavailable: {import_error}")
-                # Fallback to simple processing
-                from api.v1.upload_simple import process_video_simple
-                use_complex_processing = False
-                logger.info("Using simplified video processing")
+                logger.warning(f"Complex processing import error: {import_error}")
+                # Still try to use complex processing with degraded services
+                try:
+                    # Import the function directly even if services failed
+                    import importlib
+                    upload_vercel_module = importlib.import_module("api.v1.upload_vercel")
+                    process_video_sync = getattr(upload_vercel_module, "process_video_sync")
+                    use_complex_processing = True
+                    logger.info("🚀 FORCING COMPLEX processing (degraded mode - some services unavailable)")
+                except Exception as force_error:
+                    logger.error(f"Could not force complex processing: {force_error}")
+                    # Only fallback to simple if absolutely necessary
+                    from api.v1.upload_simple import process_video_simple
+                    use_complex_processing = False
+                    logger.info("Using simplified video processing as last resort")
             
             # Process synchronously with timeout
             if use_complex_processing:
@@ -467,21 +477,31 @@ async def upload_video_direct(
             logger.info(f"🚀 Processing video synchronously (mode: {config['mode']})")
             
             try:
-                # Try complex processing first, fallback to simple if needed
+                # Force complex processing - ignore import errors in services
                 try:
                     from api.v1.upload_vercel import process_video_sync
                     use_complex_processing = True
-                    logger.info("🚀 Using COMPLEX video processing (FFmpeg + AI)")
+                    logger.info("🚀 FORCING COMPLEX video processing (FFmpeg + AI analysis)")
                 except Exception as import_error:
-                    logger.warning(f"Complex processing unavailable: {import_error}")
-                    # Fallback to simple processing
+                    logger.warning(f"Complex processing import error: {import_error}")
+                    # Still try to use complex processing with degraded services
                     try:
-                        from api.v1.upload_simple import process_video_simple
-                        use_complex_processing = False
-                        logger.info("Using simplified video processing")
-                    except Exception as simple_error:
-                        logger.error(f"Even simple processing failed: {simple_error}")
-                        video.status = "uploaded" 
+                        # Import the function directly even if services failed
+                        import importlib
+                        upload_vercel_module = importlib.import_module("api.v1.upload_vercel")
+                        process_video_sync = getattr(upload_vercel_module, "process_video_sync")
+                        use_complex_processing = True
+                        logger.info("🚀 FORCING COMPLEX processing (degraded mode - some services unavailable)")
+                    except Exception as force_error:
+                        logger.error(f"Could not force complex processing: {force_error}")
+                        # Only fallback to simple if absolutely necessary
+                        try:
+                            from api.v1.upload_simple import process_video_simple
+                            use_complex_processing = False
+                            logger.info("Using simplified video processing as last resort")
+                        except Exception as simple_error:
+                            logger.error(f"Even simple processing failed: {simple_error}")
+                            video.status = "uploaded" 
                         db.commit()
                         return VideoResponse.from_orm(video)
                 

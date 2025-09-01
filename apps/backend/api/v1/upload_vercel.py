@@ -48,27 +48,25 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
     try:
         logger.info(f"🎬 Processing video synchronously: {video.title}")
         
-        # Check if required services are available
-        if not s3_service:
-            logger.error("❌ S3 service not available - check pydantic-settings installation")
+        # Check services availability and log warnings (graceful degradation)
+        services_available = {
+            "s3": s3_service is not None,
+            "video_conversion": video_conversion_service is not None, 
+            "blip_analysis": blip_analysis_service is not None
+        }
+        
+        if not services_available["s3"]:
+            logger.error("❌ S3 service not available - check AWS credentials")
             video.status = "failed"
             video.description = f"{video.description}\n\nFailed: S3 service not available"
             db.commit()
             raise Exception("S3 service required for video processing")
             
-        if not video_conversion_service:
-            logger.error("❌ Video conversion service not available - check FFmpeg installation")
-            video.status = "failed"
-            video.description = f"{video.description}\n\nFailed: Video conversion service not available"
-            db.commit()
-            raise Exception("Video conversion service required")
+        if not services_available["video_conversion"]:
+            logger.warning("⚠️ Video conversion service not available - skipping FFmpeg operations")
             
-        if not blip_analysis_service:
-            logger.error("❌ BLIP analysis service not available - check PIL/transformers installation")
-            video.status = "failed"  
-            video.description = f"{video.description}\n\nFailed: AI analysis service not available"
-            db.commit()
-            raise Exception("BLIP analysis service required")
+        if not services_available["blip_analysis"]:
+            logger.warning("⚠️ BLIP analysis service not available - skipping AI description")
         
         # Download video from S3
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -84,11 +82,16 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
                 shutil.copy2(local_path, original_path)
             
             # Get video metadata (with FFmpeg check)
-            try:
-                metadata = video_conversion_service.get_video_metadata(original_path)
-                logger.info(f"✅ Video metadata extracted: {metadata}")
-            except Exception as e:
-                logger.warning(f"⚠️ Metadata extraction failed (FFmpeg issue?): {e}")
+            if services_available["video_conversion"]:
+                try:
+                    metadata = video_conversion_service.get_video_metadata(original_path)
+                    logger.info(f"✅ Video metadata extracted: {metadata}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Metadata extraction failed (FFmpeg issue?): {e}")
+                    metadata = {"duration": 30.0, "width": 1080, "height": 1920, "fps": 30}
+            else:
+                # Default metadata when FFmpeg not available
+                logger.info("ℹ️ Using default metadata (no FFmpeg)")
                 metadata = {"duration": 30.0, "width": 1080, "height": 1920, "fps": 30}
             
             # Check if conversion is needed and FFmpeg is available
@@ -133,9 +136,8 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
                 logger.warning("🚫 Skipping video conversion - FFmpeg not available")
             
             # Generate AI description (with timeout) - THIS WORKS WITHOUT FFMPEG
-            content_description = "Video uploaded successfully"
-            try:
-                if config["enable_ai_description"]:
+            if services_available["blip_analysis"] and config["enable_ai_description"]:
+                try:
                     logger.info("📝 Generating AI description with BLIP...")
                     content_description = blip_analysis_service.analyze_video_content(
                         final_video_path,
@@ -143,9 +145,13 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
                         timeout=config["processing_timeout"]["ai_analysis"]
                     )
                     logger.info(f"✅ AI description generated: {content_description[:100]}...")
-            except Exception as e:
-                logger.warning(f"⚠️ AI description failed: {e}")
-                content_description = "Video uploaded successfully - AI analysis unavailable"
+                except Exception as e:
+                    logger.warning(f"⚠️ AI description failed: {e}")
+                    content_description = "Video uploaded successfully - AI analysis failed"
+            else:
+                if not services_available["blip_analysis"]:
+                    logger.info("ℹ️ Skipping AI analysis - BLIP service not available")
+                    content_description = "Video uploaded successfully - AI analysis unavailable (missing dependencies)"
             
             # Upload processed video if converted
             final_s3_key = s3_key
@@ -347,17 +353,23 @@ async def complete_upload_vercel(
                 else:
                     logger.warning("⚠️ Conversion failed, using original")
             
-            # Generate AI description (with timeout for Vercel)
-            try:
-                logger.info("📝 Generating AI description...")
-                content_description = blip_analysis_service.analyze_video_content(
-                    final_video_path,
-                    max_frames=5,  # Reduced for faster processing
-                    timeout=30     # 30 second timeout for Vercel
-                )
-            except Exception as e:
-                logger.warning(f"AI description failed: {e}")
-                content_description = "Video uploaded successfully"
+            # Generate AI description (with timeout for Vercel) - if BLIP available
+            content_description = "Video uploaded successfully"
+            if services_available["blip_analysis"]:
+                try:
+                    logger.info("📝 Generating AI description...")
+                    content_description = blip_analysis_service.analyze_video_content(
+                        final_video_path,
+                        max_frames=5,  # Reduced for faster processing
+                        timeout=30     # 30 second timeout for Vercel
+                    )
+                except Exception as e:
+                    logger.warning(f"⚠️ AI description failed: {e}")
+                    content_description = "Video uploaded successfully - AI analysis failed"
+            else:
+                logger.info("ℹ️ Skipping AI description - BLIP service not available")
+                content_description = "Video uploaded successfully - AI analysis unavailable"
+            
             
             # Upload processed video if converted
             final_s3_key = request.s3_key
