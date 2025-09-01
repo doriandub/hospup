@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: hospup-backend
+    runtime: python3
+    plan: standard
+    buildCommand: |
+      # Run optimized AI dependencies installation
+      chmod +x install_ai_deps.sh && ./install_ai_deps.sh
+      
+      # Install remaining Python dependencies
+      pip install -r requirements.txt --no-cache-dir
+    startCommand: gunicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.5
+      - key: TORCH_COMPILE_DEBUG
+        value: "0"
+      - key: TOKENIZERS_PARALLELISM
+        value: "false"
+      - key: TRANSFORMERS_CACHE
+        value: /tmp/transformers_cache
+      - key: HF_HOME
+        value: /tmp/huggingface_cache
