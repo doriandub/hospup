@@ -50,15 +50,24 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
         
         # Check if required services are available
         if not s3_service:
-            logger.error("❌ S3 service not available")
+            logger.error("❌ S3 service not available - check pydantic-settings installation")
+            video.status = "failed"
+            video.description = f"{video.description}\n\nFailed: S3 service not available"
+            db.commit()
             raise Exception("S3 service required for video processing")
             
         if not video_conversion_service:
-            logger.error("❌ Video conversion service not available")
+            logger.error("❌ Video conversion service not available - check FFmpeg installation")
+            video.status = "failed"
+            video.description = f"{video.description}\n\nFailed: Video conversion service not available"
+            db.commit()
             raise Exception("Video conversion service required")
             
         if not blip_analysis_service:
-            logger.error("❌ BLIP analysis service not available")
+            logger.error("❌ BLIP analysis service not available - check PIL/transformers installation")
+            video.status = "failed"  
+            video.description = f"{video.description}\n\nFailed: AI analysis service not available"
+            db.commit()
             raise Exception("BLIP analysis service required")
         
         # Download video from S3
@@ -74,47 +83,73 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
                 import shutil
                 shutil.copy2(local_path, original_path)
             
-            # Get video metadata
-            metadata = video_conversion_service.get_video_metadata(original_path)
+            # Get video metadata (with FFmpeg check)
+            try:
+                metadata = video_conversion_service.get_video_metadata(original_path)
+                logger.info(f"✅ Video metadata extracted: {metadata}")
+            except Exception as e:
+                logger.warning(f"⚠️ Metadata extraction failed (FFmpeg issue?): {e}")
+                metadata = {"duration": 30.0, "width": 1080, "height": 1920, "fps": 30}
             
-            # Check if conversion is needed
-            needs_conversion = video_conversion_service.needs_conversion(metadata)
+            # Check if conversion is needed and FFmpeg is available
+            needs_conversion = False
             final_video_path = original_path
             
-            if needs_conversion:
-                logger.info("📐 Video needs conversion - converting...")
-                converted_path = os.path.join(temp_dir, f"converted_{video.id}.mp4")
-                
-                conversion_result = video_conversion_service.convert_video(
-                    original_path, 
-                    converted_path,
-                    target_resolution="1080x1920",
-                    target_fps=30,
-                    timeout=config["processing_timeout"]["video_conversion"]
-                )
-                
-                if conversion_result.get("success"):
-                    final_video_path = converted_path
-                    logger.info("✅ Video converted successfully")
-                else:
-                    logger.warning("⚠️ Conversion failed, using original")
+            # Test FFmpeg availability
+            ffmpeg_available = False
+            try:
+                import subprocess
+                result = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True, timeout=5)
+                ffmpeg_available = result.returncode == 0
+                logger.info("✅ FFmpeg is available for conversion")
+            except Exception as e:
+                logger.warning(f"⚠️ FFmpeg not available: {e}")
+                ffmpeg_available = False
             
-            # Generate AI description (with timeout)
+            if ffmpeg_available:
+                try:
+                    needs_conversion = video_conversion_service.needs_conversion(metadata)
+                    
+                    if needs_conversion:
+                        logger.info("📐 Video needs conversion - converting...")
+                        converted_path = os.path.join(temp_dir, f"converted_{video.id}.mp4")
+                        
+                        conversion_result = video_conversion_service.convert_video(
+                            original_path, 
+                            converted_path,
+                            target_resolution="1080x1920",
+                            target_fps=30,
+                            timeout=config["processing_timeout"]["video_conversion"]
+                        )
+                        
+                        if conversion_result.get("success"):
+                            final_video_path = converted_path
+                            logger.info("✅ Video converted successfully")
+                        else:
+                            logger.warning("⚠️ Conversion failed, using original")
+                except Exception as e:
+                    logger.warning(f"⚠️ Video conversion failed: {e}")
+            else:
+                logger.warning("🚫 Skipping video conversion - FFmpeg not available")
+            
+            # Generate AI description (with timeout) - THIS WORKS WITHOUT FFMPEG
             content_description = "Video uploaded successfully"
             try:
                 if config["enable_ai_description"]:
-                    logger.info("📝 Generating AI description...")
+                    logger.info("📝 Generating AI description with BLIP...")
                     content_description = blip_analysis_service.analyze_video_content(
                         final_video_path,
                         max_frames=config["max_frames_for_ai"],
                         timeout=config["processing_timeout"]["ai_analysis"]
                     )
+                    logger.info(f"✅ AI description generated: {content_description[:100]}...")
             except Exception as e:
-                logger.warning(f"AI description failed: {e}")
+                logger.warning(f"⚠️ AI description failed: {e}")
+                content_description = "Video uploaded successfully - AI analysis unavailable"
             
             # Upload processed video if converted
             final_s3_key = s3_key
-            if needs_conversion:
+            if needs_conversion and ffmpeg_available:
                 # Upload converted video
                 base_key = s3_key.rsplit('.', 1)[0]
                 final_s3_key = f"{base_key}_processed.mp4"
@@ -144,11 +179,11 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
                     if os.path.exists(original_local_path):
                         os.remove(original_local_path)
             
-            # Generate thumbnail (quick version)
+            # Generate thumbnail (quick version) - only if FFmpeg available
             thumbnail_url = None
             try:
-                if config["enable_thumbnail_generation"]:
-                    logger.info("📸 Generating thumbnail...")
+                if config["enable_thumbnail_generation"] and ffmpeg_available:
+                    logger.info("📸 Generating thumbnail with FFmpeg...")
                     thumbnail_path = os.path.join(temp_dir, f"thumb_{video.id}.jpg")
                     
                     # Generate thumbnail at 2 second mark
@@ -178,12 +213,18 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
                             thumbnail_url = f"s3://hospup-files/{thumb_key}"
                         
                         logger.info("✅ Thumbnail generated")
+                elif config["enable_thumbnail_generation"] and not ffmpeg_available:
+                    logger.warning("🚫 Skipping thumbnail generation - FFmpeg not available")
                 
             except Exception as e:
-                logger.warning(f"Thumbnail generation failed: {e}")
+                logger.warning(f"⚠️ Thumbnail generation failed: {e}")
             
             # Update video record with final information
-            final_metadata = video_conversion_service.get_video_metadata(final_video_path)
+            try:
+                final_metadata = video_conversion_service.get_video_metadata(final_video_path) if ffmpeg_available else metadata
+            except Exception as e:
+                logger.warning(f"⚠️ Final metadata extraction failed: {e}")
+                final_metadata = metadata
             
             # Update video with processed information
             if settings.STORAGE_BACKEND == "s3":

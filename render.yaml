@@ -5,8 +5,13 @@ services:
     region: frankfurt
     plan: starter
     buildCommand: |
-      # Installation des dépendances système
-      apt-get update && apt-get install -y ffmpeg
+      # Installation des dépendances système (FORCE FFmpeg)
+      apt-get update -y
+      apt-get install -y ffmpeg
+      
+      # Vérification FFmpeg
+      ffmpeg -version || echo "FFmpeg installation failed"
+      which ffmpeg || echo "FFmpeg not in PATH"
       
       # Installation des dépendances Python
       cd apps/backend
