@@ -446,15 +446,36 @@ async def upload_video_direct(
             except Exception as e:
                 logger.warning(f"❌ Async processing failed, video will remain as processing: {e}")
         else:
-            # Synchronous processing fallback for environments without Celery
-            logger.info(f"⚡ Synchronous processing for video {video.id}")
+            # Vercel/Production sans Celery - traitement synchrone
+            logger.info(f"🚀 Processing video synchronously (mode: {config['mode']})")
+            
             try:
-                # Mark as uploaded for now, processing can be triggered later
-                video.status = "uploaded"
-                db.commit()
-                logger.info(f"✅ Video marked as uploaded: {video.id}")
+                # Import the synchronous processing function conditionally
+                try:
+                    from api.v1.upload_vercel import process_video_sync
+                except Exception as import_error:
+                    logger.warning(f"Could not import synchronous processing: {import_error}")
+                    video.status = "uploaded" 
+                    db.commit()
+                    return VideoResponse.from_orm(video)
+                
+                # Process synchronously with timeout
+                processed = await process_video_sync(
+                    video=video,
+                    s3_key=s3_key,
+                    db=db,
+                    config=config
+                )
+                
+                if processed:
+                    logger.info(f"✅ Synchronous processing completed for video {video.id}")
+                else:
+                    logger.warning(f"⚠️ Synchronous processing partial success for video {video.id}")
+                    
             except Exception as e:
-                logger.error(f"❌ Error updating video status: {e}")
+                logger.error(f"❌ Synchronous processing failed: {e}")
+                video.status = "uploaded"  # Fallback to uploaded status
+                db.commit()
         
         logger.info(f"✅ Direct upload successful: {video.id} ({file.filename})")
         
