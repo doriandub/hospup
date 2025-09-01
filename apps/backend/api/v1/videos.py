@@ -10,7 +10,12 @@ from core.auth import get_current_user
 from models.user import User
 from models.video import Video
 from models.property import Property
-from services.s3_service import s3_service
+# Import S3 service conditionally to prevent startup crashes
+try:
+    from services.s3_service import s3_service
+except Exception as e:
+    print(f"Warning: Could not import S3 service in videos.py: {e}")
+    s3_service = None
 from services.instagram_description_service import instagram_service
 import json
 import logging

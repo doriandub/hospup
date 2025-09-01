@@ -6,14 +6,36 @@ from core.auth import get_current_user
 from models.user import User
 from models.property import Property
 from models.video import Video
-from tasks.video_matching import find_matching_viral_videos, analyze_image_for_matching
-# from tasks.video_generation import generate_video_from_template, check_generation_status
-from tasks.embeddings import populate_viral_video_database
+# Import Celery tasks conditionally to prevent startup crashes
+try:
+    from tasks.video_matching import find_matching_viral_videos, analyze_image_for_matching
+except Exception as e:
+    print(f"Warning: Could not import video matching tasks: {e}")
+    find_matching_viral_videos = None
+    analyze_image_for_matching = None
+
+try:
+    from tasks.embeddings import populate_viral_video_database
+except Exception as e:
+    print(f"Warning: Could not import embeddings tasks: {e}")
+    populate_viral_video_database = None
+
+try:
+    from tasks.video_generation_v3 import generate_video_from_timeline_v3
+except Exception as e:
+    print(f"Warning: Could not import video generation v3 tasks: {e}")
+    generate_video_from_timeline_v3 = None
+
 from pydantic import BaseModel
 import uuid
 import json
-from services.s3_service import s3_service
-from tasks.video_generation_v3 import generate_video_from_timeline_v3
+
+# Import S3 service conditionally to prevent startup crashes
+try:
+    from services.s3_service import s3_service
+except Exception as e:
+    print(f"Warning: Could not import S3 service in video_generation.py: {e}")
+    s3_service = None
 import logging
 
 logger = logging.getLogger(__name__)
