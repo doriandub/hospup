@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { videosApi } from '@/lib/api'
+import { videosApi, api } from '@/lib/api'
 
 interface Video {
   id: string
@@ -74,20 +74,8 @@ export function useVideos(propertyId?: string, videoType?: string) {
         // Tenter de relancer le processing
         for (const video of problematicVideos) {
           try {
-            const token = localStorage.getItem('access_token')
-            const response = await fetch(`http://localhost:8000/api/v1/videos/${video.id}/restart-processing`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            })
-            
-            if (response.ok) {
-              console.log(`✅ Restarted processing for video ${video.id}`)
-            } else {
-              console.error(`❌ Failed to restart video ${video.id}:`, await response.text())
-            }
+            await api.post(`/api/v1/videos/${video.id}/restart-processing`)
+            console.log(`✅ Restarted processing for video ${video.id}`)
           } catch (error) {
             console.error(`❌ Error restarting video ${video.id}:`, error)
           }
