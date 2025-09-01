@@ -6,6 +6,9 @@ from pydantic import BaseModel, EmailStr
 from core.database import get_db
 from core.security import verify_password, get_password_hash, create_access_token, create_refresh_token, verify_jwt_token
 from models.user import User
+import logging
+
+logger = logging.getLogger(__name__)
 
 security = HTTPBearer()
 
@@ -61,6 +64,21 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    
+    # Create a default property for the user
+    try:
+        from models.property import Property
+        default_property = Property(
+            name=f"{db_user.name}'s Property",
+            user_id=db_user.id,
+            property_type="hotel",
+            description="Default property for video uploads"
+        )
+        db.add(default_property)
+        db.commit()
+        logger.info(f"Created default property for user {db_user.id}")
+    except Exception as e:
+        logger.warning(f"Failed to create default property: {e}")
     
     # Create tokens
     access_token = create_access_token(subject=str(db_user.id))
