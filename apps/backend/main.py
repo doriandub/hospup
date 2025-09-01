@@ -57,8 +57,19 @@ async def lifespan(app: FastAPI):
         logger.info("Database connection test successful")
         
         # Create tables if they don't exist
-        create_tables()
-        logger.info("Database tables verified/created")
+        try:
+            create_tables()
+            logger.info("Database tables verified/created")
+        except Exception as table_error:
+            logger.error(f"Error creating tables: {table_error}")
+            # Force create tables even if there's an error
+            try:
+                from models.user import User
+                from core.database import Base
+                Base.metadata.create_all(bind=engine)
+                logger.info("Database tables force-created successfully")
+            except Exception as force_error:
+                logger.error(f"Force table creation also failed: {force_error}")
     except Exception as e:
         logger.warning(f"Database connection test failed: {e}. Application will continue but database operations may fail.")
     
