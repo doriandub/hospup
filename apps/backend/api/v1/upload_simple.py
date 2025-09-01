@@ -18,19 +18,28 @@ async def process_video_simple(video: Video, s3_key: str, db: Session, config: d
     """
     
     try:
-        logger.info(f"🎬 Processing video simple: {video.title}")
+        logger.info(f"🎬 Processing video simple: {video.title} (id: {video.id})")
         
         # Mise à jour des métadonnées basiques
+        logger.info(f"📝 Setting basic metadata for video {video.id}")
         video.duration = 30.0  # Durée par défaut
         video.status = "processing"
         db.commit()
+        logger.info(f"✅ Status set to 'processing' for video {video.id}")
         
         # Génération d'une description intelligente basée sur le nom du fichier et la propriété
         try:
-            # Récupération de la propriété pour contextualiser
+            # Récupération de la propriété pour contextualiser (avec query explicite)
             property_name = "votre établissement"
-            if video.property:
-                property_name = video.property.name
+            try:
+                if video.property_id:
+                    from models.property import Property
+                    property = db.query(Property).filter(Property.id == video.property_id).first()
+                    if property:
+                        property_name = property.name
+            except Exception as prop_error:
+                logger.warning(f"Could not load property: {prop_error}")
+                property_name = "votre établissement"
             
             # Analyse du nom de fichier pour deviner le contenu
             filename_lower = video.title.lower()
@@ -67,10 +76,11 @@ async def process_video_simple(video: Video, s3_key: str, db: Session, config: d
             logger.warning(f"Thumbnail generation failed: {e}")
         
         # Marquer comme prêt
+        logger.info(f"🎯 Setting video {video.id} status to 'ready'")
         video.status = "ready"
         db.commit()
         
-        logger.info(f"✅ Video processing completed successfully: {video.id}")
+        logger.info(f"✅ Video processing completed successfully: {video.id} - status is now 'ready'")
         return True
         
     except Exception as e:
