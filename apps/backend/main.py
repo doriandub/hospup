@@ -48,13 +48,17 @@ async def lifespan(app: FastAPI):
         redis_client = None
         rate_limiter = None
     
-    # Test database connection (non-blocking)
+    # Test database connection and create tables (non-blocking)
     try:
-        from core.database import engine
+        from core.database import engine, create_tables
         from sqlalchemy import text
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
         logger.info("Database connection test successful")
+        
+        # Create tables if they don't exist
+        create_tables()
+        logger.info("Database tables verified/created")
     except Exception as e:
         logger.warning(f"Database connection test failed: {e}. Application will continue but database operations may fail.")
     
