@@ -1,11 +1,15 @@
 [phases.setup]
-nixPkgs = ["python311", "ffmpeg", "pkg-config", "gcc", "python311Packages.pip"]
+nixPkgs = ["python311", "python311Packages.pip", "python311Packages.virtualenv", "ffmpeg", "pkg-config", "gcc", "glib", "cairo", "pango", "gdk-pixbuf"]
 
 [phases.install]
-cmds = ["cd apps/backend && pip install -r requirements.txt"]
+cmds = [
+  "python3.11 -m venv venv",
+  ". venv/bin/activate && cd apps/backend && pip install --upgrade pip",
+  ". venv/bin/activate && cd apps/backend && pip install -r requirements.txt"
+]
 
 [phases.build]
-cmds = ["echo 'Build phase completed'"]
+cmds = ["echo 'Build phase completed - AI dependencies installed'"]
 
 [start]
-cmd = "cd apps/backend && gunicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 300"
+cmd = ". venv/bin/activate && cd apps/backend && gunicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 300"
