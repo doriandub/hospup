@@ -37,11 +37,11 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_HOURS: int = 24
     
-    # AWS S3
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_SECRET_ACCESS_KEY: str = ""
-    AWS_S3_BUCKET: str = "hospup-saas-uploads"
-    AWS_REGION: str = "eu-west-1"
+    # AWS S3 - Use environment variables (secure)
+    AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID", "")
+    AWS_SECRET_ACCESS_KEY: str = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+    AWS_S3_BUCKET: str = os.getenv("AWS_S3_BUCKET", "hospup-files")
+    AWS_REGION: str = os.getenv("AWS_REGION", "eu-west-1")
     
     # Storage backend configuration
     STORAGE_BACKEND: str = "s3"  # 'local' or 's3'
