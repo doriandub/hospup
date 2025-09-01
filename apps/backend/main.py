@@ -209,20 +209,51 @@ async def debug():
         logger.error(f"Could not get deployment config: {e}")
         config = {"mode": "unknown", "use_async_processing": False}
     
-    # Test dependencies safely
+    # Test dependencies with safe error handling
     deps = {}
     
-    # Test FFmpeg (simplified)
-    deps["ffmpeg"] = False  # Simplified to prevent crashes
+    # Test FFmpeg
+    try:
+        import subprocess
+        result = subprocess.run(['ffmpeg', '-version'], capture_output=True, timeout=5)
+        deps["ffmpeg"] = result.returncode == 0
+    except Exception:
+        deps["ffmpeg"] = False
     
-    # Test AI/ML libraries (simplified)
-    deps["torch"] = False
-    deps["transformers"] = False
-    deps["opencv"] = False
+    # Test AI/ML libraries
+    try:
+        import torch
+        deps["torch"] = True
+        deps["torch_version"] = torch.__version__
+    except Exception:
+        deps["torch"] = False
+        
+    try:
+        import transformers
+        deps["transformers"] = True
+        deps["transformers_version"] = transformers.__version__
+    except Exception:
+        deps["transformers"] = False
+        
+    try:
+        import cv2
+        deps["opencv"] = True
+        deps["opencv_version"] = cv2.__version__
+    except Exception:
+        deps["opencv"] = False
     
-    # Test custom services (simplified)
-    deps["video_conversion_service"] = False
-    deps["blip_analysis_service"] = False
+    # Test custom services
+    try:
+        from services.video_conversion_service import video_conversion_service
+        deps["video_conversion_service"] = video_conversion_service is not None
+    except Exception:
+        deps["video_conversion_service"] = False
+        
+    try:
+        from services.blip_analysis_service import blip_analysis_service
+        deps["blip_analysis_service"] = blip_analysis_service is not None
+    except Exception:
+        deps["blip_analysis_service"] = False
     
     return {
         "app_name": settings.APP_NAME,
