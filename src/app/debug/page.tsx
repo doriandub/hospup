@@ -1,7 +1,22 @@
 'use client'
 
+import { useAuth } from '@/hooks/useAuth'
+import { useContext } from 'react'
+import { AuthContext } from '@/hooks/useAuth'
+
 export default function DebugPage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://hospup-backend.onrender.com'
+  
+  // Test du contexte Auth
+  const authContext = useContext(AuthContext)
+  const authContextStatus = authContext ? '✅ AuthContext available' : '❌ AuthContext missing'
+  
+  // Test sécurisé du hook useAuth
+  let authHookStatus = '❌ Error'
+  let authHookError = ''
+  
+  // Ne pas appeler useAuth directement car ça causera l'erreur React #418
+  // À la place, on va tester le contexte directement
   
   const testAuth = async () => {
     try {
@@ -46,6 +61,12 @@ export default function DebugPage() {
           <h3 className="font-semibold">Environment Variables</h3>
           <p><strong>API URL:</strong> {apiUrl}</p>
           <p><strong>Window location:</strong> {typeof window !== 'undefined' ? window.location.href : 'SSR'}</p>
+        </div>
+
+        <div className="p-4 bg-blue-100 rounded border border-blue-300">
+          <h3 className="font-semibold text-blue-800">React Context Status</h3>
+          <p><strong>AuthContext:</strong> {authContextStatus}</p>
+          <p><strong>Context Value:</strong> {authContext ? JSON.stringify(Object.keys(authContext)) : 'null'}</p>
         </div>
 
         <button 
