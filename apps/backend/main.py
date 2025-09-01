@@ -177,9 +177,19 @@ async def test():
 @app.post("/create-tables")
 async def create_database_tables():
     try:
-        from core.database import create_tables
-        create_tables()
-        return {"success": True, "message": "Database tables created successfully"}
+        from core.database import engine, Base
+        from models.user import User
+        
+        # Force create all tables
+        Base.metadata.create_all(bind=engine)
+        
+        # Verify tables were created
+        with engine.connect() as conn:
+            from sqlalchemy import text
+            result = conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"))
+            tables = [row[0] for row in result]
+        
+        return {"success": True, "message": "Database tables created successfully", "tables": tables}
     except Exception as e:
         logger.error(f"Error creating tables: {e}")
         return {"success": False, "error": str(e)}
