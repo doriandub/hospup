@@ -9,10 +9,24 @@ from models.video import Video
 from models.property import Property
 from models.user import User
 from api.dependencies.auth import get_current_user
-from services.s3_service import s3_service
-# Local storage service removed - using S3 only
-from services.video_conversion_service import video_conversion_service
-from services.blip_analysis_service import blip_analysis_service
+# Import services conditionally to prevent startup crashes
+try:
+    from services.s3_service import s3_service
+except Exception as e:
+    print(f"Warning: Could not import S3 service: {e}")
+    s3_service = None
+
+try:
+    from services.video_conversion_service import video_conversion_service
+except Exception as e:
+    print(f"Warning: Could not import video conversion service: {e}")
+    video_conversion_service = None
+
+try:
+    from services.blip_analysis_service import blip_analysis_service
+except Exception as e:
+    print(f"Warning: Could not import BLIP analysis service: {e}")  
+    blip_analysis_service = None
 from core.config import settings
 from schemas.video import VideoResponse, VideoCreateRequest, UploadUrlRequest, UploadUrlResponse
 import logging
@@ -33,6 +47,19 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
     
     try:
         logger.info(f"🎬 Processing video synchronously: {video.title}")
+        
+        # Check if required services are available
+        if not s3_service:
+            logger.error("❌ S3 service not available")
+            raise Exception("S3 service required for video processing")
+            
+        if not video_conversion_service:
+            logger.error("❌ Video conversion service not available")
+            raise Exception("Video conversion service required")
+            
+        if not blip_analysis_service:
+            logger.error("❌ BLIP analysis service not available")
+            raise Exception("BLIP analysis service required")
         
         # Download video from S3
         with tempfile.TemporaryDirectory() as temp_dir:

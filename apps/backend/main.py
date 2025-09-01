@@ -131,6 +131,50 @@ async def debug():
     from core.deployment import deployment_config
     config = deployment_config.get_processing_config()
     
+    # Test dependencies
+    deps = {}
+    
+    # Test FFmpeg
+    try:
+        import subprocess
+        result = subprocess.run(['ffmpeg', '-version'], capture_output=True, timeout=5)
+        deps["ffmpeg"] = result.returncode == 0
+    except:
+        deps["ffmpeg"] = False
+    
+    # Test AI/ML libraries
+    try:
+        import torch
+        deps["torch"] = True
+        deps["torch_version"] = torch.__version__
+    except:
+        deps["torch"] = False
+    
+    try:
+        import transformers
+        deps["transformers"] = True
+    except:
+        deps["transformers"] = False
+    
+    try:
+        import cv2
+        deps["opencv"] = True
+    except:
+        deps["opencv"] = False
+    
+    # Test custom services
+    try:
+        from services.video_conversion_service import video_conversion_service
+        deps["video_conversion_service"] = True
+    except:
+        deps["video_conversion_service"] = False
+        
+    try:
+        from services.blip_analysis_service import blip_analysis_service  
+        deps["blip_analysis_service"] = True
+    except:
+        deps["blip_analysis_service"] = False
+    
     return {
         "app_name": settings.APP_NAME,
         "environment": settings.ENVIRONMENT,
@@ -139,6 +183,7 @@ async def debug():
         "deployment_mode": config["mode"],
         "use_async_processing": config["use_async_processing"],
         "redis_url_available": bool(settings.REDIS_URL) if hasattr(settings, 'REDIS_URL') else False,
+        "dependencies": deps,
         "status": "running"
     }
 

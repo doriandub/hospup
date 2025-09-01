@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: hospup-backend
+    env: python
+    region: frankfurt
+    plan: starter
+    buildCommand: |
+      # Installation des dépendances système
+      apt-get update && apt-get install -y ffmpeg
+      
+      # Installation des dépendances Python
+      cd apps/backend
+      pip install -r requirements.txt
+      
+      # Pré-téléchargement des modèles AI pour éviter les timeouts
+      python -c "
+      import os
+      os.environ['TRANSFORMERS_CACHE'] = '/opt/render/project/src/.cache/transformers'
+      os.environ['HF_HOME'] = '/opt/render/project/src/.cache/huggingface'
+      
+      try:
+          from transformers import BlipProcessor, BlipForConditionalGeneration
+          print('📦 Téléchargement du modèle BLIP...')
+          processor = BlipProcessor.from_pretrained('Salesforce/blip-image-captioning-base')
+          model = BlipForConditionalGeneration.from_pretrained('Salesforce/blip-image-captioning-base')
+          print('✅ Modèle BLIP téléchargé avec succès')
+      except Exception as e:
+          print(f'⚠️ Échec téléchargement BLIP: {e}')
+      "
+      
+    startCommand: cd apps/backend && gunicorn main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120
+    
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.6
+      - key: ENVIRONMENT  
+        value: production
+      - key: TRANSFORMERS_CACHE
+        value: /opt/render/project/src/.cache/transformers
+      - key: HF_HOME
+        value: /opt/render/project/src/.cache/huggingface
+      - key: TORCH_HOME
+        value: /opt/render/project/src/.cache/torch
+      - key: PYTORCH_ENABLE_MPS_FALLBACK
+        value: "1"
