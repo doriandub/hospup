@@ -48,13 +48,15 @@ api.interceptors.response.use(
   }
 )
 
-// API endpoints
+// API endpoints - TEMPORARY hardcoded Railway URLs for debugging
+const RAILWAY_URL = 'https://web-production-93a0d.up.railway.app'
+
 export const authApi = {
   login: (credentials: { email: string; password: string }) =>
-    api.post('/api/v1/auth/login', credentials),
+    axios.post(`${RAILWAY_URL}/api/v1/auth/login`, credentials),
   
   register: (userData: { name: string; email: string; password: string }) =>
-    api.post('/api/v1/auth/register', userData),
+    axios.post(`${RAILWAY_URL}/api/v1/auth/register`, userData),
   
   getProfile: () =>
     api.get('/api/v1/auth/me'),
