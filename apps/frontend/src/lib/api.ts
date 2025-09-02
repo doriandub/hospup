@@ -1,8 +1,9 @@
 import axios, { AxiosResponse } from 'axios'
 import { ApiResponse } from '@/types'
 
-// Centralized API URL configuration
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-93a0d.up.railway.app'
+// HARDCODED - NO ENVIRONMENT VARIABLES
+import { BACKEND_URL } from '@/config/constants'
+export const API_URL = BACKEND_URL
 
 // Create axios instance with default config
 export const api = axios.create({
