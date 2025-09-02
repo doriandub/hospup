@@ -23,10 +23,12 @@ except Exception as e:
     video_conversion_service = None
 
 try:
-    from services.blip_analysis_service import blip_analysis_service
+    from services.openai_vision_service import openai_vision_service
+    ai_analysis_service = openai_vision_service
+    logger.info("✅ Using OpenAI Vision API for video analysis")
 except Exception as e:
-    print(f"Warning: Could not import BLIP analysis service: {e}")  
-    blip_analysis_service = None
+    print(f"Warning: Could not import OpenAI Vision service: {e}")  
+    ai_analysis_service = None
 from core.config import settings
 from schemas.video import VideoResponse, VideoCreateRequest, UploadUrlRequest, UploadUrlResponse
 import logging
@@ -52,7 +54,7 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
         services_available = {
             "s3": s3_service is not None,
             "video_conversion": video_conversion_service is not None, 
-            "blip_analysis": blip_analysis_service is not None
+            "ai_analysis": ai_analysis_service is not None
         }
         
         if not services_available["s3"]:
@@ -65,8 +67,8 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
         if not services_available["video_conversion"]:
             logger.warning("⚠️ Video conversion service not available - skipping FFmpeg operations")
             
-        if not services_available["blip_analysis"]:
-            logger.warning("⚠️ BLIP analysis service not available - skipping AI description")
+        if not services_available["ai_analysis"]:
+            logger.warning("⚠️ OpenAI Vision service not available - skipping AI description")
         
         # Download video from S3
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -135,11 +137,12 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
             else:
                 logger.warning("🚫 Skipping video conversion - FFmpeg not available")
             
-            # Generate AI description (with timeout) - THIS WORKS WITHOUT FFMPEG
-            if services_available["blip_analysis"] and config["enable_ai_description"]:
+            # Generate AI description with OpenAI Vision
+            content_description = "Video uploaded successfully"
+            if services_available["ai_analysis"] and config["enable_ai_description"]:
                 try:
-                    logger.info("📝 Generating AI description with BLIP...")
-                    content_description = blip_analysis_service.analyze_video_content(
+                    logger.info("📝 Generating AI description with OpenAI Vision...")
+                    content_description = ai_analysis_service.analyze_video_content(
                         final_video_path,
                         max_frames=config["max_frames_for_ai"],
                         timeout=config["processing_timeout"]["ai_analysis"]
@@ -149,9 +152,9 @@ async def process_video_sync(video: Video, s3_key: str, db: Session, config: dic
                     logger.warning(f"⚠️ AI description failed: {e}")
                     content_description = "Video uploaded successfully - AI analysis failed"
             else:
-                if not services_available["blip_analysis"]:
-                    logger.info("ℹ️ Skipping AI analysis - BLIP service not available")
-                    content_description = "Video uploaded successfully - AI analysis unavailable (missing dependencies)"
+                if not services_available["ai_analysis"]:
+                    logger.info("ℹ️ Skipping AI analysis - OpenAI Vision not configured")
+                    content_description = "Video uploaded successfully - AI analysis unavailable (OpenAI key missing)"
             
             # Upload processed video if converted
             final_s3_key = s3_key
@@ -351,12 +354,12 @@ async def complete_upload_vercel(
                 else:
                     logger.warning("⚠️ Conversion failed, using original")
             
-            # Generate AI description (with timeout for Vercel) - if BLIP available
+            # Generate AI description (with timeout for Vercel) - if AI analysis available
             content_description = "Video uploaded successfully"
-            if services_available["blip_analysis"]:
+            if services_available["ai_analysis"]:
                 try:
                     logger.info("📝 Generating AI description...")
-                    content_description = blip_analysis_service.analyze_video_content(
+                    content_description = ai_analysis_service.analyze_video_content(
                         final_video_path,
                         max_frames=5,  # Reduced for faster processing
                         timeout=30     # 30 second timeout for Vercel

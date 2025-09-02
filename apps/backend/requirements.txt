@@ -22,13 +22,8 @@ weaviate-client>=4.9.0
 numpy==1.26.4
 tiktoken==0.8.0
 email-validator>=2.0.0
-# AI/ML Dependencies - CPU-optimized wheels
-torch==2.1.0
-torchvision==0.16.0
-transformers==4.35.0
+# Light AI dependencies for video processing
 opencv-python-headless==4.8.1.78
-accelerate==0.24.1
-sentencepiece==0.1.99
 scenedetect==0.6.7
 ffmpeg-python==0.2.0
 groq==0.31.0

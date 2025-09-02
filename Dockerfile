@@ -21,11 +21,8 @@ COPY apps/backend/requirements.txt /tmp/requirements.txt
 # Install core dependencies first (these cache well)
 RUN pip install --upgrade pip setuptools wheel
 
-# Install heavy AI dependencies separately 
-RUN pip install --no-cache-dir torch==2.1.0 torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cpu
-
-# Install transformers and ML packages
-RUN pip install --no-cache-dir transformers==4.35.0 accelerate==0.24.1 opencv-python-headless==4.8.1.78
+# Install lightweight AI dependencies for video processing
+RUN pip install --no-cache-dir opencv-python-headless==4.8.1.78
 
 # Install remaining dependencies
 RUN pip install --no-cache-dir -r /tmp/requirements.txt

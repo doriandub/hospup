@@ -250,10 +250,10 @@ async def debug():
         deps["video_conversion_service"] = False
         
     try:
-        from services.blip_analysis_service import blip_analysis_service
-        deps["blip_analysis_service"] = blip_analysis_service is not None
+        from services.openai_vision_service import openai_vision_service
+        deps["ai_analysis_service"] = openai_vision_service is not None
     except Exception:
-        deps["blip_analysis_service"] = False
+        deps["ai_analysis_service"] = False
     
     return {
         "app_name": settings.APP_NAME,
