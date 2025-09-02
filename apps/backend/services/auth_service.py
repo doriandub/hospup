@@ -148,11 +148,13 @@ class AuthService:
     @staticmethod
     def set_auth_cookie(response: Response, cookie_value: str) -> None:
         """Set secure authentication cookie"""
+        from core.config import settings
+        
         response.set_cookie(
             key="hospup_session",
             value=cookie_value,
             httponly=True,  # Prevent XSS
-            secure=True,    # HTTPS only
+            secure=settings.ENVIRONMENT == "production",  # HTTPS only in production
             samesite="lax", # CSRF protection
             max_age=30 * 24 * 60 * 60,  # 30 days
             path="/"
@@ -161,10 +163,12 @@ class AuthService:
     @staticmethod
     def clear_auth_cookie(response: Response) -> None:
         """Clear authentication cookie"""
+        from core.config import settings
+        
         response.delete_cookie(
             key="hospup_session",
             httponly=True,
-            secure=True,
+            secure=settings.ENVIRONMENT == "production",
             samesite="lax",
             path="/"
         )
