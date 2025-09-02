@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useProperties } from '@/hooks/useProperties'
 import { useVideos } from '@/hooks/useVideos'
-import { videosApi, api } from '@/lib/api'
 
 export default function ContentLibraryPage() {
   const router = useRouter()
@@ -68,10 +67,14 @@ export default function ContentLibraryPage() {
       // Check status for each processing video
       const statusChecks = processingVideos.map(async (video) => {
         try {
-          const response = await videosApi.getById(video.id)
+          const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/${video.id}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+          })
           
-          if (response.status === 200) {
-            const updatedVideo = response.data
+          if (response.ok) {
+            const updatedVideo = await response.json()
             // If video status changed, we need a full refresh
             if (updatedVideo.status !== video.status) {
               console.log(`📱 Status change detected: ${video.title} (${video.id.slice(0,8)}) ${video.status} → ${updatedVideo.status}`)
@@ -110,7 +113,12 @@ export default function ContentLibraryPage() {
           console.log(`🗑️ Video ${video.id} stuck in processing for ${Math.round(processingTime/3600000)}h, deleting...`)
           
           try {
-            await videosApi.delete(video.id)
+            await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/${video.id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+              }
+            })
             
             // Remove from processing times and refresh list
             const updatedTimes = { ...processingStartTime }
@@ -131,7 +139,13 @@ export default function ContentLibraryPage() {
           
           try {
             // Restart processing by calling the backend
-            await api.post(`/api/v1/videos/${video.id}/restart-processing`)
+            await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/${video.id}/restart-processing`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                'Content-Type': 'application/json'
+              }
+            })
             
             // Reset the start time
             newProcessingTimes[video.id] = Date.now()
@@ -279,9 +293,9 @@ export default function ContentLibraryPage() {
     formData.append('property_id', propertyId)
     formData.append('title', file.name.split('.')[0])
 
-    console.log('📤 Uploading directly to /api/v1/upload')
+    console.log('📤 Uploading directly to /api/v1/upload/')
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://hospup-backend.onrender.com'}/api/v1/upload`, {
+    const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/upload/', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`

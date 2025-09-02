@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PropertyForm } from '@/components/dashboard/property-form'
 import { useProperties } from '@/hooks/useProperties'
-import { videosApi } from '@/lib/api'
 import { 
   Plus, 
   Building2, 
@@ -85,10 +84,14 @@ export default function PropertiesPage() {
     try {
       const token = localStorage.getItem('access_token')
       // Only count uploaded videos, not generated ones
-      const response = await videosApi.getAll(propertyId, 'uploaded')
+      const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/?property_id=${propertyId}&video_type=uploaded`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       
-      if (response.status === 200) {
-        const videos = response.data
+      if (response.ok) {
+        const videos = await response.json()
         setVideoCounts(prev => ({ ...prev, [propertyId]: videos.length }))
         
         // Get thumbnail from the most recent video if available

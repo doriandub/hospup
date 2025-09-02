@@ -35,7 +35,7 @@ export function useViralTemplates() {
       setError(null)
       
       const token = localStorage.getItem('access_token')
-      const response = await fetch('http://localhost:8000/api/v1/viral-matching/user-viral-history', {
+      const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/user-viral-history', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

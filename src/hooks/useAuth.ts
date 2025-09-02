@@ -34,46 +34,24 @@ export function useAuthState() {
     // Only run on client-side
     if (typeof window === 'undefined') return
     
-    // Safari-specific: Add a small delay to ensure localStorage is ready
-    const checkAuth = () => {
-      try {
-        // Check for existing auth on mount
-        const user = storage.getUser()
-        const { accessToken } = storage.getTokens()
-        
-        console.log('Auth check:', { user: !!user, token: !!accessToken, browser: navigator.userAgent.includes('Safari') })
-        
-        if (user && accessToken) {
-          setState({
-            user,
-            isAuthenticated: true,
-            isLoading: false,
-            token: accessToken,
-          })
-        } else {
-          setState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            token: null,
-          })
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error)
-        setState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          token: null,
-        })
-      }
-    }
+    // Check for existing auth on mount
+    const user = storage.getUser()
+    const { accessToken } = storage.getTokens()
     
-    // Safari needs a small delay sometimes
-    if (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')) {
-      setTimeout(checkAuth, 100)
+    if (user && accessToken) {
+      setState({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        token: accessToken,
+      })
     } else {
-      checkAuth()
+      setState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        token: null,
+      })
     }
   }, [])
 
@@ -87,24 +65,12 @@ export function useAuthState() {
       storage.setTokens(access_token, refresh_token)
       storage.setUser(user)
       
-      // Safari fix: Force state update with a slight delay
-      const newState = {
+      setState({
         user,
         isAuthenticated: true,
         isLoading: false,
         token: access_token,
-      }
-      
-      setState(newState)
-      
-      // Safari sometimes needs an extra push
-      if (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')) {
-        setTimeout(() => {
-          setState(newState)
-          console.log('Safari: Force state update after login')
-        }, 50)
-      }
-      
+      })
     } catch (error) {
       setState({
         user: null,

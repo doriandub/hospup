@@ -122,7 +122,7 @@ export function PropertyOnboardingDashboard() {
       try {
         console.log(`Uploading file: ${file.name}, type: ${file.type}, size: ${file.size}`)
         
-        const urlResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://hospup-backend.onrender.com'}/api/v1/upload/presigned-url`, {
+        const urlResponse = await fetch('https://web-production-93a0d.up.railway.app/api/v1/upload/presigned-url', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -183,7 +183,7 @@ export function PropertyOnboardingDashboard() {
         console.log('Upload response status:', uploadResponse.status, uploadResponse.statusText)
 
         if (uploadResponse.ok) {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://hospup-backend.onrender.com'}/api/v1/upload/complete`, {
+          await fetch('https://web-production-93a0d.up.railway.app/api/v1/upload/complete', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,

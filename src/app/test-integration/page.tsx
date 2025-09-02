@@ -7,7 +7,7 @@ export default function TestIntegration() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://hospup-backend.onrender.com';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-93a0d.up.railway.app';
 
   useEffect(() => {
     testBackendConnection();

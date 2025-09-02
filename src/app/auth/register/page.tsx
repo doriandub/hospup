@@ -7,6 +7,8 @@ import { Building, Eye, EyeOff, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useAuth } from '@/hooks/useAuth'
+
 export default function RegisterPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -16,8 +18,8 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
   
+  const { register } = useAuth()
   const router = useRouter()
 
   // Password validation
@@ -31,63 +33,25 @@ export default function RegisterPage() {
 
   const isPasswordValid = Object.values(passwordChecks).every(check => check)
 
-  // Fallback direct API call si useAuth ne fonctionne pas
-  const handleDirectRegistration = async () => {
-    setIsLoading(true)
-    setError('')
-
-    try {
-      const response = await fetch('https://hospup-backend.onrender.com/api/v1/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        // Store tokens
-        localStorage.setItem('access_token', data.access_token)
-        localStorage.setItem('refresh_token', data.refresh_token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        
-        setSuccess(true)
-        setTimeout(() => router.push('/dashboard'), 1500)
-      } else {
-        const errorData = await response.json()
-        setError(errorData.detail || 'Registration failed')
-      }
-    } catch (err: any) {
-      setError('Network error: ' + err.message)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    setError('')
+
     if (!isPasswordValid) {
       setError('Please ensure all password requirements are met.')
       return
     }
 
-    // Essayer d'abord l'approche directe
-    await handleDirectRegistration()
-  }
+    setIsLoading(true)
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center">
-          <div className="bg-green-100 border border-green-300 text-green-800 px-6 py-4 rounded-lg">
-            <h2 className="text-xl font-bold mb-2">✅ Registration Successful!</h2>
-            <p>Redirecting to dashboard...</p>
-          </div>
-        </div>
-      </div>
-    )
+    try {
+      await register(name, email, password)
+      router.push('/dashboard')
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Registration failed. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -250,12 +214,20 @@ export default function RegisterPage() {
               </Link>
             </p>
           </div>
+        </div>
 
-          {/* Debug info */}
-          <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
-            <p>🔧 Safe registration page (bypasses useAuth hook)</p>
-            <p>Using direct API calls to avoid React context issues</p>
-          </div>
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-gray-500 text-sm">
+            By creating an account, you agree to our{' '}
+            <Link href="/terms" className="text-primary hover:text-primary/80">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" className="text-primary hover:text-primary/80">
+              Privacy Policy
+            </Link>
+          </p>
         </div>
       </div>
     </div>

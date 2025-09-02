@@ -14,40 +14,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   
+  const { login } = useAuth()
   const router = useRouter()
-  const { login, isLoading } = useAuth()
-
-  // Use useAuth hook for proper state management
-  const handleLogin = async () => {
-    setError('')
-
-    try {
-      await login(email, password)
-      setSuccess(true)
-      setTimeout(() => router.push('/dashboard'), 1500)
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || 'Login failed')
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await handleLogin()
-  }
+    setError('')
+    setIsLoading(true)
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center">
-          <div className="bg-green-100 border border-green-300 text-green-800 px-6 py-4 rounded-lg">
-            <h2 className="text-xl font-bold mb-2">✅ Login Successful!</h2>
-            <p>Redirecting to dashboard...</p>
-          </div>
-        </div>
-      </div>
-    )
+    try {
+      await login(email, password)
+      router.push('/dashboard')
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Login failed. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -62,7 +46,7 @@ export default function LoginPage() {
             <span className="text-2xl font-bold text-gray-900">Hospup</span>
           </div>
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">Welcome back</h1>
-          <p className="text-gray-600">Sign in to continue creating viral content</p>
+          <p className="text-gray-600">Sign in to your account to continue</p>
         </div>
 
         {/* Login Form */}
@@ -114,29 +98,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <Link
-                  href="/auth/forgot-password"
-                  className="font-medium text-primary hover:text-primary/80"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
-            </div>
-
             <Button 
               type="submit" 
               className="w-full bg-primary hover:bg-primary/90" 
@@ -155,21 +116,22 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link 
                 href="/auth/register" 
                 className="text-primary hover:text-primary/80 font-medium"
               >
-                Create account
+                Sign up
               </Link>
             </p>
           </div>
+        </div>
 
-          {/* Debug info */}
-          <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
-            <p>🔧 Safe login page (bypasses useAuth hook)</p>
-            <p>Using direct API calls to avoid React context issues</p>
-          </div>
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-gray-500 text-sm">
+            © 2024 Hospup. All rights reserved.
+          </p>
         </div>
       </div>
     </div>

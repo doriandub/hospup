@@ -1,7 +1,11 @@
 import axios, { AxiosResponse } from 'axios'
 import { ApiResponse } from '@/types'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-93a0d.up.railway.app'
+// HARDCODED RAILWAY URL - NO ENVIRONMENT VARIABLES  
+const RAILWAY_URL = 'https://web-production-93a0d.up.railway.app'
+console.log('🚀 FORCED API URL:', RAILWAY_URL)
+
+export const API_URL = RAILWAY_URL
 
 // Create axios instance with default config
 export const api = axios.create({
@@ -35,31 +39,29 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Only redirect on auth pages, not during uploads
-      const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
-      const isUploadProcess = currentPath.includes('/content') || currentPath.includes('/properties')
-      
-      if (typeof window !== 'undefined' && !isUploadProcess) {
-        console.warn('⚠️ Authentication error, redirecting to login')
+      // Token expired or invalid
+      if (typeof window !== 'undefined') {
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('user')
         window.location.href = '/auth/login'
-      } else if (isUploadProcess) {
-        console.warn('⚠️ Auth error during upload process - not redirecting')
       }
     }
     return Promise.reject(error)
   }
 )
 
-// API endpoints
+// FORCED RAILWAY AUTH ENDPOINTS
 export const authApi = {
-  login: (credentials: { email: string; password: string }) =>
-    api.post('/api/v1/auth/login', credentials),
+  login: (credentials: { email: string; password: string }) => {
+    console.log('🔑 LOGIN URL:', `${RAILWAY_URL}/api/v1/auth/login`)
+    return axios.post(`${RAILWAY_URL}/api/v1/auth/login`, credentials)
+  },
   
-  register: (userData: { name: string; email: string; password: string }) =>
-    api.post('/api/v1/auth/register', userData),
+  register: (userData: { name: string; email: string; password: string }) => {
+    console.log('📝 REGISTER URL:', `${RAILWAY_URL}/api/v1/auth/register`)
+    return axios.post(`${RAILWAY_URL}/api/v1/auth/register`, userData)
+  },
   
   getProfile: () =>
     api.get('/api/v1/auth/me'),

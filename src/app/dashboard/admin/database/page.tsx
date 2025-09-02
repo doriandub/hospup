@@ -89,7 +89,7 @@ export default function DatabasePage() {
     setLoading(true)
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch('http://localhost:8000/api/v1/viral-matching/viral-templates', {
+      const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       
@@ -170,7 +170,7 @@ export default function DatabasePage() {
       
       const updateData: any = { [editingCell.column]: processedValue }
       
-      const response = await fetch(`http://localhost:8000/api/v1/viral-matching/viral-templates/${editingCell.rowId}`, {
+      const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates/${editingCell.rowId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -206,7 +206,7 @@ export default function DatabasePage() {
   const handleAddRow = async () => {
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch('http://localhost:8000/api/v1/viral-matching/viral-templates', {
+      const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -250,7 +250,7 @@ export default function DatabasePage() {
       if (row.length > 0 && row[0].trim()) {
         try {
           const token = localStorage.getItem('access_token')
-          await fetch('http://localhost:8000/api/v1/viral-matching/viral-templates', {
+          await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -308,7 +308,7 @@ export default function DatabasePage() {
     
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://localhost:8000/api/v1/viral-matching/viral-templates/${id}`, {
+      const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       })
