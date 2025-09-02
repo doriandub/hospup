@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from 'axios'
 import { ApiResponse } from '@/types'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://hospup-backend.onrender.com'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-93a0d.up.railway.app'
 
 // Create axios instance with default config
 export const api = axios.create({
