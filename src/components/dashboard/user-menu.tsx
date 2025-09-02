@@ -46,10 +46,10 @@ export function UserMenu() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
-                    {user?.name || 'Demo User'}
+                    {user?.name || 'User'}
                   </p>
                   <p className="text-xs text-gray-600">
-                    {user?.email || 'demo@hospup.com'}
+                    {user?.email || 'Loading...'}
                   </p>
                   <span className="text-xs text-[#ff914d] capitalize font-medium">
                     {user?.plan || 'Free'} Plan

@@ -35,9 +35,8 @@ export default function SimplePage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem('access_token')
       const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       })
       
       if (response.ok) {

@@ -72,11 +72,8 @@ export default function AdminPage() {
   const loadTemplates = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem('access_token')
       const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
       
       if (response.ok) {
@@ -94,13 +91,12 @@ export default function AdminPage() {
   const handleCreate = async () => {
     setIsSubmitting(true)
     try {
-      const token = localStorage.getItem('access_token')
       const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
@@ -132,13 +128,12 @@ export default function AdminPage() {
     
     setIsSubmitting(true)
     try {
-      const token = localStorage.getItem('access_token')
       const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates/${selectedTemplate.id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
@@ -173,12 +168,9 @@ export default function AdminPage() {
 
     setIsDeleting(template.id)
     try {
-      const token = localStorage.getItem('access_token')
       const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates/${template.id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
       
       if (response.ok) {

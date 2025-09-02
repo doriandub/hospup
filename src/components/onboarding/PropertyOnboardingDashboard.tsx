@@ -110,12 +110,6 @@ export function PropertyOnboardingDashboard() {
 
 
   const uploadFilesToProperty = async (propertyId: string, files: File[]) => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      console.error('No access token found')
-      return
-    }
-
     console.log(`Starting upload for ${files.length} files to property ${propertyId}`)
 
     for (const file of files) {
@@ -125,9 +119,9 @@ export function PropertyOnboardingDashboard() {
         const urlResponse = await fetch('https://web-production-93a0d.up.railway.app/api/v1/upload/presigned-url', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({
             file_name: file.name,
             content_type: file.type,
@@ -160,9 +154,7 @@ export function PropertyOnboardingDashboard() {
           console.log('Uploading to local storage:', urlData.upload_url)
           uploadResponse = await fetch(urlData.upload_url, {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
+            credentials: 'include',
             body: formData
           })
         } else {
@@ -186,9 +178,9 @@ export function PropertyOnboardingDashboard() {
           await fetch('https://web-production-93a0d.up.railway.app/api/v1/upload/complete', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
               property_id: propertyId,
               s3_key: urlData.s3_key,

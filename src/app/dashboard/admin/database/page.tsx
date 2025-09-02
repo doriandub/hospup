@@ -88,9 +88,8 @@ export default function DatabasePage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem('access_token')
       const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       })
       
       if (response.ok) {
@@ -150,8 +149,6 @@ export default function DatabasePage() {
     
     setSaving(editingCell.rowId)
     try {
-      const token = localStorage.getItem('access_token')
-      
       let processedValue: any = editValue
       const column = COLUMNS.find(c => c.key === editingCell.column)
       
@@ -173,9 +170,9 @@ export default function DatabasePage() {
       const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates/${editingCell.rowId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(updateData)
       })
       
@@ -205,13 +202,12 @@ export default function DatabasePage() {
 
   const handleAddRow = async () => {
     try {
-      const token = localStorage.getItem('access_token')
       const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: 'Nouvelle Vidéo',
           description: '',
@@ -249,13 +245,12 @@ export default function DatabasePage() {
     for (const row of parsedRows) {
       if (row.length > 0 && row[0].trim()) {
         try {
-          const token = localStorage.getItem('access_token')
           await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
               title: row[0] || 'Nouvelle Vidéo',
               hotel_name: row[1] || '',
@@ -307,10 +302,9 @@ export default function DatabasePage() {
     if (!confirm('Supprimer cette ligne ?')) return
     
     try {
-      const token = localStorage.getItem('access_token')
       const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       })
       
       if (response.ok) {

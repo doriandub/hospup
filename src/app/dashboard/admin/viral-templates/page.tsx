@@ -111,11 +111,8 @@ export default function ViralTemplatesPage() {
   const loadTemplates = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem('access_token')
       const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
       
       if (response.ok) {
@@ -133,8 +130,6 @@ export default function ViralTemplatesPage() {
   const handleCreate = async () => {
     setIsSubmitting(true)
     try {
-      const token = localStorage.getItem('access_token')
-      
       // Parse script if provided
       let parsedScript = null
       if (formData.script.trim()) {
@@ -149,9 +144,9 @@ export default function ViralTemplatesPage() {
       const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
@@ -196,8 +191,6 @@ export default function ViralTemplatesPage() {
     
     setIsSubmitting(true)
     try {
-      const token = localStorage.getItem('access_token')
-      
       // Parse script if provided
       let parsedScript = null
       if (formData.script.trim()) {
@@ -212,9 +205,9 @@ export default function ViralTemplatesPage() {
       const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates/${selectedTemplate.id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
@@ -262,12 +255,9 @@ export default function ViralTemplatesPage() {
 
     setIsDeleting(template.id)
     try {
-      const token = localStorage.getItem('access_token')
       const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates/${template.id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
       
       if (response.ok) {

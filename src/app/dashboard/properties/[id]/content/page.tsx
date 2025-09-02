@@ -115,9 +115,7 @@ export default function PropertyContentPage() {
 
           uploadResponse = await fetch(urlData.upload_url, {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            },
+            credentials: 'include',
             body: formData
           })
         } else {

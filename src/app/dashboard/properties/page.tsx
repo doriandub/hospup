@@ -82,12 +82,9 @@ export default function PropertiesPage() {
 
   const fetchVideoCount = async (propertyId: string) => {
     try {
-      const token = localStorage.getItem('access_token')
       // Only count uploaded videos, not generated ones
       const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/?property_id=${propertyId}&video_type=uploaded`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
       
       if (response.ok) {

@@ -89,8 +89,6 @@ export default function AddVideosPage() {
   const handleSubmit = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem('access_token')
-      
       for (const video of videos) {
         if (!video.title.trim()) continue
         
@@ -123,9 +121,9 @@ export default function AddVideosPage() {
         const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify(payload)
         })
 

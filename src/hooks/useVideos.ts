@@ -74,13 +74,12 @@ export function useVideos(propertyId?: string, videoType?: string) {
         // Tenter de relancer le processing
         for (const video of problematicVideos) {
           try {
-            const token = localStorage.getItem('access_token')
             const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/${video.id}/restart-processing`, {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
-              }
+              },
+              credentials: 'include'
             })
             
             if (response.ok) {

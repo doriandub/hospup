@@ -68,9 +68,7 @@ export default function ContentLibraryPage() {
       const statusChecks = processingVideos.map(async (video) => {
         try {
           const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/${video.id}`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            }
+            credentials: 'include'
           })
           
           if (response.ok) {
@@ -115,9 +113,7 @@ export default function ContentLibraryPage() {
           try {
             await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/${video.id}`, {
               method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-              }
+              credentials: 'include'
             })
             
             // Remove from processing times and refresh list
@@ -142,9 +138,9 @@ export default function ContentLibraryPage() {
             await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/${video.id}/restart-processing`, {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                 'Content-Type': 'application/json'
-              }
+              },
+              credentials: 'include'
             })
             
             // Reset the start time
@@ -277,11 +273,6 @@ export default function ContentLibraryPage() {
 
   const uploadSingleFile = async (file: File, propertyId: string) => {
     console.log('🎬 Direct upload started:', file.name, 'propertyId:', propertyId)
-    const token = localStorage.getItem('access_token')
-    
-    if (!token) {
-      throw new Error('No authentication token found')
-    }
     
     if (!propertyId) {
       throw new Error('No property ID provided')
@@ -297,9 +288,7 @@ export default function ContentLibraryPage() {
     
     const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/upload/', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+      credentials: 'include',
       body: formData
     })
 
@@ -352,7 +341,6 @@ export default function ContentLibraryPage() {
       console.log('💡 Error details:', {
         message: errorMessage,
         activePropertyId,
-        tokenExists: !!localStorage.getItem('access_token'),
         error
       })
       alert(`Upload failed: ${errorMessage}`)
