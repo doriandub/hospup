@@ -52,11 +52,15 @@ api.interceptors.response.use(
 import { API_BASE_URL } from '@/config/api'
 
 export const authApi = {
-  login: (credentials: { email: string; password: string }) =>
-    axios.post(`${API_BASE_URL}/api/v1/auth/login`, credentials),
+  login: (credentials: { email: string; password: string }) => {
+    console.log('🔑 LOGIN URL:', `${API_BASE_URL}/api/v1/auth/login`)
+    return axios.post(`${API_BASE_URL}/api/v1/auth/login`, credentials)
+  },
   
-  register: (userData: { name: string; email: string; password: string }) =>
-    axios.post(`${API_BASE_URL}/api/v1/auth/register`, userData),
+  register: (userData: { name: string; email: string; password: string }) => {
+    console.log('📝 REGISTER URL:', `${API_BASE_URL}/api/v1/auth/register`)
+    return axios.post(`${API_BASE_URL}/api/v1/auth/register`, userData)
+  },
   
   getProfile: () =>
     api.get('/api/v1/auth/me'),
