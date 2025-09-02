@@ -43,8 +43,10 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 
-# Copy application code
+# Copy application code and startup script
 COPY apps/backend /app/
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 # Expose port
 EXPOSE 8000
@@ -53,5 +55,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
-# Start command (use PORT env var from Railway, fallback to 8000)
-CMD gunicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 300
+# Start command using startup script
+CMD ["/app/start.sh"]
