@@ -10,15 +10,27 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.get("/health")
-async def health_check(db: Session = Depends(get_db)):
+async def health_check():
     """
-    Endpoint de vérification de santé du système
+    Endpoint de vérification de santé basique pour Railway
+    Vérifie seulement que l'application FastAPI répond
+    """
+    return {
+        "status": "healthy",
+        "service": "hospup-backend", 
+        "message": "Backend is running"
+    }
+
+@router.get("/health/detailed")
+async def detailed_health_check(db: Session = Depends(get_db)):
+    """
+    Endpoint de vérification de santé détaillé
     Vérifie que tous les composants critiques fonctionnent
     """
     health_status = {
         "status": "healthy",
         "database": "unknown",
-        "celery_worker": "unknown",
+        "celery_worker": "unknown", 
         "video_processing": "unknown",
         "issues": []
     }
@@ -36,7 +48,6 @@ async def health_check(db: Session = Depends(get_db)):
     
     # Test du worker Celery
     try:
-        # Vérifier les workers actifs
         inspect = celery_app.control.inspect()
         active_workers = inspect.active()
         
@@ -56,9 +67,8 @@ async def health_check(db: Session = Depends(get_db)):
         health_status["status"] = "unhealthy" 
         logger.error(f"❌ Celery error: {e}")
     
-    # Test du processing vidéo (vidéos bloquées en processing)
+    # Test du processing vidéo
     try:
-        # Compter les vidéos en processing depuis plus de 10 minutes
         from datetime import datetime, timedelta
         ten_minutes_ago = datetime.utcnow() - timedelta(minutes=10)
         
