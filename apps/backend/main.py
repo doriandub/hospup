@@ -220,20 +220,13 @@ async def debug():
     except Exception:
         deps["ffmpeg"] = False
     
-    # Test AI/ML libraries
+    # Test AI/ML libraries (OpenAI Vision API replaces local models)
     try:
-        import torch
-        deps["torch"] = True
-        deps["torch_version"] = torch.__version__
+        import openai
+        deps["openai"] = True
+        deps["openai_version"] = openai.__version__
     except Exception:
-        deps["torch"] = False
-        
-    try:
-        import transformers
-        deps["transformers"] = True
-        deps["transformers_version"] = transformers.__version__
-    except Exception:
-        deps["transformers"] = False
+        deps["openai"] = False
         
     try:
         import cv2

@@ -21,7 +21,7 @@ COPY apps/backend/requirements.txt /tmp/requirements.txt
 # Install core dependencies first (these cache well)
 RUN pip install --upgrade pip setuptools wheel
 
-# Install lightweight AI dependencies for video processing
+# Install lightweight dependencies (no PyTorch/transformers - using OpenAI Vision API)
 RUN pip install --no-cache-dir opencv-python-headless==4.8.1.78
 
 # Install remaining dependencies
