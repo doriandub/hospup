@@ -139,7 +139,6 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
-        </div>
 
           {/* Info */}
           <div className="mt-4 p-2 bg-blue-50 rounded text-xs text-blue-700">

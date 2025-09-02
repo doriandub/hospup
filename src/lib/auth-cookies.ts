@@ -1,5 +1,3 @@
-import { api } from './api'
-
 export interface User {
   id: string
   name: string
@@ -17,11 +15,12 @@ export interface AuthResponse {
 class AuthService {
   private currentUser: User | null = null
   private authCheckPromise: Promise<boolean> | null = null
+  private readonly API_URL = 'https://web-production-93a0d.up.railway.app'
 
   // Register user
   async register(name: string, email: string, password: string): Promise<User> {
     try {
-      const response = await fetch('/api/v1/auth/register', {
+      const response = await fetch(`${this.API_URL}/api/v1/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,7 +46,7 @@ class AuthService {
   // Login user
   async login(email: string, password: string): Promise<User> {
     try {
-      const response = await fetch('/api/v1/auth/login', {
+      const response = await fetch(`${this.API_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -73,7 +72,7 @@ class AuthService {
   // Logout user
   async logout(): Promise<void> {
     try {
-      await fetch('/api/v1/auth/logout', {
+      await fetch(`${this.API_URL}/api/v1/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -87,7 +86,7 @@ class AuthService {
   // Logout from all devices
   async logoutAll(): Promise<void> {
     try {
-      await fetch('/api/v1/auth/logout-all', {
+      await fetch(`${this.API_URL}/api/v1/auth/logout-all`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -128,7 +127,7 @@ class AuthService {
   // Private method to check auth status
   private async checkAuth(): Promise<boolean> {
     try {
-      const response = await fetch('/api/v1/auth/me', {
+      const response = await fetch(`${this.API_URL}/api/v1/auth/me`, {
         credentials: 'include',
       })
 
