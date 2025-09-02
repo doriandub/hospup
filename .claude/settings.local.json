@@ -11,7 +11,10 @@
       "Bash(rm:*)",
       "Bash(python:*)",
       "Bash(mkdir:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx vercel:*)",
+      "WebFetch(domain:hospup.vercel.app)",
+      "WebFetch(domain:web-production-93a0d.up.railway.app)"
     ],
     "deny": [],
     "ask": [],

@@ -7,7 +7,7 @@ import { Building, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useAuth } from '@/hooks/useAuth'
+import { authService } from '@/lib/auth-cookies'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -15,8 +15,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   
-  const { login } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,13 +25,27 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      await login(email, password)
-      router.push('/dashboard')
+      const user = await authService.login(email, password)
+      setSuccess(true)
+      setTimeout(() => router.push('/dashboard'), 1500)
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Login failed. Please try again.')
+      setError(err.message || 'Login failed. Please try again.')
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center">
+          <div className="bg-green-100 border border-green-300 text-green-800 px-6 py-4 rounded-lg">
+            <h2 className="text-xl font-bold mb-2">✅ Login Successful!</h2>
+            <p>Redirecting to dashboard...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -46,7 +60,7 @@ export default function LoginPage() {
             <span className="text-2xl font-bold text-gray-900">Hospup</span>
           </div>
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">Welcome back</h1>
-          <p className="text-gray-600">Sign in to your account to continue</p>
+          <p className="text-gray-600">Sign in to continue creating viral content</p>
         </div>
 
         {/* Login Form */}
@@ -121,9 +135,16 @@ export default function LoginPage() {
                 href="/auth/register" 
                 className="text-primary hover:text-primary/80 font-medium"
               >
-                Sign up
+                Create account
               </Link>
             </p>
+          </div>
+        </div>
+
+          {/* Info */}
+          <div className="mt-4 p-2 bg-blue-50 rounded text-xs text-blue-700">
+            <p>🔒 Secure cookie-based authentication</p>
+            <p>Works across all browsers and devices</p>
           </div>
         </div>
 

@@ -11,3 +11,4 @@ dist/
 build/
 uploads/
 *.log
+.vercel

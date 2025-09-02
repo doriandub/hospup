@@ -14,7 +14,7 @@ from core.config import settings
 from core.database import get_db
 from core.security import verify_jwt_token
 from core.rate_limiter import RateLimiter
-from api.v1 import auth, properties, videos, upload, dashboard, video_generation, websocket, video_analysis, viral_matching, video_reconstruction, health, text_customization, text_suggestions, instagram_proxy, ai_templates, preview
+from api.v1 import auth, auth_cookies, properties, videos, upload, dashboard, video_generation, websocket, video_analysis, viral_matching, video_reconstruction, health, text_customization, text_suggestions, instagram_proxy, ai_templates, preview
 from api import instagram_templates
 from routers import video_recovery
 from models.user import User
@@ -281,8 +281,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # Import get_current_user from centralized auth
 from core.auth import get_current_user
 
-# API routes
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+# API routes - New cookie-based auth (primary)
+app.include_router(auth_cookies.router, prefix="/api/v1/auth", tags=["auth"])
+
+# Legacy JWT auth (for compatibility)
+app.include_router(auth.router, prefix="/api/v1/auth-jwt", tags=["auth-legacy"])
 
 app.include_router(
     properties.router, 

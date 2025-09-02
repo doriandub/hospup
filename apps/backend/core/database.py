@@ -38,6 +38,7 @@ def create_tables():
     """Create all tables in the database"""
     # Import all models to ensure they're registered
     from models.user import User
+    from models.session import UserSession
     
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables created successfully")
