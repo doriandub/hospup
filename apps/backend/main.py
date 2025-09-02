@@ -101,7 +101,14 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Temporarily allow all origins for debugging
+    allow_origins=[
+        "https://hospup.vercel.app",
+        "https://hospup-kemi8mwu1-dorians-projects-6dd2ee49.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://localhost:3003",
+    ],  # Specific origins required for credentials
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
