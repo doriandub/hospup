@@ -75,7 +75,7 @@ export function useVideos(propertyId?: string, videoType?: string) {
         for (const video of problematicVideos) {
           try {
             const token = localStorage.getItem('access_token')
-            const response = await fetch(`http://localhost:8000/api/v1/videos/${video.id}/restart-processing`, {
+            const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/${video.id}/restart-processing`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,

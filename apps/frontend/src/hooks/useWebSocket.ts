@@ -29,9 +29,9 @@ export const useWebSocket = (): WebSocketHookReturn => {
 
     try {
       // In development, use localhost. In production, use your domain
-      const wsUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-        ? `ws://localhost:8000/ws?token=${token}`
-        : `wss://${window.location.host}/ws?token=${token}`
+      // Use Railway WebSocket URL
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-93a0d.up.railway.app'
+      const wsUrl = apiUrl.replace('https://', 'wss://').replace('http://', 'ws://') + `/ws?token=${token}`
       
       ws.current = new WebSocket(wsUrl)
 

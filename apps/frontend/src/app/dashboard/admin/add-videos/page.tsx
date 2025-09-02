@@ -120,7 +120,7 @@ export default function AddVideosPage() {
           total_duration_max: video.duration * 1.2
         }
 
-        const response = await fetch('http://localhost:8000/api/v1/viral-matching/viral-templates', {
+        const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/viral-matching/viral-templates', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

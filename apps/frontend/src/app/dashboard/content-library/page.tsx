@@ -67,7 +67,7 @@ export default function ContentLibraryPage() {
       // Check status for each processing video
       const statusChecks = processingVideos.map(async (video) => {
         try {
-          const response = await fetch(`http://localhost:8000/api/v1/videos/${video.id}`, {
+          const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/${video.id}`, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('access_token')}`
             }
@@ -113,7 +113,7 @@ export default function ContentLibraryPage() {
           console.log(`🗑️ Video ${video.id} stuck in processing for ${Math.round(processingTime/3600000)}h, deleting...`)
           
           try {
-            await fetch(`http://localhost:8000/api/v1/videos/${video.id}`, {
+            await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/${video.id}`, {
               method: 'DELETE',
               headers: {
                 'Authorization': `Bearer ${localStorage.getItem('access_token')}`
@@ -139,7 +139,7 @@ export default function ContentLibraryPage() {
           
           try {
             // Restart processing by calling the backend
-            await fetch(`http://localhost:8000/api/v1/videos/${video.id}/restart-processing`, {
+            await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/${video.id}/restart-processing`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
@@ -295,7 +295,7 @@ export default function ContentLibraryPage() {
 
     console.log('📤 Uploading directly to /api/v1/upload/')
     
-    const response = await fetch('http://localhost:8000/api/v1/upload/', {
+    const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/upload/', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`

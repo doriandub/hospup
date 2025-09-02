@@ -81,7 +81,7 @@ export class InstagramService {
    */
   async fetchThumbnailViaProxy(url: string): Promise<string | null> {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/instagram/thumbnail?url=${encodeURIComponent(url)}`)
+      const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/instagram/thumbnail?url=${encodeURIComponent(url)}`)
       
       if (response.ok) {
         // Get blob URL for the image
@@ -101,7 +101,7 @@ export class InstagramService {
    */
   async fetchMetadataViaProxy(url: string): Promise<InstagramPostData | null> {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/instagram/metadata?url=${encodeURIComponent(url)}`)
+      const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/instagram/metadata?url=${encodeURIComponent(url)}`)
       
       if (response.ok) {
         const data = await response.json()

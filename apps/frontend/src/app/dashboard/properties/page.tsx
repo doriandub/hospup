@@ -84,7 +84,7 @@ export default function PropertiesPage() {
     try {
       const token = localStorage.getItem('access_token')
       // Only count uploaded videos, not generated ones
-      const response = await fetch(`http://localhost:8000/api/v1/videos/?property_id=${propertyId}&video_type=uploaded`, {
+      const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/?property_id=${propertyId}&video_type=uploaded`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

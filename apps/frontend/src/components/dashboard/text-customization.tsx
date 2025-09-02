@@ -52,7 +52,7 @@ export function TextCustomization({ value, onChange, propertyName = "Votre propr
 
   const fetchFontsData = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/text/fonts')
+      const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/text/fonts')
       const data = await response.json()
       setFonts(data.fonts || [])
       setColors(data.colors || [])
