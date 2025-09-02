@@ -1,118 +1,183 @@
-import axios, { AxiosResponse } from 'axios'
-import { ApiResponse } from '@/types'
+// Clean API client for Railway backend
+const API_BASE_URL = 'https://web-production-93a0d.up.railway.app'
 
-// HARDCODED RAILWAY URL - NO ENVIRONMENT VARIABLES  
-const RAILWAY_URL = 'https://web-production-93a0d.up.railway.app'
-console.log('🚀 FORCED API URL:', RAILWAY_URL)
+interface User {
+  id: string
+  name: string
+  email: string
+  plan: string
+  videos_used: number
+  videos_limit: number
+  created_at: string
+}
 
-export const API_URL = RAILWAY_URL
+interface LoginCredentials {
+  email: string
+  password: string
+}
 
-// Create axios instance with default config
-export const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000,
-})
+interface RegisterData {
+  name: string
+  email: string
+  password: string
+}
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('access_token')
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-      }
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
+// Simple fetch wrapper with error handling
+async function apiRequest(endpoint: string, options: RequestInit = {}) {
+  const url = `${API_BASE_URL}${endpoint}`
+  
+  const defaultOptions: RequestInit = {
+    credentials: 'include', // Always include cookies
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
   }
-)
 
-// Response interceptor to handle auth errors
-api.interceptors.response.use(
-  (response: AxiosResponse<ApiResponse>) => {
-    return response
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        localStorage.removeItem('user')
+  try {
+    const response = await fetch(url, defaultOptions)
+    
+    // Handle auth errors
+    if (response.status === 401) {
+      // Redirect to login if not authenticated
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/')) {
         window.location.href = '/auth/login'
       }
+      throw new Error('Not authenticated')
     }
-    return Promise.reject(error)
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.detail || `HTTP ${response.status}`)
+    }
+    
+    return response.json()
+  } catch (error: any) {
+    console.error(`API Error [${endpoint}]:`, error.message)
+    throw error
   }
-)
-
-// FORCED RAILWAY AUTH ENDPOINTS
-export const authApi = {
-  login: (credentials: { email: string; password: string }) => {
-    console.log('🔑 LOGIN URL:', `${RAILWAY_URL}/api/v1/auth/login`)
-    return axios.post(`${RAILWAY_URL}/api/v1/auth/login`, credentials)
-  },
-  
-  register: (userData: { name: string; email: string; password: string }) => {
-    console.log('📝 REGISTER URL:', `${RAILWAY_URL}/api/v1/auth/register`)
-    return axios.post(`${RAILWAY_URL}/api/v1/auth/register`, userData)
-  },
-  
-  getProfile: () =>
-    api.get('/api/v1/auth/me'),
 }
 
-export const propertiesApi = {
-  getAll: () =>
-    api.get('/api/v1/properties'),
-  
-  getById: (id: string) =>
-    api.get(`/api/v1/properties/${id}`),
-  
-  create: (data: any) =>
-    api.post('/api/v1/properties', data),
-  
-  update: (id: string, data: any) =>
-    api.put(`/api/v1/properties/${id}`, data),
-  
-  delete: (id: string) =>
-    api.delete(`/api/v1/properties/${id}`),
+// Authentication API
+export const authAPI = {
+  // Login user
+  login: async (credentials: LoginCredentials): Promise<User> => {
+    return apiRequest('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    })
+  },
+
+  // Register user
+  register: async (userData: RegisterData): Promise<User> => {
+    return apiRequest('/api/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    })
+  },
+
+  // Get current user
+  getMe: async (): Promise<User> => {
+    return apiRequest('/api/v1/auth/me')
+  },
+
+  // Check if authenticated
+  check: async (): Promise<{ authenticated: boolean; user_id?: string }> => {
+    return apiRequest('/api/v1/auth/check')
+  },
+
+  // Logout
+  logout: async (): Promise<void> => {
+    return apiRequest('/api/v1/auth/logout', {
+      method: 'POST',
+    })
+  },
 }
 
-export const videosApi = {
-  getAll: (propertyId?: string, videoType?: string) => {
-    const params: any = {}
-    if (propertyId) params.property_id = propertyId
-    if (videoType) params.video_type = videoType
-    return api.get('/api/v1/videos', { params })
+// Properties API
+export const propertiesAPI = {
+  getAll: async () => {
+    return apiRequest('/api/v1/properties')
   },
   
-  getById: (id: string) =>
-    api.get(`/api/v1/videos/${id}`),
+  getById: async (id: string) => {
+    return apiRequest(`/api/v1/properties/${id}`)
+  },
   
-  generate: (data: any) =>
-    api.post('/api/v1/videos/generate', data),
+  create: async (data: any) => {
+    return apiRequest('/api/v1/properties', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
   
-  delete: (id: string) =>
-    api.delete(`/api/v1/videos/${id}`),
+  update: async (id: string, data: any) => {
+    return apiRequest(`/api/v1/properties/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  },
+  
+  delete: async (id: string) => {
+    return apiRequest(`/api/v1/properties/${id}`, {
+      method: 'DELETE',
+    })
+  },
 }
 
+// Videos API
+export const videosAPI = {
+  getAll: async (propertyId?: string, videoType?: string) => {
+    const params = new URLSearchParams()
+    if (propertyId) params.append('property_id', propertyId)
+    if (videoType) params.append('video_type', videoType)
+    
+    const query = params.toString()
+    return apiRequest(`/api/v1/videos${query ? '?' + query : ''}`)
+  },
+  
+  getById: async (id: string) => {
+    return apiRequest(`/api/v1/videos/${id}`)
+  },
+  
+  generate: async (data: any) => {
+    return apiRequest('/api/v1/videos/generate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+  
+  delete: async (id: string) => {
+    return apiRequest(`/api/v1/videos/${id}`, {
+      method: 'DELETE',
+    })
+  },
+}
+
+// Legacy exports for compatibility
+export const api = { 
+  get: (url: string) => apiRequest(url),
+  post: (url: string, data: any) => apiRequest(url, { method: 'POST', body: JSON.stringify(data) }),
+  put: (url: string, data: any) => apiRequest(url, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (url: string) => apiRequest(url, { method: 'DELETE' }),
+}
+
+export const propertiesApi = propertiesAPI
+export const videosApi = videosAPI
 export const textApi = {
   getSuggestions: (propertyId?: string, category?: string, count?: number) => {
-    const params: any = {}
-    if (propertyId) params.property_id = propertyId
-    if (category) params.category = category
-    if (count) params.count = count
-    return api.get('/api/v1/text/suggestions', { params })
+    const params = new URLSearchParams()
+    if (propertyId) params.append('property_id', propertyId)
+    if (category) params.append('category', category)
+    if (count) params.append('count', count.toString())
+    
+    const query = params.toString()
+    return apiRequest(`/api/v1/text/suggestions${query ? '?' + query : ''}`)
   },
   
-  getCategories: () =>
-    api.get('/api/v1/text/categories'),
+  getCategories: () => apiRequest('/api/v1/text/categories'),
 }
 
-export default api
+export { apiRequest }
+export type { User, LoginCredentials, RegisterData }

@@ -288,11 +288,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # Import get_current_user from centralized auth
 from core.auth import get_current_user
 
-# API routes - New cookie-based auth (primary)
+# Clean cookie-based authentication
 app.include_router(auth_cookies.router, prefix="/api/v1/auth", tags=["auth"])
-
-# Legacy JWT auth (for compatibility)
-app.include_router(auth.router, prefix="/api/v1/auth-jwt", tags=["auth-legacy"])
 
 app.include_router(
     properties.router, 

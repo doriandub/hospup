@@ -7,7 +7,7 @@ import { Building, Eye, EyeOff, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useAuth } from '@/hooks/useAuth'
+import { authAPI } from '@/lib/api'
 
 export default function RegisterPage() {
   const [name, setName] = useState('')
@@ -19,7 +19,6 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   
-  const { register } = useAuth()
   const router = useRouter()
 
   // Password validation
@@ -45,7 +44,8 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      await register(name, email, password)
+      const user = await authAPI.register({ name, email, password })
+      console.log('✅ Registration successful for:', user.email)
       router.push('/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Registration failed. Please try again.')

@@ -7,7 +7,7 @@ import { Building, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { authService } from '@/lib/auth-cookies'
+import { authAPI } from '@/lib/api'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -25,7 +25,8 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const user = await authService.login(email, password)
+      const user = await authAPI.login({ email, password })
+      console.log('✅ Login successful for:', user.email)
       setSuccess(true)
       setTimeout(() => router.push('/dashboard'), 1500)
     } catch (err: any) {
@@ -141,9 +142,9 @@ export default function LoginPage() {
           </div>
 
           {/* Info */}
-          <div className="mt-4 p-2 bg-blue-50 rounded text-xs text-blue-700">
-            <p>🔒 Secure cookie-based authentication</p>
-            <p>Works across all browsers and devices</p>
+          <div className="mt-4 p-2 bg-green-50 rounded text-xs text-green-700">
+            <p>🚀 Clean Railway + Vercel authentication</p>
+            <p>Simple, secure, cross-browser compatible</p>
           </div>
         </div>
 
