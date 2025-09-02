@@ -48,15 +48,15 @@ api.interceptors.response.use(
   }
 )
 
-// API endpoints - TEMPORARY hardcoded Railway URLs for debugging
-const RAILWAY_URL = 'https://web-production-93a0d.up.railway.app'
+// FORCED RAILWAY URLS - NO ENVIRONMENT VARIABLES
+import { API_BASE_URL } from '@/config/api'
 
 export const authApi = {
   login: (credentials: { email: string; password: string }) =>
-    axios.post(`${RAILWAY_URL}/api/v1/auth/login`, credentials),
+    axios.post(`${API_BASE_URL}/api/v1/auth/login`, credentials),
   
   register: (userData: { name: string; email: string; password: string }) =>
-    axios.post(`${RAILWAY_URL}/api/v1/auth/register`, userData),
+    axios.post(`${API_BASE_URL}/api/v1/auth/register`, userData),
   
   getProfile: () =>
     api.get('/api/v1/auth/me'),
