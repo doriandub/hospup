@@ -3,7 +3,6 @@ Modèle pour tracker les templates viraux vus par les utilisateurs
 """
 
 from sqlalchemy import Column, String, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -17,11 +16,11 @@ class UserViewedTemplate(Base):
     """
     __tablename__ = "user_viewed_templates"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     
-    # Relations
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    viral_template_id = Column(UUID(as_uuid=True), ForeignKey("viral_video_templates.id"), nullable=False)
+    # Relations - Using String to match User.id type
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    viral_template_id = Column(String, ForeignKey("viral_video_templates.id"), nullable=False)
     
     # Metadata
     viewed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
