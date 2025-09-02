@@ -2,6 +2,7 @@
   "version": 2,
   "name": "hospup-frontend",
   "framework": "nextjs",
-  "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "npm run build"
+  "installCommand": "cd apps/frontend && npm install --legacy-peer-deps",
+  "buildCommand": "cd apps/frontend && npm run build",
+  "outputDirectory": "apps/frontend/.next"
 }
