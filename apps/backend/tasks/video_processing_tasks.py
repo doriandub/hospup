@@ -6,7 +6,11 @@ from models.property import Property
 from services.s3_service import s3_service
 # Local storage service removed - using S3 only
 from services.video_conversion_service import video_conversion_service
-from services.blip_analysis_service import blip_analysis_service
+try:
+    from services.openai_vision_service import openai_vision_service
+    ai_analysis_service = openai_vision_service
+except ImportError:
+    ai_analysis_service = None
 from core.config import settings
 from sqlalchemy.orm import Session
 from typing import Dict, Any
@@ -376,7 +380,10 @@ def generate_video_content_description(
             # Use BLIP AI model for intelligent image analysis
             try:
                 logger.info("🤖 Analyzing video content with BLIP...")
-                description = blip_analysis_service.analyze_image(frame_path, property_obj.name)
+                if ai_analysis_service:
+                    description = ai_analysis_service.analyze_video_content(frame_path)
+                else:
+                    description = "Video processed successfully - AI analysis unavailable"
                 logger.info("✅ BLIP analysis successful")
             except Exception as e:
                 logger.warning(f"⚠️ BLIP analysis failed: {e}, falling back to heuristic")

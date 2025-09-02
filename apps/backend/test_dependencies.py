@@ -113,11 +113,11 @@ def test_services():
         video_service_ok = False
     
     try:
-        from services.blip_analysis_service import blip_analysis_service
-        logger.info("✅ BLIP analysis service available")
+        from services.openai_vision_service import openai_vision_service
+        logger.info("✅ OpenAI Vision service available")
         blip_service_ok = True
     except Exception as e:
-        logger.error(f"❌ BLIP analysis service error: {e}")
+        logger.error(f"❌ OpenAI Vision service error: {e}")
         blip_service_ok = False
     
     return video_service_ok and blip_service_ok
