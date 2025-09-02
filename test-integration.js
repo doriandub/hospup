@@ -4,7 +4,7 @@
 const https = require('https');
 const http = require('http');
 
-const BACKEND_URL = 'https://hospup-backend.onrender.com';
+const BACKEND_URL = 'https://web-production-93a0d.up.railway.app';
 const FRONTEND_ORIGIN = 'https://hospup.vercel.app';
 
 // Couleurs pour les logs

@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     
     # Security
     ALLOWED_HOSTS: str = "*"
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,https://hospup-backend.onrender.com,https://hospup.vercel.app"
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,https://web-production-93a0d.up.railway.app,https://hospup.vercel.app"
     
     @property
     def allowed_hosts_list(self) -> List[str]:

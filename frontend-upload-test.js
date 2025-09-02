@@ -3,7 +3,7 @@
 
 console.log('🚀 TEST UPLOAD FRONTEND → BACKEND');
 
-const API_URL = 'https://hospup-backend.onrender.com';
+const API_URL = 'https://web-production-93a0d.up.railway.app';
 const token = localStorage.getItem('access_token');
 
 if (!token) {

@@ -24,7 +24,7 @@ export default function LoginSafePage() {
     setError('')
 
     try {
-      const response = await fetch('https://hospup-backend.onrender.com/api/v1/auth/login', {
+      const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

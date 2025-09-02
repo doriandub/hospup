@@ -4,7 +4,7 @@
 console.log('🔍 DEBUG UPLOAD - Début du test');
 
 // Test 1: Vérifier les variables d'environnement
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://hospup-backend.onrender.com';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-93a0d.up.railway.app';
 console.log('📡 API_URL configurée:', API_URL);
 
 // Test 2: Vérifier l'authentification
