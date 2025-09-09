@@ -175,16 +175,20 @@ export function VideoCard({
       return
     }
     
-    // Create a temporary video element to play the video inline (working method from Properties)
+    // Create a video element optimized for viewing
     const tempVideo = document.createElement('video')
     tempVideo.src = videoUrl
     tempVideo.controls = true
     tempVideo.autoplay = true
-    tempVideo.style.width = '100%'
-    tempVideo.style.height = 'auto'
-    tempVideo.style.maxHeight = '80vh'
+    tempVideo.style.cssText = `
+      width: 100%;
+      height: auto;
+      max-height: 80vh;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    `
     
-    // Create modal-like overlay
+    // Create modal overlay
     const overlay = document.createElement('div')
     overlay.style.cssText = `
       position: fixed;
@@ -192,52 +196,107 @@ export function VideoCard({
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.9);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
       padding: 20px;
+      animation: fadeIn 0.2s ease-out;
     `
+    
+    // Add fade animation
+    const style = document.createElement('style')
+    style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+    `
+    document.head.appendChild(style)
     
     const container = document.createElement('div')
     container.style.cssText = `
-      background: white;
-      border-radius: 8px;
-      padding: 20px;
+      position: relative;
       max-width: 90%;
       max-height: 90%;
+      display: flex;
+      flex-direction: column;
+    `
+    
+    // Video info header
+    const header = document.createElement('div')
+    header.style.cssText = `
+      color: white;
+      padding: 0 0 16px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    `
+    
+    const title = document.createElement('h3')
+    title.textContent = video.title
+    title.style.cssText = `
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
     `
     
     const closeButton = document.createElement('button')
-    closeButton.textContent = '✕ Close'
+    closeButton.innerHTML = '✕'
     closeButton.style.cssText = `
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #333;
+      background: rgba(255,255,255,0.2);
       color: white;
       border: none;
-      padding: 8px 12px;
-      border-radius: 4px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
       cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
     `
     
-    closeButton.onclick = () => {
-      document.body.removeChild(overlay)
+    closeButton.onmouseover = () => {
+      closeButton.style.background = 'rgba(255,255,255,0.3)'
+    }
+    closeButton.onmouseout = () => {
+      closeButton.style.background = 'rgba(255,255,255,0.2)'
     }
     
+    const closeModal = () => {
+      tempVideo.pause()
+      document.body.removeChild(overlay)
+      document.head.removeChild(style)
+    }
+    
+    closeButton.onclick = closeModal
+    
+    header.appendChild(title)
+    header.appendChild(closeButton)
+    container.appendChild(header)
     container.appendChild(tempVideo)
     overlay.appendChild(container)
-    overlay.appendChild(closeButton)
     document.body.appendChild(overlay)
     
     // Close on overlay click
     overlay.onclick = (e) => {
       if (e.target === overlay) {
-        document.body.removeChild(overlay)
+        closeModal()
       }
     }
+    
+    // Close on Escape key
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeModal()
+        document.removeEventListener('keydown', handleKeyDown)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
   }
 
   // List view content
@@ -246,7 +305,18 @@ export function VideoCard({
       <div className="flex items-center space-x-4">
         {/* Thumbnail */}
         <div className="flex-shrink-0 w-24 h-16 bg-gray-100 rounded-lg overflow-hidden relative">
-          {videoUrl ? (
+          {video.thumbnail_url ? (
+            <img 
+              src={video.thumbnail_url} 
+              alt={video.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                console.log(`Thumbnail failed for ${video.title} in list view`)
+                const target = e.target as HTMLImageElement
+                target.style.display = 'none'
+              }}
+            />
+          ) : videoUrl ? (
             <video 
               className="w-full h-full object-cover" 
               preload="metadata"
@@ -267,12 +337,6 @@ export function VideoCard({
             >
               <source src={videoUrl} type="video/mp4" />
             </video>
-          ) : video.thumbnail_url ? (
-            <img 
-              src={video.thumbnail_url} 
-              alt={video.title}
-              className="w-full h-full object-cover"
-            />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 relative">
               <div className="text-center">
@@ -354,7 +418,27 @@ export function VideoCard({
     >
       {/* Thumbnail */}
       <div className="aspect-[9/16] bg-gray-100 relative overflow-hidden">
-        {videoUrl ? (
+        {video.thumbnail_url ? (
+          <div className="w-full h-full relative">
+            <img 
+              src={video.thumbnail_url} 
+              alt={video.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                console.log(`Thumbnail failed for ${video.title}, falling back to video preview`)
+                // If thumbnail fails, try to show video preview
+                const target = e.target as HTMLImageElement
+                target.style.display = 'none'
+              }}
+            />
+            {/* Play button overlay on thumbnail */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black bg-opacity-30">
+              <div className="bg-white bg-opacity-90 rounded-full p-3">
+                <Play className="h-8 w-8 text-gray-800" />
+              </div>
+            </div>
+          </div>
+        ) : videoUrl ? (
           <div className="w-full h-full relative">
             <video 
               className="w-full h-full object-cover" 
@@ -377,12 +461,6 @@ export function VideoCard({
               <source src={videoUrl} type="video/mp4" />
             </video>
           </div>
-        ) : video.thumbnail_url ? (
-          <img 
-            src={video.thumbnail_url} 
-            alt={video.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 relative">
             <div className="text-center">
