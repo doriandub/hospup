@@ -61,6 +61,7 @@ interface TimelineEditorProps {
   templateId: string
   onAddText?: () => void
   onGenerateVideo?: () => void
+  onTimelineUpdate?: (assignments: SlotAssignment[], texts: any[]) => void
 }
 
 export function VideoTimelineEditor({
@@ -71,7 +72,8 @@ export function VideoTimelineEditor({
   propertyId,
   templateId,
   onAddText,
-  onGenerateVideo
+  onGenerateVideo,
+  onTimelineUpdate
 }: TimelineEditorProps) {
   const [assignments, setAssignments] = useState<SlotAssignment[]>([])
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
@@ -161,10 +163,18 @@ export function VideoTimelineEditor({
 
   useEffect(() => {
     if (onGenerateVideo) {
-      // Store the internal handler for external use  
+      // Store the internal handler for external use
       (window as any).videoTimelineGenerateVideo = handleGenerateVideo
     }
   }, [onGenerateVideo, assignments, textOverlays, onGenerate])
+
+  // Call timeline update callback whenever assignments or textOverlays change
+  useEffect(() => {
+    if (onTimelineUpdate && (assignments.length > 0 || textOverlays.length > 0)) {
+      console.log('🔄 Notifying parent of timeline update:', assignments.length, 'assignments,', textOverlays.length, 'text overlays')
+      onTimelineUpdate(assignments, textOverlays)
+    }
+  }, [assignments, textOverlays, onTimelineUpdate])
 
   // Load saved assignments or auto-match when data is ready  
   useEffect(() => {

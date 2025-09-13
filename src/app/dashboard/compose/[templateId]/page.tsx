@@ -46,6 +46,8 @@ export default function ComposePage() {
   const [contentVideos, setContentVideos] = useState<ContentVideo[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedProperty, setSelectedProperty] = useState<string>('')
+  const [currentAssignments, setCurrentAssignments] = useState<any[]>([])
+  const [currentTextOverlays, setCurrentTextOverlays] = useState<any[]>([])
 
   const templateId = params.templateId as string
   const propertyFromUrl = searchParams.get('property')
@@ -228,7 +230,13 @@ export default function ComposePage() {
     }
   }
 
+  const handleTimelineUpdate = (assignments: any[], textOverlays: any[]) => {
+    setCurrentAssignments(assignments)
+    setCurrentTextOverlays(textOverlays)
+  }
+
   const handleGenerate = async (assignments: any[], textOverlays: any[]) => {
+    console.log('🚨🚨🚨 HANDLEGENERATE FUNCTION CALLED! 🚨🚨🚨')
     console.log('🎬 handleGenerate called with:', { assignments, textOverlays })
     console.log('📍 Text overlays positions:')
     textOverlays.forEach((text, i) => {
@@ -352,10 +360,11 @@ export default function ComposePage() {
           }
         }}
         onGenerateTemplate={() => {
-          // Create video functionality
-          if ((window as any).videoTimelineGenerateVideo) {
-            (window as any).videoTimelineGenerateVideo()
-          }
+          // Create video functionality - call handleGenerate with current assignments and text overlays
+          console.log('🔘 Create Video button clicked - calling handleGenerate with current state')
+          console.log('📊 Current assignments:', currentAssignments.length)
+          console.log('📝 Current text overlays:', currentTextOverlays.length)
+          handleGenerate(currentAssignments, currentTextOverlays)
         }}
         isGenerating={false}
       />
@@ -369,6 +378,7 @@ export default function ComposePage() {
         templateId={templateId}
         onAddText={() => {}}
         onGenerateVideo={() => {}}
+        onTimelineUpdate={handleTimelineUpdate}
       />
     </div>
   )
