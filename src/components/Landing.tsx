@@ -5,7 +5,7 @@ import React, { useState } from 'react'
 // Data configuration
 const landingData = {
   "brand": "Hospup",
-  "navbar": ["Features", "Pricing", "Resources", "About"],
+  "navbar": ["Features", "How it works", "Pricing"],
   "hero": {
     "title": "Becoming Instagram's next viral property made easy",
     "subtitle": "Drive more direct bookings in just 3 minutes a day. Hospup makes content creation accessible to all with videos, captions, and music ready to post.",
@@ -137,11 +137,11 @@ const Hero = () => {
           </div>
           
           {/* Main Title */}
-          <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-8 leading-tight max-w-4xl mx-auto" style={{ fontFamily: 'Inter' }} dangerouslySetInnerHTML={{ __html: landingData.hero.title }}>
+          <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight max-w-4xl mx-auto" style={{ fontFamily: 'Inter' }} dangerouslySetInnerHTML={{ __html: landingData.hero.title }}>
           </h1>
-          
+
           {/* Subtitle */}
-          <p className="text-xl lg:text-2xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto" style={{ fontFamily: 'Inter' }}>
+          <p className="text-lg lg:text-xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto" style={{ fontFamily: 'Inter' }}>
             {landingData.hero.subtitle}
           </p>
           
@@ -708,182 +708,139 @@ const FAQ = () => {
 
 // Simple Process Section
 const Benefits = () => {
-  const process = [
-    {
-      icon: "📁",
-      title: "1. Uploadez toutes vos vidéos",
-      description: "Importez vos contenus hôteliers existants depuis votre téléphone ou ordinateur"
-    },
-    {
-      icon: "💬",
-      title: "2. Dites-nous ce que vous voulez créer",
-      description: "Décrivez votre idée ou laissez notre IA analyser et proposer des formats viraux"
-    },
-    {
-      icon: "✨",
-      title: "3. Vidéo et description prêtes",
-      description: "Votre contenu Instagram est généré automatiquement, prêt à être posté"
-    }
-  ]
-
   return (
-    <section className="py-16 bg-white border-b border-gray-100">
+    <section className="py-20 bg-white border-b border-gray-100">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
-        
-        {/* Mobile-first visual process */}
-        <div className="max-w-6xl mx-auto mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start justify-items-center">
-            
-            {/* Step 1: Upload Content */}
-            <div className="text-center relative">
-              <div className="flex flex-col items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#09725c] text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
-                <h3 className="text-lg font-bold text-gray-900 text-center">Import all your property footage</h3>
+
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>
+            How it works
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto" style={{ fontFamily: 'Inter' }}>
+            From property videos to viral content in three simple steps
+          </p>
+        </div>
+
+        {/* Three Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+
+          {/* Step 1 Card */}
+          <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 text-center">
+            <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-blue-500 font-bold text-lg">1</div>
+            </div>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Inter' }}>
+              Upload your footages
+            </h3>
+            <p className="text-gray-600 mb-6" style={{ fontFamily: 'Inter' }}>
+              Import all your property videos.
+            </p>
+
+            {/* Illustration */}
+            <div className="bg-gray-50 rounded-2xl p-6 mb-4">
+              <div className="border-2 border-dashed border-blue-300 rounded-xl p-6 bg-blue-50">
+                <svg className="w-8 h-8 text-blue-400 mx-auto mb-2" fill="currentColor" viewBox="0 0 48 48">
+                  <path d="M14 14h20v20H14z M18 10l6 6 6-6"/>
+                </svg>
+                <p className="text-sm font-medium text-blue-600">Drag & Drop</p>
               </div>
-              
-              <div className="relative mx-auto w-64 h-96 bg-gray-100 rounded-3xl p-3 shadow-lg">
-                <div className="w-full h-full bg-white rounded-2xl overflow-hidden">
-                  {/* Phone content */}
-                  <div className="p-4 h-full flex flex-col">
-                    <div className="text-center mb-4">
-                      <div className="w-8 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
-                      <h4 className="font-semibold text-sm">Importer vos vidéos</h4>
-                    </div>
-                    
-                    <div className="flex-1 border-2 border-dashed border-blue-300 rounded-xl flex flex-col items-center justify-center bg-blue-50">
-                      <svg className="w-8 h-8 text-blue-400 mb-2" fill="currentColor" viewBox="0 0 48 48">
-                        <path d="M14 14h20v20H14z M18 10l6 6 6-6"/>
-                      </svg>
-                      <p className="text-xs font-medium text-blue-600">Drag & Drop</p>
-                      <p className="text-xs text-gray-500">ou parcourir</p>
-                    </div>
-                    
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center gap-2 bg-green-100 p-2 rounded text-xs">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="flex-1">piscine.mp4</span>
-                        <span className="text-green-600">✓</span>
-                      </div>
-                      <div className="flex items-center gap-2 bg-blue-100 p-2 rounded text-xs">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span className="flex-1">suite.mp4</span>
-                        <span className="text-blue-600">✓</span>
-                      </div>
-                      <div className="text-center text-xs text-gray-500">+12 autres fichiers</div>
-                    </div>
-                  </div>
+
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-2 bg-green-100 p-2 rounded text-sm">
+                  <div className="w-8 h-6 bg-gray-300 rounded"></div>
+                  <span className="flex-1">villa-pool.mp4</span>
+                  <span className="text-green-600">✓</span>
+                </div>
+                <div className="flex items-center gap-2 bg-blue-100 p-2 rounded text-sm">
+                  <div className="w-8 h-6 bg-gray-300 rounded"></div>
+                  <span className="flex-1">luxury-suite.mp4</span>
+                  <span className="text-blue-600">✓</span>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Step 2: Template Selection - Tablet mockup */}
-            <div className="text-center relative">
-              <div className="flex flex-col items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#09725c] text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
-                <h3 className="text-lg font-bold text-gray-900 text-center">Validate the best video idea</h3>
-              </div>
-              
-              <div className="relative mx-auto w-72 h-96 bg-gray-100 rounded-2xl p-2 shadow-lg">
-                <div className="w-full h-full bg-white rounded-xl overflow-hidden">
-                  <div className="p-3 h-full">
-                    <div className="bg-gray-100 rounded-lg p-2 mb-3">
-                      <input 
-                        type="text" 
-                        placeholder="Décrivez votre idée..."
-                        className="w-full text-xs border-0 bg-transparent"
-                        disabled
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 h-60">
-                      <div className="bg-gradient-to-br from-pink-100 to-pink-200 rounded-lg p-2 border-2 border-pink-400 relative">
-                        <div className="aspect-square bg-pink-300 rounded mb-1 flex items-center justify-center">
-                          <span className="text-lg">🏊‍♀️</span>
-                        </div>
-                        <p className="text-xs font-bold text-pink-700">Pool Tour</p>
-                        <p className="text-xs text-pink-600">2.3M vues</p>
-                        <div className="absolute top-1 right-1 bg-pink-500 text-white text-xs px-1 rounded-full">✓</div>
-                      </div>
-                      
-                      <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-2">
-                        <div className="aspect-square bg-blue-300 rounded mb-1 flex items-center justify-center">
-                          <span className="text-lg">🍽️</span>
-                        </div>
-                        <p className="text-xs font-bold text-blue-700">Food Tour</p>
-                        <p className="text-xs text-blue-600">1.8M vues</p>
-                      </div>
-                      
-                      <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-lg p-2">
-                        <div className="aspect-square bg-green-300 rounded mb-1 flex items-center justify-center">
-                          <span className="text-lg">🌅</span>
-                        </div>
-                        <p className="text-xs font-bold text-green-700">Morning</p>
-                        <p className="text-xs text-green-600">4.1M vues</p>
-                      </div>
-                      
-                      <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg p-2">
-                        <div className="aspect-square bg-purple-300 rounded mb-1 flex items-center justify-center">
-                          <span className="text-lg">✨</span>
-                        </div>
-                        <p className="text-xs font-bold text-purple-700">Luxury</p>
-                        <p className="text-xs text-purple-600">3.2M vues</p>
-                      </div>
-                    </div>
-                    
-                    <button className="w-full bg-gray-200 text-gray-700 text-xs py-2 rounded-lg mt-2">
-                      Générer une autre idée
-                    </button>
+          {/* Step 2 Card */}
+          <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 text-center">
+            <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-blue-500 font-bold text-lg">2</div>
+            </div>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Inter' }}>
+              Select your template
+            </h3>
+            <p className="text-gray-600 mb-6" style={{ fontFamily: 'Inter' }}>
+              Choose from proven viral templates.
+            </p>
+
+            {/* Illustration */}
+            <div className="bg-gray-50 rounded-2xl p-6 mb-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gradient-to-br from-pink-100 to-pink-200 rounded-lg p-3 border-2 border-pink-400 relative">
+                  <div className="aspect-square bg-pink-300 rounded mb-2 flex items-center justify-center">
+                    <span className="text-lg">🏊‍♀️</span>
                   </div>
+                  <p className="text-xs font-bold text-pink-700">Pool Tour</p>
+                  <p className="text-xs text-pink-600">2.3M views</p>
+                  <div className="absolute top-1 right-1 bg-pink-500 text-white text-xs px-1 rounded-full">✓</div>
+                </div>
+
+                <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-3">
+                  <div className="aspect-square bg-blue-300 rounded mb-2 flex items-center justify-center">
+                    <span className="text-lg">✨</span>
+                  </div>
+                  <p className="text-xs font-bold text-blue-700">Luxury</p>
+                  <p className="text-xs text-blue-600">3.2M views</p>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Step 3: Generated Result - Phone mockup */}
-            <div className="text-center">
-              <div className="flex flex-col items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#09725c] text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
-                <h3 className="text-lg font-bold text-gray-900 text-center">Your post is ready in one minute</h3>
-              </div>
-              
-              <div className="relative mx-auto w-64 h-96 bg-gray-100 rounded-3xl p-3 shadow-lg">
-                <div className="w-full h-full bg-white rounded-2xl overflow-hidden">
-                  <div className="p-4 h-full flex flex-col">
-                    <div className="text-center mb-3">
-                      <div className="w-8 h-1 bg-gray-300 rounded-full mx-auto mb-2"></div>
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs font-medium text-green-600">Vidéo générée !</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex-1 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl mb-3 flex items-center justify-center relative">
-                      <svg width="24" height="24" fill="var(--brand)" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                      <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                        ✓
-                      </div>
-                    </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                      <p className="text-xs font-medium">🏨 Suite avec vue océan ! 🌊</p>
-                      <p className="text-xs text-blue-600">#luxury #ocean</p>
-                    </div>
-                    
-                    <button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm py-3 rounded-xl font-medium">
-                      📱 Poster sur Instagram
-                    </button>
+          {/* Step 3 Card */}
+          <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 text-center">
+            <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-blue-500 font-bold text-lg">3</div>
+            </div>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Inter' }}>
+              Generate video
+            </h3>
+            <p className="text-gray-600 mb-6" style={{ fontFamily: 'Inter' }}>
+              Your post is ready in seconds.
+            </p>
+
+            {/* Illustration */}
+            <div className="bg-gray-50 rounded-2xl p-6 mb-4">
+              {/* Loading animation turning into polished video */}
+              <div className="relative">
+                <div className="w-full aspect-[9/16] bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl mb-4 flex items-center justify-center relative overflow-hidden">
+                  {/* Circular loading animation */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                   </div>
+
+                  {/* Phone screen overlay */}
+                  <div className="absolute bottom-2 right-2 w-12 h-20 bg-black rounded-lg p-1">
+                    <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 rounded flex items-center justify-center">
+                      <div className="w-6 h-10 bg-gray-600 rounded-sm"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-3 border">
+                  <p className="text-xs font-medium text-gray-900">🏨 Luxury villa with ocean view!</p>
+                  <p className="text-xs text-blue-600">#luxury #villa #ocean</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        
-        
+
         <div className="text-center">
           <button className="bg-futuristic text-white px-8 py-3 rounded-2xl font-medium hover:scale-[1.02] transition-all duration-200 border-0">
-            Essayer maintenant
+            Try it now
           </button>
         </div>
       </div>
