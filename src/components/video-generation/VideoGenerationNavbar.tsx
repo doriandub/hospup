@@ -10,6 +10,8 @@ interface VideoGenerationNavbarProps {
   templateId?: string
   videoId?: string
   showGenerationButtons?: boolean
+  showRandomTemplate?: boolean
+  showGenerateTemplate?: boolean
   onRandomTemplate?: () => void
   onGenerateTemplate?: () => void
   isGenerating?: boolean
@@ -21,6 +23,8 @@ export function VideoGenerationNavbar({
   templateId,
   videoId,
   showGenerationButtons = false,
+  showRandomTemplate = false,
+  showGenerateTemplate = false,
   onRandomTemplate,
   onGenerateTemplate,
   isGenerating = false
@@ -38,7 +42,8 @@ export function VideoGenerationNavbar({
         break
       case 4:
         if (templateId) {
-          router.push(`/dashboard/compose/${templateId}?property=${propertyId}`)
+          const composeRoute = `/dashboard/compose/${templateId}?property=${propertyId}`
+          router.push(composeRoute as any)
         } else {
           router.push('/dashboard/generate')
         }
@@ -75,35 +80,67 @@ export function VideoGenerationNavbar({
             </div>
           </div>
 
-          {/* Right side - Always show buttons or step indicator */}
+          {/* Right side - Always show both buttons when appropriate */}
           <div className="flex items-center gap-3">
-            <Button
-              onClick={onRandomTemplate}
-              disabled={isGenerating || !propertyId}
-              variant={currentStep === 4 ? "default" : "outline"}
-              size="sm"
-              className={currentStep === 4 ? 
-                "bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 text-white border-0 disabled:opacity-50 px-4 py-2" : 
-                "border-[#09725c] text-[#09725c] hover:bg-[#09725c]/10 disabled:opacity-50 px-4 py-2"
-              }
-            >
-              {currentStep === 4 ? (
-                <Music className="w-4 h-4 mr-2" />
-              ) : (
-                <Shuffle className="w-4 h-4 mr-2" />
-              )}
-              {currentStep === 2 ? "Another Template" : currentStep === 3 ? "Add Text" : currentStep === 4 ? "Publier sur Instagram avec la musique" : "Random Template"}
-            </Button>
+            {currentStep === 1 && (
+              <>
+                {/* Random Template - needs only property selection */}
+                <Button
+                  onClick={onRandomTemplate}
+                  disabled={isGenerating || !propertyId}
+                  variant="outline"
+                  size="sm"
+                  className="border-[#09725c] text-[#09725c] hover:bg-[#09725c]/10 disabled:opacity-50 px-4 py-2"
+                >
+                  <Shuffle className="w-4 h-4 mr-2" />
+                  Random Template
+                </Button>
+                
+                {/* Generate Template - needs property + description */}
+                <Button
+                  onClick={onGenerateTemplate}
+                  disabled={isGenerating || !propertyId || !showGenerateTemplate}
+                  size="sm"
+                  className="bg-[#09725c] hover:bg-[#09725c]/90 disabled:opacity-50 px-4 py-2"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Template
+                </Button>
+              </>
+            )}
             
-            <Button
-              onClick={onGenerateTemplate}
-              disabled={isGenerating || !showGenerationButtons}
-              size="sm"
-              className="bg-[#09725c] hover:bg-[#09725c]/90 disabled:opacity-50 px-4 py-2"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {currentStep === 2 ? "Create This Video" : currentStep === 3 ? "Create Video" : currentStep === 4 ? "Créer une autre vidéo" : "Generate Template"}
-            </Button>
+            {/* Other steps buttons */}
+            {currentStep > 1 && (
+              <>
+                <Button
+                  onClick={onRandomTemplate}
+                  disabled={isGenerating}
+                  variant={currentStep === 4 ? "default" : "outline"}
+                  size="sm"
+                  className={currentStep === 4 ? 
+                    "bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 text-white border-0 disabled:opacity-50 px-4 py-2" : 
+                    "border-[#09725c] text-[#09725c] hover:bg-[#09725c]/10 disabled:opacity-50 px-4 py-2"
+                  }
+                >
+                  {currentStep === 4 ? (
+                    <Music className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Shuffle className="w-4 h-4 mr-2" />
+                  )}
+                  {currentStep === 2 ? "Another Template" : currentStep === 3 ? "Add Text" : currentStep === 4 ? "Publier sur Instagram avec la musique" : "Random Template"}
+                </Button>
+                
+                <Button
+                  onClick={onGenerateTemplate}
+                  disabled={isGenerating}
+                  size="sm"
+                  className="bg-[#09725c] hover:bg-[#09725c]/90 disabled:opacity-50 px-4 py-2"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  {currentStep === 2 ? "Create This Video" : currentStep === 3 ? "Create Video" : currentStep === 4 ? "Créer une autre vidéo" : "Generate Template"}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

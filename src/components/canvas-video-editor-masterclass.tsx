@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useRef, useEffect, useState, useCallback } from 'react'
-import { Play, Pause, Copy, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Copy, Trash2 } from 'lucide-react'
+import { TextOverlay } from '@/types/text-overlay'
 
 interface VideoSlot {
   id: string
@@ -15,30 +15,6 @@ interface VideoSlot {
     title: string
     thumbnail_url: string
   }
-}
-
-interface TextOverlay {
-  id: string
-  content: string
-  start_time: number
-  end_time: number
-  position: { 
-    x: number // Pourcentage 0-100
-    y: number // Pourcentage 0-100
-    anchor: string 
-  }
-  style: {
-    font_family: string
-    font_size: number // Pourcentage de la hauteur vidéo
-    color: string
-    bold: boolean
-    italic: boolean
-    shadow: boolean
-    outline: boolean
-    background: boolean
-    opacity: number
-  }
-  textAlign?: 'left' | 'center' | 'right'
 }
 
 interface CanvasVideoEditorMasterclassProps {
@@ -160,7 +136,7 @@ export function CanvasVideoEditorMasterclass({
 
     const x = (text.position.x / 100) * CANVAS_WIDTH
     const y = (text.position.y / 100) * CANVAS_HEIGHT
-    const fontSize = (text.style.font_size / 100) * CANVAS_HEIGHT
+    const fontSize = text.style.font_size * (CANVAS_HEIGHT / 1920)
 
     const fontWeight = text.style.bold ? 'bold' : 'normal'
     const fontStyle = text.style.italic ? 'italic' : 'normal'
@@ -274,7 +250,7 @@ export function CanvasVideoEditorMasterclass({
     visibleTexts.forEach(text => {
       const x = (text.position.x / 100) * CANVAS_WIDTH
       const y = (text.position.y / 100) * CANVAS_HEIGHT
-      const fontSize = (text.style.font_size / 100) * CANVAS_HEIGHT
+      const fontSize = text.style.font_size * (CANVAS_HEIGHT / 1920)
 
       ctx.save()
 
@@ -495,7 +471,7 @@ export function CanvasVideoEditorMasterclass({
       
       const direction = (deltaX + deltaY) > 0 ? 1 : -1
       const scaleFactor = 1 + (direction * deltaDistance / 400) // MOINS sensible (400 au lieu de 200)
-      const newFontSize = Math.max(0.5, Math.min(10, originalText.style.font_size * scaleFactor)) // Limites plus restrictives
+      const newFontSize = Math.max(20, Math.min(200, originalText.style.font_size * scaleFactor)) // Range simple 20-200px
 
       setTextOverlays(textOverlays.map(text => 
         text.id === selectedTextId 
@@ -648,7 +624,8 @@ export function CanvasVideoEditorMasterclass({
         shadow: true,
         outline: false,
         background: false,
-        opacity: 1
+        opacity: 1,
+        text_align: 'center'
       },
       textAlign: 'center'
     }
@@ -695,8 +672,8 @@ export function CanvasVideoEditorMasterclass({
       content: original.content + ' Copy',
       position: {
         ...original.position,
-        x: Math.min(90, original.position.x + 5),
-        y: Math.min(90, original.position.y + 5)
+        x: Math.min(1030, original.position.x + 50),
+        y: Math.min(1870, original.position.y + 50)
       }
     }
 
@@ -729,15 +706,6 @@ export function CanvasVideoEditorMasterclass({
 
 
 
-      {/* Lecteur */}
-      <div className="flex items-center justify-center gap-2">
-        <Button variant="ghost" size="sm" onClick={isPlaying ? onPause : onPlay}>
-          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-        </Button>
-        <span className="text-xs text-gray-500">
-          {currentTime.toFixed(1)}s / {totalDuration.toFixed(1)}s
-        </span>
-      </div>
     </div>
   )
 }

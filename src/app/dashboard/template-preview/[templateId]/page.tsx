@@ -7,7 +7,6 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { 
   ArrowLeft, 
   Sparkles, 
-  Play, 
   Users, 
   Eye, 
   Heart, 
@@ -16,11 +15,10 @@ import {
   Video,
   RefreshCw,
   TrendingUp,
-  Shuffle,
-  RotateCcw
+  Shuffle
 } from 'lucide-react'
+import { VideoGenerationHeader } from '@/components/video-generation/VideoGenerationHeader'
 import { InstagramEmbed } from '@/components/social/InstagramEmbed'
-import { VideoGenerationNavbar } from '@/components/video-generation/VideoGenerationNavbar'
 import { api } from '@/lib/api'
 
 interface ViralTemplate {
@@ -36,180 +34,140 @@ interface ViralTemplate {
   likes?: number
   comments?: number
   followers?: number
-  script?: string
+  script?: any
   popularity_score?: number
   duration?: number
-}
-
-interface TemplateSuggestion {
-  template: ViralTemplate
-  isMain: boolean
 }
 
 export default function TemplatePreviewPage({ params }: { params: Promise<{ templateId: string }> }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const resolvedParams = use(params)
-  const [suggestions, setSuggestions] = useState<TemplateSuggestion[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState<ViralTemplate | null>(null)
   const [loading, setLoading] = useState(true)
   const [regenerating, setRegenerating] = useState(false)
   const [error, setError] = useState('')
-  const [viewedTemplates, setViewedTemplates] = useState<string[]>([])
   
   const propertyId = searchParams.get('property')
   const userDescription = searchParams.get('description')
   const isRandomGeneration = userDescription === 'Template choisi aléatoirement'
 
   useEffect(() => {
-    generateSuggestions()
+    loadTemplate()
   }, [resolvedParams.templateId])
 
-  const generateSuggestions = async () => {
+  const loadTemplate = async () => {
+    setLoading(true)
     try {
-      // Get main template
-      const mainResponse = await api.get(`/api/v1/viral-matching/viral-templates/${resolvedParams.templateId}`)
-      const mainTemplate = mainResponse.data
-
-      // Initialize viewed templates with current template
-      setViewedTemplates([resolvedParams.templateId])
-      setSelectedTemplate(mainTemplate)
-
-      // Add to viral inspiration
-      await addToViralInspiration(mainTemplate.id)
+      const templateData = await api.get(`/api/v1/viral-matching/viral-templates/${resolvedParams.templateId}`) as ViralTemplate
+      console.log('🎬 Template loaded:', templateData)
+      setSelectedTemplate(templateData)
+      setError('')
       
-    } catch (error) {
-      console.error('Failed to fetch suggestions:', error)
-      setError('Template non trouvé')
+      // Track template view
+      await trackTemplateView(templateData.id)
+    } catch (error: any) {
+      console.error('Failed to load template:', error)
+      if (error?.message?.includes('404')) {
+        setError('Template non trouvé')
+      } else if (error?.message?.includes('connection') || error?.message?.includes('timeout')) {
+        setError('Problème de connexion. Veuillez réessayer.')
+      } else {
+        setError('Erreur lors du chargement du template')
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  const addToViralInspiration = async (templateId: string) => {
+  const trackTemplateView = async (templateId: string) => {
     try {
-      // Temporarily disabled due to database type mismatch
+      // Temporarily disabled due to route not implemented
       console.log('Template viewed:', templateId)
     } catch (error) {
-      console.error('Failed to add to viral inspiration:', error)
+      console.error('Failed to track template view:', error)
     }
   }
 
-  const handleRegenerateSuggestions = async () => {
+  const handleRegenerateTemplate = async () => {
     if (!selectedTemplate) return
     
     setRegenerating(true)
     try {
       let newTemplate: ViralTemplate | null = null
       
-      if (isRandomGeneration) {
-        // For random generation, get a completely random template
-        const allResponse = await api.get('/api/v1/viral-matching/viral-templates')
-        const availableTemplates = allResponse.data.filter(
-          (t: ViralTemplate) => !viewedTemplates.includes(t.id)
-        )
+      // Get all templates and pick a random one
+      const allTemplates = await api.get('/api/v1/viral-matching/viral-templates') as ViralTemplate[]
+      
+      if (!allTemplates || allTemplates.length === 0) {
+        throw new Error('Aucun template disponible')
+      }
+      
+      // Filter out current template
+      const availableTemplates = allTemplates.filter(t => t.id !== selectedTemplate.id)
+      
+      if (availableTemplates.length === 0) {
+        throw new Error('Aucun autre template disponible')
+      }
+      
+      // Pick random template
+      newTemplate = availableTemplates[Math.floor(Math.random() * availableTemplates.length)]
+
+      if (newTemplate) {
+        setSelectedTemplate(newTemplate)
+        setError('')
         
-        if (availableTemplates.length === 0) {
-          // If all viewed, reset and exclude only current
-          setViewedTemplates([selectedTemplate.id])
-          const resetTemplates = allResponse.data.filter((t: ViralTemplate) => t.id !== selectedTemplate.id)
-          newTemplate = resetTemplates[Math.floor(Math.random() * resetTemplates.length)]
-        } else {
-          newTemplate = availableTemplates[Math.floor(Math.random() * availableTemplates.length)]
-        }
+        // Update URL without page reload
+        const params = new URLSearchParams()
+        if (propertyId) params.set('property', propertyId)
+        if (userDescription) params.set('description', userDescription)
+        
+        window.history.pushState({}, '', `/dashboard/template-preview/${newTemplate.id}?${params.toString()}`)
+        
+        // Track new template view
+        await trackTemplateView(newTemplate.id)
+      }
+      
+    } catch (error: any) {
+      console.error('Failed to regenerate template:', error)
+      if (error?.message?.includes('connection') || error?.message?.includes('timeout')) {
+        setError('Problème de connexion. Veuillez réessayer.')
       } else {
-        // For description-based generation, get multiple matches and filter client-side
-        if (!propertyId || !userDescription) return
-        
-        // Strategy: Make multiple API calls to get variety, then filter out viewed templates
-        const uniqueTemplates = new Set<string>()
-        const candidates: ViralTemplate[] = []
-        const maxCandidates = 10
-        let attempts = 0
-        const maxAttempts = 20
-        
-        while (candidates.length < maxCandidates && attempts < maxAttempts) {
-          try {
-            // Make API call without exclusion to get fresh matches each time
-            const matchResponse = await api.post('/api/v1/viral-matching/smart-match', {
-              property_id: propertyId,
-              user_description: userDescription
-            })
-            
-            if (matchResponse.data && !uniqueTemplates.has(matchResponse.data.id)) {
-              uniqueTemplates.add(matchResponse.data.id)
-              candidates.push(matchResponse.data)
-            }
-            
-            // Add small delay to potentially get different results
-            await new Promise(resolve => setTimeout(resolve, 50))
-          } catch (e) {
-            console.warn('API call failed, continuing...', e)
-          }
-          attempts++
-        }
-        
-        // Filter out already viewed templates
-        const availableCandidates = candidates.filter(
-          (t: ViralTemplate) => !viewedTemplates.includes(t.id)
-        )
-        
-        if (availableCandidates.length > 0) {
-          // Pick random from available candidates
-          newTemplate = availableCandidates[Math.floor(Math.random() * availableCandidates.length)]
-        } else if (candidates.length > 0) {
-          // Fallback: reset viewed and pick from all candidates (exclude current)
-          const nonCurrentCandidates = candidates.filter(t => t.id !== selectedTemplate.id)
-          if (nonCurrentCandidates.length > 0) {
-            newTemplate = nonCurrentCandidates[Math.floor(Math.random() * nonCurrentCandidates.length)]
-            setViewedTemplates([selectedTemplate.id]) // Reset with current template
-          }
-        }
-        
-        if (!newTemplate) {
-          alert('No more similar templates found. Try a different description.')
-          setRegenerating(false)
-          return
-        }
+        setError(error.message || 'Impossible de charger un nouveau template')
       }
-
-      if (!newTemplate) {
-        alert('No template found. Please try again.')
-        setRegenerating(false)
-        return
-      }
-
-      // Update the current template and add to viewed (max 10 templates in history)
-      setSelectedTemplate(newTemplate)
-      setViewedTemplates(prev => {
-        const updated = [...prev, newTemplate.id]
-        return updated.length > 10 ? updated.slice(-10) : updated
-      })
-      
-      // Add to viral inspiration
-      await addToViralInspiration(newTemplate.id)
-      
-    } catch (error) {
-      console.error('Failed to regenerate suggestions:', error)
-      alert('Failed to get new template. Please try again.')
     } finally {
       setRegenerating(false)
     }
   }
 
-  const handleSelectTemplate = async (template: ViralTemplate) => {
-    setSelectedTemplate(template)
-    
-    // Add to viral inspiration
-    await addToViralInspiration(template.id)
-  }
-
-  const handleRecreateVideo = () => {
+  const handleCreateVideo = async () => {
     if (!propertyId || !selectedTemplate) {
       alert('Propriété manquante')
       return
     }
-    router.push(`/dashboard/compose/${selectedTemplate.id}?property=${propertyId}&prompt=${encodeURIComponent(userDescription || '')}`)
+
+    try {
+      // Call smart-match API to auto-assign assets to slots
+      console.log('🧠 Starting smart matching...', { propertyId, templateId: selectedTemplate.id })
+
+      const matchResponse = await api.post('/api/v1/video-generation/smart-match', {
+        property_id: propertyId,
+        template_id: selectedTemplate.id
+      }) as any
+
+      console.log('✅ Smart matching completed:', matchResponse)
+
+      // Encode assignments as JSON for compose page
+      const assignmentsJson = encodeURIComponent(JSON.stringify(matchResponse.slot_assignments || []))
+      const composeUrl = `/dashboard/compose/${selectedTemplate.id}?property=${propertyId}&assignments=${assignmentsJson}&prompt=${encodeURIComponent(userDescription || '')}`
+
+      router.push(composeUrl as any)
+    } catch (error) {
+      console.error('❌ Smart matching failed:', error)
+      // Fallback: go to compose without pre-filled assignments
+      const composeUrl = `/dashboard/compose/${selectedTemplate.id}?property=${propertyId}&prompt=${encodeURIComponent(userDescription || '')}`
+      router.push(composeUrl as any)
+    }
   }
 
   const handleInstagramClick = () => {
@@ -225,18 +183,22 @@ export default function TemplatePreviewPage({ params }: { params: Promise<{ temp
     return num.toString()
   }
 
-  const getClipsCount = (script?: string) => {
+  const getClipsCount = (script?: any) => {
     if (!script) return 0
     try {
-      let cleanScript = script.trim()
-      
-      // Supprimer les préfixes '=' s'ils existent (peut être == ou =)
-      while (cleanScript.startsWith('=')) {
-        cleanScript = cleanScript.slice(1).trim()
+      if (typeof script === 'object' && script.clips) {
+        return script.clips.length || 0
       }
-      
-      const scriptData = typeof cleanScript === 'string' ? JSON.parse(cleanScript) : cleanScript
-      return scriptData?.clips?.length || 0
+      if (typeof script === 'string') {
+        // Handle string scripts that might be JSON
+        let cleanScript = script.trim()
+        while (cleanScript.startsWith('=')) {
+          cleanScript = cleanScript.slice(1).trim()
+        }
+        const parsed = JSON.parse(cleanScript)
+        return parsed?.clips?.length || 0
+      }
+      return 0
     } catch {
       return 0
     }
@@ -265,17 +227,36 @@ export default function TemplatePreviewPage({ params }: { params: Promise<{ temp
   if (error || !selectedTemplate) {
     return (
       <div className="min-h-screen bg-gray-50 font-inter">
-        <div className="grid grid-cols-1 gap-3 p-8">
+        <VideoGenerationHeader
+          currentStep={2}
+          propertyId={propertyId || undefined}
+          templateId={resolvedParams.templateId}
+          showGenerationButtons={false}
+          onRandomTemplate={() => {}}
+          onGenerateTemplate={() => {}}
+          isGenerating={false}
+        />
+        <div className="grid grid-cols-1 gap-3 p-8 max-w-md mx-auto">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
             <div className="text-red-500 mb-4">
               <Video className="w-12 h-12 mx-auto" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Template non trouvé</h2>
-            <p className="text-gray-600 mb-6">{error || 'Ce template viral n\'existe pas ou a été supprimé.'}</p>
-            <Button onClick={() => router.push('/dashboard/generate')} variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour
-            </Button>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Erreur</h2>
+            <p className="text-gray-600 mb-6">{error || 'Ce template viral n\'existe pas.'}</p>
+            <div className="flex gap-3 justify-center">
+              <Button onClick={loadTemplate} variant="outline" disabled={loading}>
+                {loading ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Réessayer
+              </Button>
+              <Button onClick={() => router.push('/dashboard/generate')} variant="outline">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Retour
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -284,28 +265,24 @@ export default function TemplatePreviewPage({ params }: { params: Promise<{ temp
 
   return (
     <div className="min-h-screen bg-gray-50 font-inter">
-      <VideoGenerationNavbar 
+      <VideoGenerationHeader
         currentStep={2}
         propertyId={propertyId || undefined}
         templateId={resolvedParams.templateId}
         showGenerationButtons={true}
-        onRandomTemplate={handleRegenerateSuggestions}
-        onGenerateTemplate={handleRecreateVideo}
+        onRandomTemplate={handleRegenerateTemplate}
+        onGenerateTemplate={handleCreateVideo}
         isGenerating={regenerating}
       />
       
-      <div className="grid grid-cols-1 gap-3 px-8 pb-8 max-w-6xl mx-auto">
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+      {/* Exact Copy-Paste of Video Preview 3-Column Design */}
+      <div className="p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           
-          <div className="grid grid-cols-3 gap-6">
-            
-            {/* Left Third: Video Preview */}
-            <div>
-              <div 
-                className="bg-gray-100 relative overflow-hidden rounded-lg cursor-pointer aspect-[9/16]"
-                onClick={handleInstagramClick}
-              >
+          {/* Colonne de gauche: Vidéo verticale */}
+          <div className="h-full">
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden h-full flex flex-col">
+              <div className="aspect-[9/16] bg-black relative w-full max-w-sm mx-auto flex-shrink-0">
                 {selectedTemplate.video_link && selectedTemplate.video_link.includes('instagram.com') ? (
                   <div className="w-full h-full">
                     <InstagramEmbed 
@@ -315,124 +292,175 @@ export default function TemplatePreviewPage({ params }: { params: Promise<{ temp
                   </div>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Video className="w-16 h-16 text-gray-300" />
+                    <div className="text-center text-white">
+                      <Video className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium">Template Viral</p>
+                    </div>
                   </div>
                 )}
-                
-                {/* Play button overlay */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/10 hover:bg-black/20 transition-colors rounded-lg">
-                  <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-                    <Play className="w-6 h-6 text-gray-900 ml-1" fill="currentColor" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Middle Third: Basic Stats */}
-            <div>
-              {/* Country Info */}
-              {selectedTemplate.country && (
-                <div className="text-center mb-6">
-                  <p className="text-gray-600">
-                    📍 {selectedTemplate.country}
-                  </p>
-                </div>
-              )}
-
-              {/* Basic Stats Block */}
-              <div className="bg-gray-50 rounded-lg p-6" style={{ height: '400px' }}>
-                <div className="h-full flex flex-col justify-between">
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <Eye className="w-4 h-4 text-[#09725c]" />
-                        <span className="text-sm text-gray-600">Vues</span>
-                      </div>
-                      <span className="font-bold text-gray-900">{formatNumber(selectedTemplate.views)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <Heart className="w-4 h-4 text-red-500" />
-                        <span className="text-sm text-gray-600">Likes</span>
-                      </div>
-                      <span className="font-bold text-gray-900">{formatNumber(selectedTemplate.likes)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <Users className="w-4 h-4 text-[#ff914d]" />
-                        <span className="text-sm text-gray-600">Followers</span>
-                      </div>
-                      <span className="font-bold text-gray-900">{formatNumber(selectedTemplate.followers)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <MessageCircle className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm text-gray-600">Comments</span>
-                      </div>
-                      <span className="font-bold text-gray-900">{formatNumber(selectedTemplate.comments)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <Video className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm text-gray-600">Clips</span>
-                      </div>
-                      <span className="font-bold text-gray-900">{getClipsCount(selectedTemplate.script)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <RefreshCw className="w-4 h-4 text-orange-500" />
-                        <span className="text-sm text-gray-600">Durée</span>
-                      </div>
-                      <span className="font-bold text-gray-900">{formatDuration(selectedTemplate.duration)}</span>
-                    </div>
-                  </div>
-
-                  {/* Instagram Button */}
-                  <div className="mt-6">
-                    <Button
-                      variant="outline"
-                      onClick={handleInstagramClick}
-                      className="w-full flex items-center justify-center space-x-2 py-3"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      <span>Voir sur Instagram</span>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Third: Performance Metrics */}
-            <div>
-              {/* Performance Metrics Block */}
-              <div className="bg-gray-50 rounded-lg p-6" style={{ height: '400px', marginTop: selectedTemplate.country ? '60px' : '0px' }}>
-                <div className="h-full flex flex-col justify-center space-y-6">
-                  {selectedTemplate.likes && selectedTemplate.followers && (
-                    <div className="bg-white rounded-lg p-6 text-center border border-gray-200">
-                      <TrendingUp className="w-6 h-6 text-[#09725c] mx-auto mb-3" />
-                      <div className="text-xl font-bold text-[#09725c] mb-1">
-                        {((selectedTemplate.likes / selectedTemplate.followers) * 100).toFixed(1)}%
-                      </div>
-                      <div className="text-sm text-gray-600 mb-1">Taux d'engagement</div>
-                      <div className="text-xs text-gray-500">(likes ÷ followers)</div>
-                    </div>
-                  )}
-                  {selectedTemplate.views && selectedTemplate.followers && (
-                    <div className="bg-white rounded-lg p-6 text-center border border-gray-200">
-                      <Eye className="w-6 h-6 text-blue-600 mx-auto mb-3" />
-                      <div className="text-xl font-bold text-blue-600 mb-1">
-                        {(selectedTemplate.views / selectedTemplate.followers).toFixed(1)}x
-                      </div>
-                      <div className="text-sm text-gray-600 mb-1">Ratio Performance</div>
-                      <div className="text-xs text-gray-500">(vues ÷ followers)</div>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>
 
+          {/* Colonne du milieu: Stats et info template */}
+          <div className="h-full">
+            <div className="bg-white rounded-xl shadow-sm border p-6 h-full flex flex-col">
+              <div className="flex items-center gap-3 mb-6">
+                <Sparkles className="w-5 h-5 text-[#ff914d]" />
+                <h3 className="text-lg font-semibold text-gray-900">Template Viral</h3>
+              </div>
 
+              {/* Template Header */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xl font-semibold text-gray-900 line-clamp-2 flex-1">
+                    {selectedTemplate.hotel_name}
+                  </h2>
+                  {selectedTemplate.category && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[#09725c]/10 text-[#09725c] ml-2">
+                      {selectedTemplate.category}
+                    </span>
+                  )}
+                </div>
+                {selectedTemplate.country && (
+                  <p className="text-sm text-gray-600 mb-2">
+                    📍 {selectedTemplate.country}
+                  </p>
+                )}
+                {selectedTemplate.username && (
+                  <p className="text-sm text-gray-500">
+                    @{selectedTemplate.username.replace('@', '')}
+                  </p>
+                )}
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-4 text-sm text-gray-500 mb-6">
+                <div className="flex items-center">
+                  <Eye className="w-4 h-4 mr-2 text-[#09725c]" />
+                  <span className="font-semibold">{formatNumber(selectedTemplate.views)}</span>
+                </div>
+                <div className="flex items-center">
+                  <Heart className="w-4 h-4 mr-2 text-red-500" />
+                  <span className="font-semibold">{formatNumber(selectedTemplate.likes)}</span>
+                </div>
+                <div className="flex items-center">
+                  <Users className="w-4 h-4 mr-2 text-[#ff914d]" />
+                  <span className="font-semibold">{formatNumber(selectedTemplate.followers)}</span>
+                </div>
+                <div className="flex items-center">
+                  <MessageCircle className="w-4 h-4 mr-2 text-blue-500" />
+                  <span className="font-semibold">{formatNumber(selectedTemplate.comments)}</span>
+                </div>
+              </div>
+
+              {/* Engagement Ratio */}
+              <div className="bg-gray-50 rounded-lg py-3 px-4 mb-6">
+                <div className="flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
+                  <span className="text-purple-700 font-semibold">
+                    Engagement: {(((selectedTemplate.likes || 0) + (selectedTemplate.comments || 0)) / (selectedTemplate.views || 1) * 100).toFixed(2)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Template Description */}
+              {userDescription && (
+                <div className="bg-gray-50 rounded-xl p-4 border-l-4 border-[#ff914d] mb-6">
+                  <div className="text-sm text-gray-600 mb-1">Description utilisée:</div>
+                  <p className="text-gray-800 text-sm italic">"{userDescription}"</p>
+                </div>
+              )}
+
+              {/* Instagram Button */}
+              <div className="mt-auto">
+                <Button
+                  variant="outline"
+                  onClick={handleInstagramClick}
+                  disabled={!selectedTemplate.video_link}
+                  className="w-full flex items-center justify-center space-x-2 py-3 mb-4"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Voir sur Instagram</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Colonne de droite: Actions et ratios clés */}
+          <div className="h-full">
+            <div className="bg-white rounded-xl shadow-sm border p-6 h-full flex flex-col">
+              <div className="flex items-center gap-3 mb-6">
+                <TrendingUp className="w-5 h-5 text-[#09725c]" />
+                <h3 className="text-lg font-semibold text-gray-900">Performance</h3>
+              </div>
+              
+              <div className="space-y-6 flex-1">
+                {/* Ratios clés */}
+                {selectedTemplate.likes && selectedTemplate.followers && (
+                  <div className="bg-green-50 rounded-lg p-4 text-center border border-green-200">
+                    <TrendingUp className="w-6 h-6 text-[#09725c] mx-auto mb-3" />
+                    <div className="text-xl font-bold text-[#09725c] mb-1">
+                      {((selectedTemplate.likes / selectedTemplate.followers) * 100).toFixed(1)}%
+                    </div>
+                    <div className="text-sm text-gray-600 mb-1">Taux d'engagement</div>
+                    <div className="text-xs text-gray-500">(likes ÷ followers)</div>
+                  </div>
+                )}
+                
+                {selectedTemplate.views && selectedTemplate.followers && (
+                  <div className="bg-blue-50 rounded-lg p-4 text-center border border-blue-200">
+                    <Eye className="w-6 h-6 text-blue-600 mx-auto mb-3" />
+                    <div className="text-xl font-bold text-blue-600 mb-1">
+                      {(selectedTemplate.views / selectedTemplate.followers).toFixed(1)}x
+                    </div>
+                    <div className="text-sm text-gray-600 mb-1">Ratio Performance</div>
+                    <div className="text-xs text-gray-500">(vues ÷ followers)</div>
+                  </div>
+                )}
+
+                {/* Additional Stats */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-4 text-center">
+                    <Video className="w-5 h-5 text-purple-500 mx-auto mb-2" />
+                    <div className="text-lg font-bold text-gray-900">{getClipsCount(selectedTemplate.script)}</div>
+                    <div className="text-sm text-gray-600">Clips</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 text-center">
+                    <RefreshCw className="w-5 h-5 text-orange-500 mx-auto mb-2" />
+                    <div className="text-lg font-bold text-gray-900">{formatDuration(selectedTemplate.duration)}</div>
+                    <div className="text-sm text-gray-600">Durée</div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-3 mt-auto">
+                  <Button 
+                    onClick={handleCreateVideo}
+                    className="w-full"
+                    disabled={!propertyId}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Créer cette vidéo
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleRegenerateTemplate}
+                    variant="outline"
+                    disabled={regenerating}
+                    className="w-full"
+                  >
+                    {regenerating ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Shuffle className="w-4 h-4 mr-2" />
+                    )}
+                    {isRandomGeneration ? 'Autre template' : 'Template similaire'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

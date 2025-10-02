@@ -127,7 +127,7 @@ export function TimelineTextEditor({
     },
     style: {
       font_family: fonts[0]?.id || 'helvetica',
-      font_size: 4.8, // Taille réduite de 10x
+      font_size: 60, // Taille normale lisible (60px sur vidéo 1920px = ~3%)
       color: '#FFFFFF',
       shadow: true,
       outline: false,
@@ -552,10 +552,10 @@ export function TimelineTextEditor({
                       type="number"
                       value={selectedText.style.font_size}
                       onChange={(e) => updateText(selectedText.id, {
-                        style: { ...selectedText.style, font_size: parseInt(e.target.value) || 24 }
+                        style: { ...selectedText.style, font_size: parseInt(e.target.value) || 60 }
                       })}
                       min={12}
-                      max={120}
+                      max={96}
                       className="mt-1"
                     />
                   </div>
@@ -636,7 +636,7 @@ export function TimelineTextEditor({
                   <div
                     style={{
                       fontFamily: fonts.find(f => f.id === selectedText.style.font_family)?.display_name || 'Helvetica',
-                      fontSize: `${Math.max(12, selectedText.style.font_size / 3)}px`,
+                      fontSize: `${Math.max(12, Math.min(selectedText.style.font_size * 0.4, 32))}px`,
                       color: selectedText.style.color,
                       textShadow: selectedText.style.shadow ? '1px 1px 2px rgba(0,0,0,0.8)' : 'none',
                       WebkitTextStroke: selectedText.style.outline ? '0.5px black' : 'none',

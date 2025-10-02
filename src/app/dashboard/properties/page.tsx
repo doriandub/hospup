@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PropertyForm } from '@/components/dashboard/property-form'
 import { useProperties } from '@/hooks/useProperties'
+import { useQuota } from '@/hooks/useQuota'
+import { api } from '@/lib/api'
 import { 
   Plus, 
   Building2, 
@@ -25,13 +27,14 @@ import Image from 'next/image'
 export default function PropertiesPage() {
   const router = useRouter()
   const { properties, loading, error, createProperty, updateProperty, deleteProperty } = useProperties()
+  const { quotaInfo, checkCanCreateProperty, getRemainingProperties, getUsedProperties, getPropertiesLimit, hasQuotaInfo, loading: quotaLoading } = useQuota()
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
-  const [videoCounts, setVideoCounts] = useState<Record<string, number>>({})
-  const [propertyThumbnails, setPropertyThumbnails] = useState<Record<string, string>>({})
+  const [isDeleting, setIsDeleting] = useState<number | null>(null)
+  const [videoCounts, setVideoCounts] = useState<Record<number, number>>({})
+  const [propertyThumbnails, setPropertyThumbnails] = useState<Record<number, string>>({})
 
   const handleCreate = async (data: any) => {
     setIsSubmitting(true)
@@ -80,29 +83,23 @@ export default function PropertiesPage() {
     setIsEditModalOpen(true)
   }
 
-  const fetchVideoCount = async (propertyId: string) => {
+  const fetchVideoCount = async (propertyId: number) => {
     try {
-      // Only count uploaded videos, not generated ones
-      const response = await fetch(`https://web-production-93a0d.up.railway.app/api/v1/videos/?property_id=${propertyId}&video_type=uploaded`, {
-        credentials: 'include'
-      })
+      // Use centralized API client for consistent authentication
+      const videos = await api.get(`/api/v1/videos/?property_id=${propertyId}`) as any[]
+      setVideoCounts(prev => ({ ...prev, [propertyId]: videos.length }))
       
-      if (response.ok) {
-        const videos = await response.json()
-        setVideoCounts(prev => ({ ...prev, [propertyId]: videos.length }))
+      // Get thumbnail from the most recent video if available
+      if (videos.length > 0) {
+        const mostRecentVideo = videos.sort((a: any, b: any) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0]
         
-        // Get thumbnail from the most recent video if available
-        if (videos.length > 0) {
-          const mostRecentVideo = videos.sort((a: any, b: any) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          )[0]
-          
-          if (mostRecentVideo.thumbnail_url) {
-            setPropertyThumbnails(prev => ({ 
-              ...prev, 
-              [propertyId]: mostRecentVideo.thumbnail_url 
-            }))
-          }
+        if (mostRecentVideo.thumbnail_url) {
+          setPropertyThumbnails(prev => ({ 
+            ...prev, 
+            [propertyId]: mostRecentVideo.thumbnail_url 
+          }))
         }
       }
     } catch (error) {
@@ -111,7 +108,7 @@ export default function PropertiesPage() {
   }
 
   useEffect(() => {
-    if (properties.length > 0) {
+    if (properties && properties.length > 0) {
       properties.forEach(property => {
         fetchVideoCount(property.id)
       })
@@ -132,6 +129,7 @@ export default function PropertiesPage() {
   return (
     <div className="min-h-screen bg-gray-50 font-inter">
       <div className="grid grid-cols-1 gap-3 p-8">
+
         {/* Error State */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-3">
@@ -143,7 +141,7 @@ export default function PropertiesPage() {
         {properties.length === 0 && !loading && !error && (
           <div className="text-center py-12">
             <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No properties yet</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No properties yet - Ready to create!</h3>
             <p className="text-gray-600 mb-6">Add your first property to start generating viral videos</p>
             <Button onClick={() => router.push('/dashboard/properties/new')}>
               <Plus className="w-4 h-4 mr-2" />
@@ -152,17 +150,34 @@ export default function PropertiesPage() {
           </div>
         )}
 
+
         {/* Properties Grid */}
+        {properties.length > 0 || loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Add Property Card - Always first */}
           <div 
-            className="bg-[#09725c]/5 border border-[#09725c]/30 rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#09725c]/10 hover:shadow-md transition-all duration-200 group"
-            onClick={() => router.push('/dashboard/properties/new')}
+            className={`bg-[#09725c]/5 border border-[#09725c]/30 rounded-xl shadow-sm p-8 transition-all duration-200 group ${
+              checkCanCreateProperty(properties.length) 
+                ? 'cursor-pointer hover:bg-[#09725c]/10 hover:shadow-md' 
+                : 'opacity-50 cursor-not-allowed'
+            }`}
+            onClick={() => {
+              if (checkCanCreateProperty(properties.length)) {
+                router.push('/dashboard/properties/new')
+              } else {
+                alert(`Quota exceeded! You have used ${getUsedProperties(properties.length)}/${getPropertiesLimit()} properties. Upgrade your plan to add more.`)
+              }
+            }}
           >
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-xl font-semibold mb-2 text-[#09725c]" style={{ fontFamily: 'Inter' }}>Add Property</h1>
-                <p className="text-base font-medium text-[#09725c]/80" style={{ fontFamily: 'Inter' }}>Create new property</p>
+                <p className="text-base font-medium text-[#09725c]/80" style={{ fontFamily: 'Inter' }}>
+                  {checkCanCreateProperty(properties.length) 
+                    ? `Create new property (${getRemainingProperties(properties.length)} remaining)` 
+                    : `Quota limit reached (${getUsedProperties(properties.length)}/${getPropertiesLimit()})`
+                  }
+                </p>
               </div>
               <div className="bg-[#09725c]/10 rounded-full p-3 group-hover:bg-[#09725c]/20 transition-all">
                 <Plus className="w-5 h-5 text-[#09725c]" />
@@ -216,7 +231,7 @@ export default function PropertiesPage() {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#09725c]/10 text-[#09725c] capitalize mb-2">
-                    {property.property_type?.replace('_', ' ') || 'Property'}
+                    Property
                   </span>
                 </div>
                 <div className="flex space-x-1">
@@ -266,12 +281,6 @@ export default function PropertiesPage() {
                   </div>
                 )}
                 
-                {property.instagram_handle && (
-                  <div className="flex items-center">
-                    <Instagram className="w-4 h-4 mr-2 text-gray-400" />
-                    <span>{property.instagram_handle}</span>
-                  </div>
-                )}
               </div>
 
               <div className="mt-4 pt-4 border-t border-gray-100">
@@ -283,7 +292,7 @@ export default function PropertiesPage() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => router.push(`/dashboard/properties/${property.id}/content`)}
+                    onClick={() => router.push(`/dashboard/properties/${property.id}/content` as any)}
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     Add Content
@@ -294,6 +303,7 @@ export default function PropertiesPage() {
           </div>
           ))}
         </div>
+        ) : null}
       </div>
 
       {/* Create Property Modal */}

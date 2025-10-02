@@ -68,38 +68,98 @@ const Logo = () => (
 
 // Navbar Component
 const Navbar = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <nav className="sticky top-0 z-50 bg-white">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="flex items-center">
+        <div className="flex items-center justify-between h-24">
+          {/* Mobile Menu Button + Logo */}
+          <div className="flex items-center gap-4">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            {/* Logo */}
             <Logo />
           </div>
-          
-          {/* Navigation Links */}
+
+          {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
             {landingData.navbar.map((item) => (
               <a
                 key={item}
                 href={`#${item.toLowerCase()}`}
-                className="text-gray-700 hover:text-[#09725c] transition-colors font-medium"
+                className="text-gray-700 hover:text-[#09725c] transition-colors font-semibold"
               >
                 {item}
               </a>
             ))}
           </div>
-          
-          {/* CTA Buttons */}
-          <div className="flex items-center gap-4">
-            <a href="/auth/login" className="border-2 border-gray-200 text-gray-700 px-6 py-2 rounded-2xl font-medium hover:border-[#09725c] hover:text-[#09725c] transition-all duration-200">
+
+          {/* Desktop CTA Buttons */}
+          <div className="hidden md:flex items-center gap-4">
+            <a href="/auth/signup" className="border border-[#06715b]/40 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:border-[#09725c] hover:text-[#09725c] transition-all duration-200">
+              Sign Up
+            </a>
+            <a href="/auth/login" className="bg-[#09725c] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#06715b] transition-all duration-200">
               Login
             </a>
-            <a href="/auth/signup" className="bg-futuristic-small text-white px-6 py-2 rounded-2xl font-medium transition-all duration-200 hover:scale-105 border-0">
-              S'inscrire
+          </div>
+
+          {/* Mobile Login Button */}
+          <div className="md:hidden">
+            <a href="/auth/login" className="bg-[#09725c] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#06715b] transition-all duration-200">
+              Se connecter
             </a>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden border-t border-gray-100 bg-white">
+            <div className="px-4 py-6 space-y-6">
+              {/* Navigation Links */}
+              <div className="space-y-4">
+                {landingData.navbar.map((item) => (
+                  <a
+                    key={item}
+                    href={`#${item.toLowerCase()}`}
+                    className="block text-gray-700 hover:text-[#09725c] transition-colors font-semibold text-lg"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item}
+                  </a>
+                ))}
+              </div>
+
+              {/* Mobile CTA Buttons */}
+              <div className="pt-4 border-t border-gray-100 space-y-3">
+                <a
+                  href="/auth/login"
+                  className="block w-full bg-[#09725c] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#06715b] transition-all duration-200 text-center"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login
+                </a>
+                <a
+                  href="/auth/signup"
+                  className="block w-full border border-[#06715b]/40 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:border-[#09725c] hover:text-[#09725c] transition-all duration-200 text-center"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign Up
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   )
@@ -109,60 +169,62 @@ const Navbar = () => {
 const Hero = () => {
   return (
     <section className="relative py-24 bg-white overflow-hidden">
-      {/* Subtle Background Effects */}
-      <div className="absolute inset-0">
-        {/* Light Grid Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <svg width="100%" height="100%" className="absolute top-0 left-0">
-            <defs>
-              <pattern id="heroGrid" patternUnits="userSpaceOnUse" width="60" height="60">
-                <rect width="60" height="60" fill="none" stroke="#09725c" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#heroGrid)" />
-          </svg>
-        </div>
-        
-        {/* Subtle Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 via-transparent to-gray-50/50"></div>
-      </div>
       
       <div className="container max-w-[1200px] mx-auto px-6 md:px-12 relative z-10">
         <div className="text-center">
           
           {/* Badge */}
-          <div className="inline-flex items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2 mb-8">
-            <div className="w-2 h-2 bg-[#09725c] rounded-full mr-3 animate-pulse"></div>
-            <span className="text-gray-700 text-sm font-medium" style={{ fontFamily: 'Inter' }}>Powered by AI</span>
+          <div className="inline-flex items-center gap-2 mb-8">
+            <svg className="w-6 h-6 self-center" viewBox="0 0 24 24" fill="none">
+              <defs>
+                <linearGradient id="instagramGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#833AB4" />
+                  <stop offset="50%" stopColor="#FD1D1D" />
+                  <stop offset="100%" stopColor="#F77737" />
+                </linearGradient>
+              </defs>
+              {/* Hollow play triangle with rounded corners */}
+              <path d="M10 7c0-1 0-1 1-1l6 4c1 0.5 1 1.5 0 2l-6 4c-1 0-1 0-1-1V7z"
+                    stroke="url(#instagramGradient)"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    fill="none"/>
+            </svg>
+            <span className="text-base font-semibold bg-gradient-to-r from-[#09725c] to-[#138a73] bg-clip-text text-transparent" style={{ fontFamily: 'Inter' }}>
+              1B+ views analyzed by AI
+            </span>
           </div>
           
           {/* Main Title */}
-          <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight max-w-4xl mx-auto" style={{ fontFamily: 'Inter' }} dangerouslySetInnerHTML={{ __html: landingData.hero.title }}>
+          <h1 className="text-4xl lg:text-7xl font-semibold text-gray-900 mb-8 leading-tight max-w-4xl mx-auto" style={{ fontFamily: 'Inter' }}>
+            Becoming the next<br />
+            <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 bg-clip-text text-transparent">viral property</span> made easy
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg lg:text-xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto" style={{ fontFamily: 'Inter' }}>
+          <p className="text-lg lg:text-xl text-gray-500 mb-12 leading-relaxed max-w-3xl mx-auto font-light" style={{ fontFamily: 'Inter' }}>
             {landingData.hero.subtitle}
           </p>
           
           {/* CTA Section */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-20">
-            <a href="/auth/signup" 
-              className="bg-futuristic text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:scale-[1.02] transition-all duration-200 shadow-lg border-0 inline-flex items-center gap-3"
+          <div className="flex justify-center mb-4">
+            <a href="/auth/signup"
+              className="bg-futuristic text-white px-8 py-3 rounded-lg text-base font-semibold hover:brightness-90 transition-all duration-200 shadow-lg border-0 inline-flex items-center gap-2"
               style={{ fontFamily: 'Inter' }}
             >
               <span className="relative z-10">{landingData.hero.cta}</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.21 1.21 0 0 0 0-1.72Z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m14 7 3 3"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 6v4"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14v4"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 2v2"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8H3"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16h-4"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3H9"/>
               </svg>
             </a>
-            
-            <button className="text-gray-600 hover:text-gray-900 px-6 py-5 rounded-2xl text-lg font-medium hover:bg-gray-50 transition-all duration-200 inline-flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h6" />
-              </svg>
-              Watch Demo
-            </button>
           </div>
           
           
@@ -172,69 +234,6 @@ const Hero = () => {
   )
 }
 
-// Videos Generated Section
-const VideosGenerated = () => {
-  return (
-    <section className="py-20 bg-white" aria-labelledby="videos-title">
-      <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
-        {/* Data Stats - Featured First */}
-        <div className="text-center mb-12">
-          <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 inline-block mb-8">
-            <div className="flex items-center justify-center gap-12">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Inter' }}>1B+</div>
-                <div className="text-gray-600 text-base" style={{ fontFamily: 'Inter' }}>Views</div>
-              </div>
-              <div className="w-px h-12 bg-gray-300"></div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Inter' }}>10M+</div>
-                <div className="text-gray-600 text-base" style={{ fontFamily: 'Inter' }}>Followers</div>
-              </div>
-              <div className="w-px h-12 bg-gray-300"></div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Inter' }}>500+</div>
-                <div className="text-gray-600 text-base" style={{ fontFamily: 'Inter' }}>Hotels</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Description */}
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Our AI analyzed this massive dataset to identify the most successful viral patterns. Based on your property and content goals, we automatically match and recreate the formats that have already proven to work, so you don't have to guess what goes viral.
-          </p>
-        </div>
-        
-        {/* Video Gallery */}
-        <div className="relative overflow-hidden -mx-4 md:-mx-6">
-          {/* Left gradient fade - starts from absolute edge */}
-          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
-          
-          {/* Right gradient fade - starts from absolute edge */}
-          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
-          
-          <div className="flex gap-3 justify-center">
-            {[...Array(8)].map((_, index) => (
-              <div
-                key={index}
-                className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl relative overflow-hidden flex-shrink-0"
-                style={{ width: '200px', height: '355px' }}
-              >
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="currentColor" className="mx-auto mb-2">
-                      <path d="M16 12l16 12-16 12V12z" />
-                    </svg>
-                    <div className="text-sm font-medium">Viral Clip</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
 
 // Steps Section
 const Steps = () => {
@@ -406,7 +405,7 @@ const Steps = () => {
                   <div className="text-lg font-bold text-blue-600">26x</div>
                   <div className="text-xs text-gray-600">Ratio Performance</div>
                 </div>
-                <button className="w-full bg-[#09725c] text-white py-2 px-4 rounded-lg text-sm font-medium">
+                <button className="w-full bg-[#09725c] text-white py-2 px-4 rounded-lg text-sm font-semibold">
                   Utiliser ce template
                 </button>
               </div>
@@ -499,7 +498,7 @@ const Steps = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-green-600 font-medium">Vidéo générée</span>
+                    <span className="text-green-600 font-semibold">Vidéo générée</span>
                   </div>
                   <p className="text-gray-500">28 secondes • 1080x1920</p>
                 </div>
@@ -547,7 +546,7 @@ const Steps = () => {
                 
                 {/* Publishing buttons */}
                 <div className="space-y-3">
-                  <button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-xl font-medium flex items-center justify-center gap-2">
+                  <button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-semibold flex items-center justify-center gap-2">
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                       <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                       <line x1="8" y1="21" x2="16" y2="21"/>
@@ -555,7 +554,7 @@ const Steps = () => {
                     </svg>
                     Publier sur Instagram
                   </button>
-                  <button className="w-full border-2 border-[#09725c] text-[#09725c] py-3 px-4 rounded-xl font-medium">
+                  <button className="w-full border-2 border-[#09725c] text-[#09725c] py-3 px-4 rounded-lg font-semibold">
                     💾 Télécharger la vidéo
                   </button>
                 </div>
@@ -591,7 +590,7 @@ const Steps = () => {
                 aria-selected={activeStep === index}
                 aria-controls={`step-panel-${index}`}
                 onClick={() => setActiveStep(index)}
-                className={`px-6 py-3 rounded-xl font-medium transition-all ${
+                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                   activeStep === index
                     ? 'bg-[#09725c] text-white'
                     : 'text-gray-600 hover:text-[#09725c]'
@@ -637,7 +636,7 @@ const Testimonials = () => {
                 </div>
                 <div>
                   <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                  <div className="text-sm text-[#09725c] font-medium">{testimonial.badge} followers</div>
+                  <div className="text-sm text-[#09725c] font-semibold">{testimonial.badge} followers</div>
                 </div>
               </div>
               <p className="text-gray-600">{testimonial.text}</p>
@@ -709,139 +708,511 @@ const FAQ = () => {
 // Simple Process Section
 const Benefits = () => {
   return (
-    <section className="py-20 bg-white border-b border-gray-100">
+    <section className="pt-24 pb-12 bg-futuristic text-white relative">
       <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
 
         {/* Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>
-            How it works
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto" style={{ fontFamily: 'Inter' }}>
-            From property videos to viral content in three simple steps
-          </p>
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-12">
+          <div className="mb-6 md:mb-0">
+            <h2 className="text-3xl md:text-4xl font-semibold text-white mb-2" style={{ fontFamily: 'Inter' }}>
+              <span className="font-medium">3 simple steps</span>
+            </h2>
+            <p className="text-lg lg:text-xl text-white/80 leading-relaxed font-light" style={{ fontFamily: 'Inter' }}>
+              How to create a viral video on hospup
+            </p>
+          </div>
+          <div className="flex md:block">
+            <a href="/auth/signup" className="bg-white text-[#09725c] px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all duration-200">
+              Create a video
+            </a>
+          </div>
         </div>
 
-        {/* Three Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        {/* Three Cards - Airbnb style */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
 
-          {/* Step 1 Card */}
-          <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 text-center">
-            <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-blue-500 font-bold text-lg">1</div>
+          {/* Step 1 Card - Upload */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            {/* Illustration - attached to edges */}
+            <div className="h-48 bg-gray-50 relative overflow-hidden">
+              {/* Main drag & drop area */}
+              <div className="absolute inset-6 border-2 border-dashed border-blue-300 rounded-xl bg-blue-50 flex items-center justify-center">
+                <div className="text-center">
+                  <svg className="w-8 h-8 text-blue-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p className="text-xs font-semibold text-blue-600">Drop videos here</p>
+                </div>
+              </div>
+
+              {/* Floating vertical video rectangles being dragged */}
+              <div className="absolute left-2 top-6 w-8 h-14 bg-gradient-to-br from-orange-400 to-red-500 rounded-md shadow-lg transform -rotate-12 border border-white">
+                <div className="w-full h-full bg-black/20 rounded-sm"></div>
+              </div>
+
+              <div className="absolute right-2 top-8 w-8 h-14 bg-gradient-to-br from-purple-400 to-pink-500 rounded-md shadow-lg transform rotate-12 border border-white">
+                <div className="w-full h-full bg-black/20 rounded-sm"></div>
+              </div>
             </div>
 
-            <h3 className="text-xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Inter' }}>
-              Upload your footages
-            </h3>
-            <p className="text-gray-600 mb-6" style={{ fontFamily: 'Inter' }}>
-              Import all your property videos.
-            </p>
-
-            {/* Illustration */}
-            <div className="bg-gray-50 rounded-2xl p-6 mb-4">
-              <div className="border-2 border-dashed border-blue-300 rounded-xl p-6 bg-blue-50">
-                <svg className="w-8 h-8 text-blue-400 mx-auto mb-2" fill="currentColor" viewBox="0 0 48 48">
-                  <path d="M14 14h20v20H14z M18 10l6 6 6-6"/>
-                </svg>
-                <p className="text-sm font-medium text-blue-600">Drag & Drop</p>
-              </div>
-
-              <div className="mt-4 space-y-2">
-                <div className="flex items-center gap-2 bg-green-100 p-2 rounded text-sm">
-                  <div className="w-8 h-6 bg-gray-300 rounded"></div>
-                  <span className="flex-1">villa-pool.mp4</span>
-                  <span className="text-green-600">✓</span>
-                </div>
-                <div className="flex items-center gap-2 bg-blue-100 p-2 rounded text-sm">
-                  <div className="w-8 h-6 bg-gray-300 rounded"></div>
-                  <span className="flex-1">luxury-suite.mp4</span>
-                  <span className="text-blue-600">✓</span>
-                </div>
-              </div>
+            {/* Content */}
+            <div className="p-6">
+              <h3 className="text-lg lg:text-xl leading-relaxed font-medium text-gray-900 mb-3" style={{ fontFamily: 'Inter' }}>
+                1. Upload your footages
+              </h3>
+              <p className="text-lg lg:text-xl leading-relaxed font-light text-gray-600" style={{ fontFamily: 'Inter' }}>
+                Import all your property videos.
+              </p>
             </div>
           </div>
 
-          {/* Step 2 Card */}
-          <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 text-center">
-            <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-blue-500 font-bold text-lg">2</div>
-            </div>
-
-            <h3 className="text-xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Inter' }}>
-              Select your template
-            </h3>
-            <p className="text-gray-600 mb-6" style={{ fontFamily: 'Inter' }}>
-              Choose from proven viral templates.
-            </p>
-
+          {/* Step 2 Card - Templates */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             {/* Illustration */}
-            <div className="bg-gray-50 rounded-2xl p-6 mb-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gradient-to-br from-pink-100 to-pink-200 rounded-lg p-3 border-2 border-pink-400 relative">
-                  <div className="aspect-square bg-pink-300 rounded mb-2 flex items-center justify-center">
-                    <span className="text-lg">🏊‍♀️</span>
+            <div className="h-48 bg-gray-50 p-6 flex items-center justify-center">
+              {/* Grid of templates */}
+              <div className="grid grid-cols-2 gap-3 w-full max-w-32">
+                <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg p-2 border-2 border-purple-400 relative">
+                  <div className="w-full h-8 bg-purple-300 rounded mb-1 flex items-center justify-center">
+                    <span className="text-xs">🏖️</span>
                   </div>
-                  <p className="text-xs font-bold text-pink-700">Pool Tour</p>
-                  <p className="text-xs text-pink-600">2.3M views</p>
-                  <div className="absolute top-1 right-1 bg-pink-500 text-white text-xs px-1 rounded-full">✓</div>
+                  <p className="text-xs font-bold text-purple-700 truncate">Resort</p>
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-3">
-                  <div className="aspect-square bg-blue-300 rounded mb-2 flex items-center justify-center">
-                    <span className="text-lg">✨</span>
+                <div className="bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-lg p-2">
+                  <div className="w-full h-8 bg-emerald-300 rounded mb-1 flex items-center justify-center">
+                    <span className="text-xs">✨</span>
                   </div>
-                  <p className="text-xs font-bold text-blue-700">Luxury</p>
-                  <p className="text-xs text-blue-600">3.2M views</p>
+                  <p className="text-xs font-bold text-emerald-700 truncate">Luxury</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-2">
+                  <div className="w-full h-8 bg-blue-300 rounded mb-1 flex items-center justify-center">
+                    <span className="text-xs">🍽️</span>
+                  </div>
+                  <p className="text-xs font-bold text-blue-700 truncate">Dining</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-pink-100 to-pink-200 rounded-lg p-2">
+                  <div className="w-full h-8 bg-pink-300 rounded mb-1 flex items-center justify-center">
+                    <span className="text-xs">🌅</span>
+                  </div>
+                  <p className="text-xs font-bold text-pink-700 truncate">Sunset</p>
                 </div>
               </div>
             </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <h3 className="text-lg lg:text-xl leading-relaxed font-medium text-gray-900 mb-3" style={{ fontFamily: 'Inter' }}>
+                2. Select your template
+              </h3>
+              <p className="text-lg lg:text-xl leading-relaxed font-light text-gray-600" style={{ fontFamily: 'Inter' }}>
+                Choose from proven viral templates.
+              </p>
+            </div>
           </div>
 
-          {/* Step 3 Card */}
-          <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 text-center">
-            <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-blue-500 font-bold text-lg">3</div>
-            </div>
-
-            <h3 className="text-xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Inter' }}>
-              Generate video
-            </h3>
-            <p className="text-gray-600 mb-6" style={{ fontFamily: 'Inter' }}>
-              Your post is ready in seconds.
-            </p>
-
+          {/* Step 3 Card - Generate */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             {/* Illustration */}
-            <div className="bg-gray-50 rounded-2xl p-6 mb-4">
-              {/* Loading animation turning into polished video */}
-              <div className="relative">
-                <div className="w-full aspect-[9/16] bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl mb-4 flex items-center justify-center relative overflow-hidden">
-                  {/* Circular loading animation */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-
-                  {/* Phone screen overlay */}
-                  <div className="absolute bottom-2 right-2 w-12 h-20 bg-black rounded-lg p-1">
-                    <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 rounded flex items-center justify-center">
-                      <div className="w-6 h-10 bg-gray-600 rounded-sm"></div>
+            <div className="h-48 bg-gray-50 p-6 flex items-center justify-center">
+              <div className="text-center w-full max-w-28">
+                {/* Vertical video being generated */}
+                <div className="mx-auto w-16 h-24 bg-black rounded-lg p-1 mb-3 relative overflow-hidden">
+                  <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-600 rounded relative">
+                    {/* Placeholder for actual video content */}
+                    <div className="absolute inset-1 bg-white/30 rounded-sm"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-2 bg-black/40 rounded-b text-white text-xs flex items-center justify-center">
+                      <span className="text-xs">🎵</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg p-3 border">
-                  <p className="text-xs font-medium text-gray-900">🏨 Luxury villa with ocean view!</p>
-                  <p className="text-xs text-blue-600">#luxury #villa #ocean</p>
+                {/* Instagram description being generated */}
+                <div className="bg-white rounded p-2 border mb-2 text-left">
+                  <div className="text-xs text-gray-900 mb-1 truncate">🏨 Luxury villa!</div>
+                  <div className="text-xs text-blue-600 truncate">#luxury #villa</div>
+                </div>
+
+                {/* Music selection */}
+                <div className="bg-white rounded p-1 border flex items-center gap-1">
+                  <span className="text-xs">🎵</span>
+                  <span className="text-xs text-gray-600 truncate">Chill Vibes</span>
                 </div>
               </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <h3 className="text-lg lg:text-xl leading-relaxed font-medium text-gray-900 mb-3" style={{ fontFamily: 'Inter' }}>
+                3. Generate video
+              </h3>
+              <p className="text-lg lg:text-xl leading-relaxed font-light text-gray-600" style={{ fontFamily: 'Inter' }}>
+                Your post is ready in seconds.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Web Editor Section
+const WebEditor = () => {
+  return (
+    <section className="py-20 bg-white">
+      <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
+        <div className="flex justify-between items-end mb-8">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900" style={{ fontFamily: 'Inter' }}>
+              Full control with our web editor
+            </h2>
+          </div>
+          <a href="/auth/signup" className="bg-[#09725c] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#06715b] transition-all duration-200">
+            Try Hospup now
+          </a>
+        </div>
+
+        {/* Large Web Editor Image */}
+        <div className="w-full">
+          <div className="bg-gray-100 rounded-2xl aspect-video flex items-center justify-center border border-gray-200">
+            <div className="text-center text-gray-500">
+              <svg className="w-16 h-16 mx-auto mb-4" viewBox="0 0 64 64" fill="currentColor">
+                <rect x="4" y="8" width="56" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="2"/>
+                <rect x="8" y="12" width="48" height="32" rx="2" fill="currentColor" opacity="0.1"/>
+                <rect x="12" y="16" width="20" height="3" rx="1" fill="currentColor" opacity="0.3"/>
+                <rect x="12" y="21" width="16" height="3" rx="1" fill="currentColor" opacity="0.3"/>
+                <rect x="12" y="26" width="24" height="3" rx="1" fill="currentColor" opacity="0.3"/>
+                <rect x="40" y="16" width="12" height="20" rx="2" fill="currentColor" opacity="0.2"/>
+                <circle cx="46" cy="26" r="3" fill="currentColor" opacity="0.4"/>
+              </svg>
+              <p className="text-lg font-semibold">Web Editor Preview</p>
+              <p className="text-sm opacity-75">Advanced video editing interface</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Everything You Need Section
+const EverythingYouNeed = () => {
+  return (
+    <section className="py-20 bg-gray-50">
+      <div className="container max-w-[1200px] mx-auto px-4 md:px-6">
+
+        {/* Header */}
+        <div className="flex justify-between items-end mb-16">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Inter' }}>
+              Everything you need to go viral
+            </h2>
+          </div>
+        </div>
+
+        {/* Tools Grid - 2 rows of 3 cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+          {/* Idea Generator Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="h-48 bg-gradient-to-br from-purple-100 to-purple-200 p-6 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/>
+                  </svg>
+                </div>
+                <div className="bg-white rounded-lg p-2 shadow-sm text-left">
+                  <div className="text-xs text-gray-900 mb-1">💡 "Villa romantique"</div>
+                  <div className="text-xs text-gray-900">🏖️ "Détente au spa"</div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Idea Generator</h3>
+              <p className="text-gray-600 text-sm">
+                Notre IA analyse 1+ milliard de vues pour identifier les formats viraux. Nous recréons automatiquement les formats qui marchent selon vos objectifs.
+              </p>
+            </div>
+          </div>
+
+          {/* Smart Template Matching Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="h-48 bg-gradient-to-br from-green-100 to-green-200 p-6 flex items-center justify-center">
+              <div className="text-center w-full">
+                <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+                  <div className="text-xs text-gray-600 mb-1">Search:</div>
+                  <div className="text-sm font-semibold">"piscine luxe"</div>
+                </div>
+                <div className="flex justify-center">
+                  <svg className="w-8 h-8 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Smart template matching</h3>
+              <p className="text-gray-600 text-sm">
+                Trouvez la template parfaite en décrivant votre vidéo
+              </p>
+            </div>
+          </div>
+
+          {/* Auto Footage Matching Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="h-48 bg-gradient-to-br from-orange-100 to-orange-200 p-6 flex items-center justify-center">
+              <div className="grid grid-cols-2 gap-2 w-full max-w-32">
+                <div className="bg-white rounded-lg p-2 shadow-sm">
+                  <div className="w-full h-8 bg-blue-300 rounded mb-1 flex items-center justify-center">
+                    <span className="text-xs">🏊</span>
+                  </div>
+                  <div className="text-xs font-bold text-gray-700">Pool</div>
+                </div>
+                <div className="bg-white rounded-lg p-2 shadow-sm border-2 border-orange-400">
+                  <div className="w-full h-8 bg-orange-300 rounded mb-1 flex items-center justify-center">
+                    <span className="text-xs">🏊</span>
+                  </div>
+                  <div className="text-xs font-bold text-orange-700">Your Pool</div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Auto footage matching</h3>
+              <p className="text-gray-600 text-sm">
+                Vos vidéos s'adaptent automatiquement aux templates
+              </p>
             </div>
           </div>
         </div>
 
+        {/* Second Row of Tools */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+          {/* Drag & Drop Video Slots Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="h-48 bg-gradient-to-br from-blue-100 to-blue-200 p-6 flex items-center justify-center">
+              <div className="text-center w-full">
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="bg-white border-2 border-dashed border-blue-300 rounded p-2 h-12 flex items-center justify-center">
+                    <span className="text-xs text-blue-600">Slot 1</span>
+                  </div>
+                  <div className="bg-blue-400 rounded p-2 h-12 flex items-center justify-center relative">
+                    <span className="text-xs text-white">Video</span>
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-white"></div>
+                  </div>
+                  <div className="bg-white border-2 border-dashed border-blue-300 rounded p-2 h-12 flex items-center justify-center">
+                    <span className="text-xs text-blue-600">Slot 3</span>
+                  </div>
+                </div>
+                <svg className="w-6 h-6 text-blue-600 mx-auto" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Drag & Drop Video Slots</h3>
+              <p className="text-gray-600 text-sm">
+                Glissez vos vidéos importées directement dans les emplacements
+              </p>
+            </div>
+          </div>
+
+          {/* Text Editor Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="h-48 bg-gradient-to-br from-yellow-100 to-yellow-200 p-6 flex items-center justify-center">
+              <div className="text-center w-full">
+                <div className="bg-white rounded-lg p-3 mb-3 shadow-sm text-left">
+                  <div className="text-xs text-gray-900 mb-2">✨ Découvrez notre villa</div>
+                  <div className="text-xs text-gray-500">avec vue sur l'océan...</div>
+                  <div className="w-8 h-1 bg-yellow-400 rounded mt-2"></div>
+                </div>
+                <div className="flex justify-center gap-2">
+                  <div className="w-6 h-6 bg-white rounded border flex items-center justify-center">
+                    <span className="text-xs font-bold">B</span>
+                  </div>
+                  <div className="w-6 h-6 bg-white rounded border flex items-center justify-center">
+                    <span className="text-xs italic">I</span>
+                  </div>
+                  <div className="w-6 h-6 bg-yellow-400 rounded flex items-center justify-center">
+                    <span className="text-xs">A</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Text Editor</h3>
+              <p className="text-gray-600 text-sm">
+                Ajoutez et personnalisez vos textes avec des styles avancés
+              </p>
+            </div>
+          </div>
+
+          {/* AI Voice Generator Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="h-48 bg-gradient-to-br from-teal-100 to-teal-200 p-6 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-teal-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/>
+                  </svg>
+                </div>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="w-1 h-4 bg-teal-400 rounded"></div>
+                  <div className="w-1 h-6 bg-teal-500 rounded"></div>
+                  <div className="w-1 h-3 bg-teal-400 rounded"></div>
+                  <div className="w-1 h-5 bg-teal-500 rounded"></div>
+                  <div className="w-1 h-4 bg-teal-400 rounded"></div>
+                </div>
+                <div className="text-xs text-gray-600">🇫🇷 Français • Femme • Naturelle</div>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">AI Voice Generator</h3>
+              <p className="text-gray-600 text-sm">
+                Voix-off professionnelle en 20+ langues générée automatiquement
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Separator Title */}
+        <div className="text-center mb-12 mt-16">
+          <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Inter' }}>
+            Votre publication est prête en quelques secondes
+          </h3>
+          <p className="text-gray-600" style={{ fontFamily: 'Inter' }}>
+            Grâce aux outils ci-dessus, vous recevez instantanément tout ce dont vous avez besoin
+          </p>
+        </div>
+
+        {/* Second Row - 3 Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+
+          {/* Video Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="h-48 bg-gradient-to-br from-red-100 to-red-200 p-6 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-24 bg-black rounded-lg mx-auto mb-3 relative overflow-hidden">
+                  <div className="w-full h-full bg-gradient-to-br from-red-400 to-pink-600 rounded relative">
+                    <div className="absolute inset-1 bg-white/20 rounded-sm"></div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-1 text-xs text-gray-600">
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  <span>4K Video</span>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Vidéo finale</h3>
+              <p className="text-gray-600 text-sm">
+                Export haute qualité 4K prêt pour Instagram et TikTok
+              </p>
+            </div>
+          </div>
+
+          {/* Description Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="h-48 bg-gradient-to-br from-blue-100 to-blue-200 p-6 flex items-center justify-center">
+              <div className="text-center w-full">
+                <div className="bg-white rounded-lg p-3 text-left shadow-sm">
+                  <div className="text-xs font-semibold text-gray-900 mb-1">🏨 Découvrez notre villa...</div>
+                  <div className="text-xs text-blue-600">#luxury #villa #pool</div>
+                  <div className="text-xs text-gray-400 mt-1">📍 Nice, France</div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Description IA</h3>
+              <p className="text-gray-600 text-sm">
+                Caption Instagram optimisée avec hashtags et localisation
+              </p>
+            </div>
+          </div>
+
+          {/* Audio Track Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="h-48 bg-gradient-to-br from-indigo-100 to-indigo-200 p-6 flex items-center justify-center">
+              <div className="text-center">
+                <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs font-semibold">Trending Audio</div>
+                      <div className="text-xs text-gray-500">2.3M uses</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Piste audio Instagram</h3>
+              <p className="text-gray-600 text-sm">
+                Musiques tendance synchronisées automatiquement
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Text */}
         <div className="text-center">
-          <button className="bg-futuristic text-white px-8 py-3 rounded-2xl font-medium hover:scale-[1.02] transition-all duration-200 border-0">
-            Try it now
-          </button>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            Tout ce dont vous avez besoin
+          </h3>
+          <p className="text-gray-600">
+            Votre publication est prête en quelques clics
+          </p>
+        </div>
+
+        {/* Videos Generated Section */}
+        <div className="mt-20">
+          <div className="text-center mb-12">
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Inter' }}>
+              Vidéos créées avec Hospup
+            </h3>
+            <p className="text-gray-600" style={{ fontFamily: 'Inter' }}>
+              Découvrez des exemples de contenus viraux générés par notre plateforme
+            </p>
+          </div>
+
+          {/* Video Gallery - Vertical Videos */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl relative overflow-hidden border border-gray-200 aspect-[9/16] w-full"
+                >
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-gray-500">
+                      <svg width="48" height="48" viewBox="0 0 48 48" fill="currentColor" className="mx-auto mb-2">
+                        <path d="M16 12l16 12-16 12V12z" />
+                      </svg>
+                      <div className="text-sm font-semibold">Vidéo Exemple {index + 1}</div>
+                      <div className="text-xs text-gray-400 mt-1">1080x1920</div>
+                    </div>
+                  </div>
+                  {/* Play button overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/10 hover:bg-black/20 transition-colors rounded-2xl">
+                    <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+                      <svg className="w-4 h-4 text-gray-900 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
       </div>
     </section>
@@ -916,7 +1287,7 @@ const FeaturesDetailed = () => {
             <p className="text-gray-600 text-sm mb-6">
               Créez vos vidéos en quelques clics grâce à notre interface pensée pour les professionnels de l'hôtellerie
             </p>
-            <button className="w-full bg-futuristic-small text-white py-3 rounded-xl font-medium hover:scale-[1.02] transition-all duration-200 border-0">
+            <button className="w-full bg-futuristic-small text-white py-3 rounded-lg font-semibold hover:scale-[1.02] transition-all duration-200 border-0">
               Essayer gratuitement
             </button>
           </div>
@@ -975,7 +1346,7 @@ const WhoIsThisFor = () => {
                   </li>
                 ))}
               </ul>
-              <button className="bg-futuristic-small text-white px-6 py-2 rounded-xl text-sm font-medium hover:scale-[1.02] transition-all duration-200 border-0">
+              <button className="bg-futuristic-small text-white px-6 py-2 rounded-lg text-sm font-semibold hover:scale-[1.02] transition-all duration-200 border-0">
                 En savoir plus
               </button>
             </div>
@@ -987,10 +1358,10 @@ const WhoIsThisFor = () => {
             Prêt à commencer ?
           </h3>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-futuristic text-white px-8 py-3 rounded-2xl font-medium hover:scale-[1.02] transition-all duration-200 border-0">
+            <button className="bg-futuristic text-white px-8 py-3 rounded-lg font-semibold hover:scale-[1.02] transition-all duration-200 border-0">
               Démarrer maintenant
             </button>
-            <button className="border-2 border-[#09725c] text-[#09725c] px-8 py-3 rounded-2xl font-medium hover:scale-[1.01] transition-transform">
+            <button className="border-2 border-[#09725c] text-[#09725c] px-8 py-3 rounded-lg font-semibold hover:scale-[1.01] transition-transform">
               Programmer une démo
             </button>
           </div>
@@ -1007,16 +1378,16 @@ const Pricing = () => {
   
   const calculatePrice = (establishments: number) => {
     if (establishments === 0) return 0 // Free plan
-    if (establishments === 1) return 59
-    
-    let totalPrice = 59 // Base price for first establishment
-    let currentPrice = 59
-    
+    if (establishments === 1) return 99
+
+    let totalPrice = 99 // Base price for first establishment
+    let currentPrice = 99
+
     for (let i = 2; i <= establishments; i++) {
-      currentPrice = Math.max(29, currentPrice - 3) // Minimum 29€ per establishment
+      currentPrice = Math.max(79, currentPrice - 5) // Minimum $79 per establishment
       totalPrice += currentPrice
     }
-    
+
     return totalPrice
   }
   
@@ -1100,7 +1471,7 @@ const Pricing = () => {
           
           {/* Monthly/Annual Toggle */}
           <div className="flex items-center justify-center gap-4 mb-8">
-            <span className={`text-sm ${!isAnnual ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+            <span className={`text-sm ${!isAnnual ? 'text-gray-900 font-semibold' : 'text-gray-600'}`}>
               Mensuel
             </span>
             <button
@@ -1117,11 +1488,11 @@ const Pricing = () => {
                 }}
               />
             </button>
-            <span className={`text-sm ${isAnnual ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+            <span className={`text-sm ${isAnnual ? 'text-gray-900 font-semibold' : 'text-gray-600'}`}>
               Annuel
             </span>
             {isAnnual && (
-              <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
+              <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-semibold">
                 2 mois offerts
               </span>
             )}
@@ -1135,7 +1506,7 @@ const Pricing = () => {
             }`}>
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-[#0f4a3d] text-white px-4 py-2 rounded-full text-sm font-medium">
+                  <span className="bg-[#0f4a3d] text-white px-4 py-2 rounded-full text-sm font-semibold">
                     Plus populaire
                   </span>
                 </div>
@@ -1148,7 +1519,7 @@ const Pricing = () => {
                 {/* Custom counter for flexible plan */}
                 {plan.customizable && (
                   <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <label className="block text-sm font-medium text-gray-900 mb-4">
+                    <label className="block text-sm font-semibold text-gray-900 mb-4">
                       Nombre d'établissements
                     </label>
                     
@@ -1181,7 +1552,7 @@ const Pricing = () => {
                     </div>
                     
                     <div className="text-center">
-                      <span className="text-sm font-medium text-[#09725c]">
+                      <span className="text-sm font-semibold text-[#09725c]">
                         {selectedTier.label} • {selectedTier.videos} vidéos/mois
                       </span>
                     </div>
@@ -1191,16 +1562,16 @@ const Pricing = () => {
                 <div className="mb-4">
                   {plan.customizable ? (
                     <div className="text-center">
-                      <span className="text-4xl font-bold text-gray-900">€{selectedTier.price}</span>
-                      <span className="text-gray-600">{isAnnual ? '/an' : '/mois'}</span>
+                      <span className="text-4xl font-bold text-gray-900">${selectedTier.price}</span>
+                      <span className="text-gray-600">{isAnnual ? '/year' : '/month'}</span>
                       {isAnnual && (
                         <div className="text-sm text-green-600 mt-1">
-                          au lieu de €{selectedTier.monthlyPrice * 12}/an
+                          instead of ${selectedTier.monthlyPrice * 12}/year
                         </div>
                       )}
                     </div>
                   ) : typeof plan.price === 'string' && plan.price !== 'Sur mesure' && plan.price !== '0' ? (
-                    <span className="text-4xl font-bold text-gray-900">€{plan.price}</span>
+                    <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
                   ) : plan.price === '0' ? (
                     <span className="text-4xl font-bold text-[#09725c]">Gratuit</span>
                   ) : (
@@ -1221,7 +1592,7 @@ const Pricing = () => {
                 ))}
               </ul>
 
-              <button className={`w-full py-3 px-6 rounded-2xl font-medium transition-all duration-200 border-0 ${
+              <button className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 border-0 ${
                 plan.popular 
                   ? 'bg-futuristic text-white hover:scale-[1.02]' 
                   : 'bg-futuristic-small text-white hover:scale-[1.02]'
@@ -1236,7 +1607,7 @@ const Pricing = () => {
           <p className="text-gray-600 mb-6">
             Tous les plans incluent un essai gratuit de 14 jours • Aucune carte bancaire requise
           </p>
-          <button className="bg-white text-[#09725c] px-8 py-3 rounded-2xl font-medium border-2 border-[#09725c] hover:scale-[1.02] transition-all duration-200">
+          <button className="bg-white text-[#09725c] px-8 py-3 rounded-lg font-semibold border-2 border-[#09725c] hover:scale-[1.02] transition-all duration-200">
             Voir la démonstration
           </button>
         </div>
@@ -1371,8 +1742,8 @@ const Landing = () => {
       
       <Hero />
       <Benefits />
-      <VideosGenerated />
-      <Steps />
+      <WebEditor />
+      <EverythingYouNeed />
       <Testimonials />
       <Pricing />
       <FAQ />

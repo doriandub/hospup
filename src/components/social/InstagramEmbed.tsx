@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Play, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { instagramService } from '@/services/instagramService'
 
 interface InstagramEmbedProps {
   postUrl: string
@@ -35,14 +34,9 @@ export function InstagramEmbed({ postUrl, className = '', showPlayButton = true 
   useEffect(() => {
     const loadThumbnail = async () => {
       try {
-        const postData = await instagramService.getOptimizedPostData(postUrl)
-        if (postData.thumbnail_url) {
-          setThumbnailUrl(postData.thumbnail_url)
-        } else {
-          // Fallback to generated thumbnail
-          const thumb = generateThumbnailUrl(postUrl)
-          setThumbnailUrl(thumb)
-        }
+        // Fallback to generated thumbnail
+        const thumb = generateThumbnailUrl(postUrl)
+        setThumbnailUrl(thumb)
       } catch (error) {
         console.warn('Failed to load Instagram data:', error)
         const thumb = generateThumbnailUrl(postUrl)

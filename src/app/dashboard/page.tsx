@@ -1,322 +1,321 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import {
-  Building2,
-  Video,
-  Play,
-  Plus,
-  Upload,
-  Activity,
-  BarChart3,
-  Headphones,
-  ArrowRight,
-  Wand2,
-  Youtube
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useAuth } from '@/hooks/useAuth'
-
-interface DashboardStats {
-  total_properties: number
-  total_videos: number
-  videos_this_month: number
-  storage_used: number
-  remaining_videos: number
-  videos_limit: number
-  videos_used: number
-}
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Search, Play, Calendar, Clock, FileText, Image, Video } from 'lucide-react'
+import { useVideos } from '@/hooks/useVideos'
+import { useAssets } from '@/hooks/useAssets'
 
 export default function DashboardPage() {
-  const { user } = useAuth()
-  const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [selectedFilter, setSelectedFilter] = useState<'generate' | 'videos' | 'assets'>('generate')
+  const [searchValue, setSearchValue] = useState('')
+  const router = useRouter()
+  const { videos, loading: videosLoading } = useVideos()
+  const { assets, loading: assetsLoading } = useAssets()
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch('https://web-production-93a0d.up.railway.app/api/v1/dashboard/stats', {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include'
-        })
-        
-        if (response.ok) {
-          const data = await response.json()
-          setStats(data)
-        } else {
-          console.error('Failed to fetch dashboard stats')
-        }
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error)
-      } finally {
-        setLoading(false)
-      }
+  const handleSearch = () => {
+    if (!searchValue.trim()) return
+
+    if (selectedFilter === 'generate') {
+      // Navigate to generate page with the search as description
+      router.push(`/dashboard/generate?description=${encodeURIComponent(searchValue)}`)
+    } else if (selectedFilter === 'videos') {
+      // Navigate to videos page with search filter
+      router.push(`/dashboard/videos?search=${encodeURIComponent(searchValue)}`)
+    } else if (selectedFilter === 'assets') {
+      // Navigate to assets page with search filter
+      router.push(`/dashboard/assets?search=${encodeURIComponent(searchValue)}`)
     }
+  }
 
-    fetchStats()
-  }, [])
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#09725c] mx-auto mb-4"></div>
-          <p className="text-[#09725c]">Loading metrics...</p>
-        </div>
-      </div>
-    )
+  const getFileIcon = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase()
+    if (['mp4', 'mov', 'avi', 'mkv'].includes(ext || '')) return Video
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) return Image
+    return FileText
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-inter">
-      <div className="grid grid-cols-1 gap-3 p-8">
-        
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Create New Video */}
-          <Link href="/dashboard/generate" className="md:col-span-2">
-            <div className="bg-futuristic rounded-xl shadow-sm p-8 text-white cursor-pointer hover:shadow-md transition-all duration-200 group h-full">
-              <div className="flex items-center justify-between relative z-10">
-                <div>
-                  <h1 className="text-xl font-semibold mb-2" style={{ fontFamily: 'Inter' }}>Create New Video</h1>
-                  <p className="text-base font-medium text-white/90" style={{ fontFamily: 'Inter' }}>Start creating</p>
-                </div>
-                <div className="bg-white bg-opacity-20 rounded-full p-3 group-hover:bg-opacity-30 transition-all">
-                  <Plus className="w-5 h-5" />
-                </div>
-              </div>
-            </div>
-          </Link>
-          
-          {/* Upload Content */}
-          <Link href="/dashboard/content-library" className="md:col-span-2">
-            <div className="bg-[#09725c]/5 border border-dashed border-[#09725c] rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#09725c]/10 hover:shadow-md transition-all duration-200 group h-full">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-xl font-semibold mb-2 text-[#09725c]" style={{ fontFamily: 'Inter' }}>Upload Content</h1>
-                  <p className="text-base font-medium text-[#09725c]/80" style={{ fontFamily: 'Inter' }}>Drag & drop</p>
-                </div>
-                <div className="bg-[#09725c]/10 rounded-full p-3 group-hover:bg-[#09725c]/20 transition-all">
-                  <Upload className="w-5 h-5 text-[#09725c]" />
-                </div>
-              </div>
-            </div>
-          </Link>
+    <div className="min-h-screen relative">
+      {/* Gradient Background - much smaller, only 1/5 height */}
+      <div className="absolute inset-x-0 top-0 h-1/5 bg-gradient-to-b from-[#06715b]/30 to-transparent"></div>
 
-          {/* Total Videos */}
-          <Link href="/dashboard/videos">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8 cursor-pointer h-full">
-              <div className="flex items-center space-x-3 h-full">
-                <div className="bg-gray-100 p-2 rounded-lg">
-                  <Video className="w-4 h-4 text-gray-700" />
-                </div>
-                <div>
-                  <div className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
-                    {stats?.total_videos ?? 0}
-                  </div>
-                  <div className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Total Videos</div>
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          {/* Videos Remaining */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8 h-full">
-            <div className="flex items-center space-x-3 h-full">
-              <div className="bg-gray-100 p-2 rounded-lg">
-                <BarChart3 className="w-4 h-4 text-gray-700" />
-              </div>
-              <div>
-                <div className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
-                  {(stats?.videos_limit ?? 50) - (stats?.videos_used ?? 0)}
-                </div>
-                <div className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Videos Remaining</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Total Properties */}
-          <Link href="/dashboard/properties">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8 cursor-pointer h-full">
-              <div className="flex items-center space-x-3 h-full">
-                <div className="bg-gray-100 p-2 rounded-lg">
-                  <Building2 className="w-4 h-4 text-gray-700" />
-                </div>
-                <div>
-                  <div className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
-                    {stats?.total_properties ?? 0}
-                  </div>
-                  <div className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Total Properties</div>
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          {/* Add Property */}
-          <Link href="/dashboard/properties/new">
-            <div className="bg-[#09725c]/5 border border-[#09725c]/30 rounded-xl shadow-sm p-8 cursor-pointer hover:bg-[#09725c]/10 hover:shadow-md transition-all duration-200 h-full">
-              <div className="flex items-center space-x-3 h-full">
-                <div className="bg-[#09725c]/10 rounded-full p-3 group-hover:bg-[#09725c]/20 transition-all">
-                  <Plus className="w-5 h-5 text-[#09725c]" />
-                </div>
-                <span className="text-sm font-medium text-[#09725c]" style={{ fontFamily: 'Inter' }}>Add Property</span>
-              </div>
-            </div>
-          </Link>
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center justify-start pt-20 px-8">
+        {/* Main Question */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-medium text-gray-900 mb-2">
+            Qu'allez-vous créer aujourd'hui ?
+          </h1>
         </div>
 
-        {/* How to use Hospup */}
-        <div className="space-y-3">
-          <h2 className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>How to use Hospup</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {/* YouTube Tutorial */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
-              <div className="bg-gray-100 rounded-lg aspect-video flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-all">
-                <div className="text-center">
-                  <Youtube className="w-16 h-16 text-red-500 mx-auto mb-2" />
-                  <p className="text-gray-600 font-medium" style={{ fontFamily: 'Inter' }}>Watch Tutorial</p>
-                </div>
-              </div>
-            </div>
+        {/* Filter Buttons */}
+        <div className="flex flex-wrap justify-center gap-4 mb-8">
+          <button
+            onClick={() => setSelectedFilter('generate')}
+            className={`px-6 py-3 rounded-lg border-2 transition-all duration-200 font-medium ${
+              selectedFilter === 'generate'
+                ? 'bg-[#06715b] text-white border-[#06715b] shadow-lg'
+                : 'bg-transparent text-gray-700 border-gray-300 hover:border-[#06715b] hover:text-[#06715b]'
+            }`}
+          >
+            Generate
+          </button>
+          <button
+            onClick={() => setSelectedFilter('videos')}
+            className={`px-6 py-3 rounded-lg border-2 transition-all duration-200 font-medium ${
+              selectedFilter === 'videos'
+                ? 'bg-[#06715b] text-white border-[#06715b] shadow-lg'
+                : 'bg-transparent text-gray-700 border-gray-300 hover:border-[#06715b] hover:text-[#06715b]'
+            }`}
+          >
+            Videos
+          </button>
+          <button
+            onClick={() => setSelectedFilter('assets')}
+            className={`px-6 py-3 rounded-lg border-2 transition-all duration-200 font-medium ${
+              selectedFilter === 'assets'
+                ? 'bg-[#06715b] text-white border-[#06715b] shadow-lg'
+                : 'bg-transparent text-gray-700 border-gray-300 hover:border-[#06715b] hover:text-[#06715b]'
+            }`}
+          >
+            Assets
+          </button>
+        </div>
 
-            {/* 3 Steps Process */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>Get Started in 3 Steps</h3>
-              <div className="relative">
-                {/* Progress Line */}
-                <div className="absolute left-4 top-8 bottom-8 w-0.5 bg-[#09725c]/20"></div>
-                
-                <div className="space-y-8">
-                  {/* Step 1 */}
-                  <div className="flex items-start relative">
-                    <div className="flex items-center justify-center w-8 h-8 bg-[#09725c] text-white rounded-full font-semibold text-xs z-10">
-                      1
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Add Your Property</span>
-                    </div>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="flex items-start relative">
-                    <div className="flex items-center justify-center w-8 h-8 bg-[#09725c] text-white rounded-full font-semibold text-xs z-10">
-                      2
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Upload Content</span>
-                    </div>
-                  </div>
-
-                  {/* Step 3 */}
-                  <div className="flex items-start relative">
-                    <div className="flex items-center justify-center w-8 h-8 bg-[#09725c] text-white rounded-full font-semibold text-xs z-10">
-                      3
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Generate Videos</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Search Bar */}
+        <div className="w-full max-w-2xl mb-16">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={
+                selectedFilter === 'generate'
+                  ? 'Describe your video idea...'
+                  : selectedFilter === 'videos'
+                  ? 'Search videos...'
+                  : 'Search assets...'
+              }
+              className="w-full px-6 py-4 pr-14 bg-white rounded-lg shadow-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#06715b] focus:border-[#06715b] text-gray-900 placeholder-gray-500 text-lg"
+            />
+            <button
+              onClick={handleSearch}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#06715b] text-white p-3 rounded-lg hover:bg-[#055a49] transition-colors"
+            >
+              <Search className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
+        {/* Recent Content Section */}
+        <div className="w-full max-w-6xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              {selectedFilter === 'assets' ? 'Recent Assets' : 'Recent Videos'}
+            </h2>
+            <button
+              onClick={() => router.push(selectedFilter === 'assets' ? '/dashboard/assets' : '/dashboard/videos')}
+              className="text-[#06715b] hover:text-[#055a49] font-medium transition-colors"
+            >
+              View all
+            </button>
+          </div>
 
-        {/* Bottom Section */}
-        <div className="space-y-3">
-          <h2 className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>Account Overview</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {/* Usage Metrics */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>Usage Metrics</h3>
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Videos Used</span>
-                  <span className="text-sm font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
-                    {stats?.videos_used ?? 0}/50
-                  </span>
+          {(selectedFilter === 'assets' ? assetsLoading : videosLoading) ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="animate-pulse">
+                    <div className="aspect-video bg-gray-200"></div>
+                    <div className="p-4 space-y-3">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      (stats?.videos_used ?? 0) > 50 
-                        ? 'bg-gradient-to-r from-red-500 to-red-600' 
-                        : 'bg-gradient-to-r from-[#09725c] to-[#09725c]'
-                    }`}
-                    style={{ width: `${Math.min(((stats?.videos_used ?? 0) / 50) * 100, 100)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Properties Registered</span>
-                  <span className="text-sm font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
-                    {stats?.total_properties ?? 0}/5
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200">
-                  <div 
-                    className="bg-gradient-to-r from-[#09725c] to-[#09725c] h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${((stats?.total_properties ?? 0) / 5) * 100}%` }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Days Remaining</span>
-                  <span className="text-sm font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
-                    {(() => {
-                      const now = new Date()
-                      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-                      const daysLeft = Math.ceil((endOfMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-                      return daysLeft
-                    })()} days
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200">
-                  <div 
-                    className="bg-gradient-to-r from-[#09725c] to-[#09725c] h-2 rounded-full transition-all duration-300" 
-                    style={{ 
-                      width: `${(() => {
-                        const now = new Date()
-                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-                        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-                        const totalDays = endOfMonth.getDate()
-                        const daysPassed = now.getDate() - 1
-                        return (daysPassed / totalDays) * 100
-                      })()}%` 
-                    }}
-                  />
-                </div>
-              </div>
+              ))}
             </div>
-          </div>
+          ) : selectedFilter === 'assets' ? (
+            assets.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {assets.slice(0, 8).map((asset) => {
+                  const IconComponent = getFileIcon(asset.file_url)
+                  return (
+                    <div
+                      key={asset.id}
+                      className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => router.push(`/dashboard/assets` as any)}
+                    >
+                      {/* Asset Thumbnail */}
+                      <div className="relative aspect-video bg-gray-100">
+                        {asset.thumbnail_url ? (
+                          <img
+                            src={asset.thumbnail_url}
+                            alt={asset.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                            <IconComponent className="w-8 h-8 text-gray-400" />
+                          </div>
+                        )}
 
-          {/* Need Help */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>Need Help?</h3>
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600" style={{ fontFamily: 'Inter' }}>
-                Our support team is here to help you create amazing videos.
-              </p>
-              <div className="flex items-center space-x-3 p-8 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                <div className="bg-[#09725c] p-2 rounded-lg">
-                  <Headphones className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Inter' }}>Contact Support</span>
+                        {/* Play button overlay for videos */}
+                        {asset.file_url.match(/\.(mp4|mov|avi|mkv)$/i) && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors">
+                            <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg opacity-0 hover:opacity-100 transition-opacity">
+                              <Play className="w-5 h-5 text-gray-900 ml-0.5" />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Duration for video assets */}
+                        {asset.duration && asset.duration > 0 && (
+                          <div className="absolute bottom-2 right-2">
+                            <span className="bg-black/70 text-white text-xs px-2 py-1 rounded">
+                              {Math.floor(asset.duration / 60)}:{(asset.duration % 60).toString().padStart(2, '0')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Asset Info */}
+                      <div className="p-4">
+                        <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                          {asset.title || asset.file_url.split('/').pop() || 'Untitled Asset'}
+                        </h3>
+
+                        <div className="flex items-center text-sm text-gray-500 space-x-4">
+                          <div className="flex items-center">
+                            <Calendar className="w-3 h-3 mr-1" />
+                            {new Date(asset.created_at).toLocaleDateString()}
+                          </div>
+                          {asset.duration && asset.duration > 0 && (
+                            <div className="flex items-center">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {Math.floor(asset.duration / 60)}:{(asset.duration % 60).toString().padStart(2, '0')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No assets yet</h3>
+                <p className="text-gray-500 mb-4">Upload your first asset to see it here</p>
+                <button
+                  onClick={() => router.push('/dashboard/assets')}
+                  className="bg-[#06715b] text-white px-6 py-2 rounded-lg hover:bg-[#055a49] transition-colors"
+                >
+                  Upload Assets
+                </button>
+              </div>
+            )
+          ) : videos.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {videos.slice(0, 8).map((video) => (
+                <div
+                  key={video.id}
+                  className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => router.push(`/dashboard/videos` as any)}
+                >
+                  {/* Video Thumbnail */}
+                  <div className="relative aspect-video bg-gray-100">
+                    {video.thumbnail_url ? (
+                      <img
+                        src={video.thumbnail_url}
+                        alt={video.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                        <Play className="w-8 h-8 text-gray-400" />
+                      </div>
+                    )}
+
+                    {/* Play button overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors">
+                      <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg opacity-0 hover:opacity-100 transition-opacity">
+                        <Play className="w-5 h-5 text-gray-900 ml-0.5" />
+                      </div>
+                    </div>
+
+                    {/* Status badge */}
+                    <div className="absolute top-2 left-2">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        video.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        video.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                        video.status === 'pending' ? 'bg-gray-100 text-gray-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {video.status === 'completed' ? 'Ready' :
+                         video.status === 'processing' ? 'Processing' :
+                         video.status === 'pending' ? 'Pending' : 'Failed'}
+                      </span>
+                    </div>
+
+                    {/* Duration */}
+                    {video.duration > 0 && (
+                      <div className="absolute bottom-2 right-2">
+                        <span className="bg-black/70 text-white text-xs px-2 py-1 rounded">
+                          {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Video Info */}
+                  <div className="p-4">
+                    <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                      {video.title || video.ai_description || 'Untitled Video'}
+                    </h3>
+
+                    <div className="flex items-center text-sm text-gray-500 space-x-4">
+                      <div className="flex items-center">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {new Date(video.created_at).toLocaleDateString()}
+                      </div>
+                      {video.duration > 0 && (
+                        <div className="flex items-center">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-          </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Play className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No videos yet</h3>
+              <p className="text-gray-500 mb-4">Create your first video to see it here</p>
+              <button
+                onClick={() => router.push('/dashboard/generate')}
+                className="bg-[#06715b] text-white px-6 py-2 rounded-lg hover:bg-[#055a49] transition-colors"
+              >
+                Create Video
+              </button>
+            </div>
+          )}
         </div>
-
       </div>
     </div>
   )

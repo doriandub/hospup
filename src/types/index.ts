@@ -29,29 +29,27 @@ export interface AuthResponse {
   refreshToken: string
 }
 
-// Property types
+// Property types (matching backend API)
 export interface Property {
-  id: string
+  id: number
+  user_id: number
   name: string
-  user_id: string
-  address?: string
-  city?: string
-  country?: string
-  property_type?: string
   description?: string
+  address: string
+  city: string
+  country: string
+  latitude?: number
+  longitude?: number
+  star_rating?: number
+  total_rooms?: number
   website_url?: string
   phone?: string
   email?: string
-  instagram_handle?: string
-  language?: string
-  is_active?: boolean
-  // Text customization settings
-  text_font?: string
-  text_color?: string
-  text_size?: string
-  text_shadow?: boolean
-  text_outline?: boolean
-  text_background?: boolean
+  amenities?: string[]
+  brand_colors?: string[]
+  brand_style?: string
+  is_active: boolean
+  videos_generated: number
   created_at: string
   updated_at: string
 }
@@ -61,7 +59,7 @@ export interface Video {
   id: string
   title: string
   description?: string
-  video_url: string
+  file_url: string
   thumbnail_url?: string
   status: 'processing' | 'completed' | 'failed'
   language: string
@@ -128,16 +126,20 @@ export interface VideoMatchResponse {
 
 export interface CreatePropertyRequest {
   name: string
-  address?: string
-  city?: string
-  country?: string
-  property_type?: string
   description?: string
+  address: string
+  city: string
+  country: string
+  latitude?: number
+  longitude?: number
+  star_rating?: number
+  total_rooms?: number
   website_url?: string
   phone?: string
   email?: string
-  instagram_handle?: string
-  language: string
+  amenities?: string[]
+  brand_colors?: string[]
+  brand_style?: string
 }
 
 export interface UpdatePropertyRequest extends Partial<CreatePropertyRequest> {

@@ -126,7 +126,7 @@ export function VideoTimelineEditor({
       content: 'New Text',
       start_time: snappedStart,
       end_time: snappedEnd,
-      position: { x: 50, y: 50, anchor: 'center' },
+      position: { x: 540, y: 960, anchor: 'center' },  // Centre en pixels pour vidéo 1080x1920
       style: {
         font_family: 'Arial',
         font_size: 4.8, // Taille réduite de 10x

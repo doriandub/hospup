@@ -1,26 +1,25 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth()
+  const { user, isLoading, isAuthenticated } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
-      console.log('❌ User not authenticated, redirecting to login...')
+    if (!isLoading && !isAuthenticated) {
       router.push('/auth/login')
     }
-  }, [user, loading, router])
+  }, [isLoading, isAuthenticated, router])
 
   // Show loading while checking authentication
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -32,7 +31,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // Show nothing while redirecting
-  if (!user) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

@@ -1,16 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Building, Eye, EyeOff, Loader2, Check } from 'lucide-react'
+import { Building, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { authAPI } from '@/lib/api'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function RegisterPage() {
-  const [name, setName] = useState('')
+  const { register } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -18,37 +17,27 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  
-  const router = useRouter()
-
-  // Password validation
-  const passwordChecks = {
-    length: password.length >= 8,
-    uppercase: /[A-Z]/.test(password),
-    lowercase: /[a-z]/.test(password),
-    number: /\d/.test(password),
-    match: password === confirmPassword && password.length > 0,
-  }
-
-  const isPasswordValid = Object.values(passwordChecks).every(check => check)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    if (!isPasswordValid) {
-      setError('Please ensure all password requirements are met.')
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long')
       return
     }
 
     setIsLoading(true)
 
     try {
-      const user = await authAPI.register({ name, email, password })
-      console.log('✅ Registration successful for:', user.email)
-      router.push('/dashboard')
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.')
+      await register(email, password)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Registration failed')
     } finally {
       setIsLoading(false)
     }
@@ -79,19 +68,6 @@ export default function RegisterPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your full name"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -115,6 +91,7 @@ export default function RegisterPage() {
                   placeholder="Create a password"
                   required
                   disabled={isLoading}
+                  minLength={8}
                 />
                 <button
                   type="button"
@@ -129,28 +106,7 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
-              
-              {/* Password Requirements */}
-              {password && (
-                <div className="text-xs space-y-1 mt-2">
-                  <div className={`flex items-center space-x-2 ${passwordChecks.length ? 'text-green-600' : 'text-gray-500'}`}>
-                    <Check className={`w-3 h-3 ${passwordChecks.length ? 'opacity-100' : 'opacity-30'}`} />
-                    <span>At least 8 characters</span>
-                  </div>
-                  <div className={`flex items-center space-x-2 ${passwordChecks.uppercase ? 'text-green-600' : 'text-gray-500'}`}>
-                    <Check className={`w-3 h-3 ${passwordChecks.uppercase ? 'opacity-100' : 'opacity-30'}`} />
-                    <span>One uppercase letter</span>
-                  </div>
-                  <div className={`flex items-center space-x-2 ${passwordChecks.lowercase ? 'text-green-600' : 'text-gray-500'}`}>
-                    <Check className={`w-3 h-3 ${passwordChecks.lowercase ? 'opacity-100' : 'opacity-30'}`} />
-                    <span>One lowercase letter</span>
-                  </div>
-                  <div className={`flex items-center space-x-2 ${passwordChecks.number ? 'text-green-600' : 'text-gray-500'}`}>
-                    <Check className={`w-3 h-3 ${passwordChecks.number ? 'opacity-100' : 'opacity-30'}`} />
-                    <span>One number</span>
-                  </div>
-                </div>
-              )}
+              <p className="text-xs text-gray-500">Must be at least 8 characters</p>
             </div>
 
             <div className="space-y-2">
@@ -178,19 +134,12 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
-              
-              {confirmPassword && (
-                <div className={`flex items-center space-x-2 text-xs ${passwordChecks.match ? 'text-green-600' : 'text-red-500'}`}>
-                  <Check className={`w-3 h-3 ${passwordChecks.match ? 'opacity-100' : 'opacity-30'}`} />
-                  <span>{passwordChecks.match ? 'Passwords match' : 'Passwords do not match'}</span>
-                </div>
-              )}
             </div>
 
             <Button 
               type="submit" 
               className="w-full bg-primary hover:bg-primary/90" 
-              disabled={isLoading || !isPasswordValid}
+              disabled={isLoading}
             >
               {isLoading ? (
                 <>
@@ -220,13 +169,13 @@ export default function RegisterPage() {
         <div className="mt-8 text-center">
           <p className="text-gray-500 text-sm">
             By creating an account, you agree to our{' '}
-            <Link href="/terms" className="text-primary hover:text-primary/80">
+            <span className="text-primary hover:text-primary/80 cursor-pointer">
               Terms of Service
-            </Link>{' '}
+            </span>{' '}
             and{' '}
-            <Link href="/privacy" className="text-primary hover:text-primary/80">
+            <span className="text-primary hover:text-primary/80 cursor-pointer">
               Privacy Policy
-            </Link>
+            </span>
           </p>
         </div>
       </div>

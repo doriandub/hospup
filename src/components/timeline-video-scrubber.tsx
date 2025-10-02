@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Play, Pause, Type, Copy, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CanvasVideoEditorMasterclass } from './canvas-video-editor-masterclass'
+import { TextOverlay } from '@/types/text-overlay'
 
 interface VideoSlot {
   id: string
@@ -18,25 +19,6 @@ interface VideoSlot {
   }
 }
 
-interface TextOverlay {
-  id: string
-  content: string
-  start_time: number
-  end_time: number
-  position: { x: number; y: number; anchor: string }
-  style: {
-    font_family: string
-    font_size: number
-    color: string
-    bold: boolean
-    italic: boolean
-    shadow: boolean
-    outline: boolean
-    background: boolean
-    opacity: number
-  }
-  textAlign?: 'left' | 'center' | 'right'
-}
 
 interface TimelineVideoScrubberProps {
   videoSlots: VideoSlot[]
@@ -176,7 +158,7 @@ export function TimelineVideoScrubber({
 
   return (
     <div className="space-y-4">
-      {/* Canvas Video Editor Masterclass */}
+      {/* Canvas Video Editor Masterclass - Sans boutons de contrôle */}
       <CanvasVideoEditorMasterclass
         videoSlots={videoSlots}
         textOverlays={textOverlays}
@@ -186,13 +168,12 @@ export function TimelineVideoScrubber({
         currentTime={previewTime}
         totalDuration={totalDuration}
         onTimeChange={onTimeChange}
-        onPlay={onPlay}
-        onPause={onPause}
-        isPlaying={isPlaying}
+        onPlay={undefined} // Pas de bouton play
+        onPause={undefined} // Pas de bouton pause
+        isPlaying={false} // Pas de lecture automatique
       />
 
-
-      {/* Timeline scrubber */}
+      {/* Timeline scrubber uniquement */}
       <div className="space-y-2">
         <div 
           ref={scrubberRef}

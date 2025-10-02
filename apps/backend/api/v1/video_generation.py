@@ -37,10 +37,23 @@ except Exception as e:
     print(f"Warning: Could not import S3 service in video_generation.py: {e}")
     s3_service = None
 import logging
+import boto3
+import requests
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/video-generation", tags=["video-generation"])
+
+# AWS Configuration for MediaConvert video generation
+AWS_LAMBDA_FUNCTION = "hospup-video-generator"
+AWS_REGION = "eu-west-1"
+
+# AWS Service (configured globally)
+try:
+    lambda_client = boto3.client('lambda', region_name=AWS_REGION)
+except Exception as e:
+    logger.warning(f"Could not initialize AWS Lambda client: {e}")
+    lambda_client = None
 
 def _generate_video_from_segments(matched_segments, target_duration, adapted_texts, property_details, video_id):
     """
@@ -1047,3 +1060,257 @@ async def get_smart_video_matching(
     except Exception as e:
         logger.error(f"❌ Error in smart matching: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error in smart matching: {str(e)}")
+
+# AWS MediaConvert Video Generation Models and Endpoints
+class VideoSegment(BaseModel):
+    id: str
+    video_url: str
+    start_time: float
+    end_time: float
+    duration: float
+    order: int
+
+class TextOverlay(BaseModel):
+    id: str
+    content: str
+    start_time: float
+    end_time: float
+    position: dict  # {"x": 50, "y": 50} - percentage coordinates
+    style: dict     # Font, color, size, shadow, outline, etc.
+
+class AWSVideoGenerationRequest(BaseModel):
+    property_id: str
+    template_id: str
+    segments: List[VideoSegment]
+    text_overlays: List[TextOverlay]
+    total_duration: float
+
+class AWSVideoGenerationResponse(BaseModel):
+    job_id: str
+    mediaconvert_job_id: str
+    status: str
+    output_url: str
+    estimated_duration: str
+
+class AWSJobStatusResponse(BaseModel):
+    job_id: str
+    status: str
+    progress: Optional[int] = None
+    video_url: Optional[str] = None
+    created_at: Optional[str] = None
+
+@router.post("/aws-generate", response_model=AWSVideoGenerationResponse)
+async def aws_generate_video(
+    request: AWSVideoGenerationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate video using AWS MediaConvert through Lambda orchestration
+    """
+    try:
+        logger.info(f"🚀 Starting AWS MediaConvert video generation for property {request.property_id}")
+        
+        # Verify the property belongs to the user
+        property_obj = db.query(Property).filter(
+            Property.id == request.property_id,
+            Property.user_id == current_user.id
+        ).first()
+        
+        if not property_obj:
+            raise HTTPException(status_code=404, detail="Property not found")
+        
+        # Check user's video quota
+        if current_user.videos_used >= current_user.videos_limit and current_user.videos_limit != -1:
+            raise HTTPException(
+                status_code=403, 
+                detail="Video generation limit reached. Please upgrade your plan."
+            )
+        
+        if not lambda_client:
+            logger.error("AWS Lambda client not configured")
+            raise HTTPException(status_code=503, detail="AWS services not available")
+        
+        logger.info(f"📊 Processing {len(request.segments)} segments and {len(request.text_overlays)} text overlays")
+        
+        # Prepare payload for AWS Lambda
+        lambda_payload = {
+            "property_id": request.property_id,
+            "template_id": request.template_id,
+            "segments": [segment.dict() for segment in request.segments],
+            "text_overlays": [overlay.dict() for overlay in request.text_overlays],
+            "total_duration": request.total_duration
+        }
+        
+        # Invoke AWS Lambda function
+        logger.info("☁️ Invoking AWS Lambda function for MediaConvert processing...")
+        
+        response = lambda_client.invoke(
+            FunctionName=AWS_LAMBDA_FUNCTION,
+            InvocationType='RequestResponse',
+            Payload=json.dumps({
+                "body": json.dumps(lambda_payload),
+                "httpMethod": "POST",
+                "headers": {
+                    "Content-Type": "application/json"
+                }
+            })
+        )
+        
+        # Parse Lambda response
+        lambda_result = json.loads(response['Payload'].read().decode('utf-8'))
+        
+        if lambda_result.get('statusCode') != 200:
+            error_msg = f"Lambda execution failed: {lambda_result.get('body', 'Unknown error')}"
+            logger.error(f"❌ {error_msg}")
+            raise HTTPException(status_code=500, detail=error_msg)
+        
+        # Parse successful response
+        result_body = json.loads(lambda_result['body'])
+        
+        # Increment user's video usage
+        current_user.videos_used += 1
+        db.commit()
+        
+        logger.info(f"✅ AWS MediaConvert job submitted: {result_body.get('mediaconvert_job_id')}")
+        
+        return AWSVideoGenerationResponse(
+            job_id=result_body['job_id'],
+            mediaconvert_job_id=result_body['mediaconvert_job_id'],
+            status=result_body['status'],
+            output_url=result_body['output_url'],
+            estimated_duration=result_body['estimated_duration']
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ AWS video generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AWS video generation failed: {str(e)}")
+
+@router.get("/aws-status/{job_id}", response_model=AWSJobStatusResponse)
+async def aws_check_status(
+    job_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Check the status of an AWS MediaConvert video generation job
+    """
+    try:
+        logger.info(f"🔍 Checking status for AWS job: {job_id}")
+        
+        if not lambda_client:
+            logger.error("AWS Lambda client not configured")
+            raise HTTPException(status_code=503, detail="AWS services not available")
+        
+        # Create the status check Lambda function name (or use the same function with different route)
+        status_payload = {
+            "pathParameters": {
+                "jobId": job_id
+            },
+            "httpMethod": "GET"
+        }
+        
+        # For now, invoke the same Lambda function but with status check parameters
+        # In production, you might have a separate function or route for status checks
+        response = lambda_client.invoke(
+            FunctionName="hospup-video-status-checker",  # Or use the same function with routing
+            InvocationType='RequestResponse',
+            Payload=json.dumps(status_payload)
+        )
+        
+        # Parse Lambda response
+        lambda_result = json.loads(response['Payload'].read().decode('utf-8'))
+        
+        if lambda_result.get('statusCode') != 200:
+            error_msg = f"Status check failed: {lambda_result.get('body', 'Unknown error')}"
+            logger.error(f"❌ {error_msg}")
+            raise HTTPException(status_code=500, detail=error_msg)
+        
+        result_body = json.loads(lambda_result['body'])
+        
+        return AWSJobStatusResponse(
+            job_id=result_body['job_id'],
+            status=result_body['status'],
+            progress=result_body.get('progress'),
+            video_url=result_body.get('video_url'),
+            created_at=result_body.get('created_at')
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ AWS status check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AWS status check failed: {str(e)}")
+
+# Alternative endpoint that calls Lambda via HTTP (if API Gateway is configured)
+@router.post("/aws-generate-http")
+async def aws_generate_video_http(
+    request: AWSVideoGenerationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Alternative AWS endpoint that uses HTTP API Gateway instead of direct Lambda invoke
+    """
+    try:
+        logger.info(f"🌐 Starting AWS HTTP video generation for property {request.property_id}")
+        
+        # Verify the property belongs to the user
+        property_obj = db.query(Property).filter(
+            Property.id == request.property_id,
+            Property.user_id == current_user.id
+        ).first()
+        
+        if not property_obj:
+            raise HTTPException(status_code=404, detail="Property not found")
+        
+        # Check user's video quota
+        if current_user.videos_used >= current_user.videos_limit and current_user.videos_limit != -1:
+            raise HTTPException(
+                status_code=403, 
+                detail="Video generation limit reached. Please upgrade your plan."
+            )
+        
+        # AWS API Gateway endpoint (to be configured)
+        aws_api_endpoint = "https://your-api-gateway-url.execute-api.eu-west-1.amazonaws.com/prod/generate-video"
+        
+        # Prepare payload
+        payload = {
+            "property_id": request.property_id,
+            "template_id": request.template_id,
+            "segments": [segment.dict() for segment in request.segments],
+            "text_overlays": [overlay.dict() for overlay in request.text_overlays],
+            "total_duration": request.total_duration
+        }
+        
+        # Call AWS API Gateway
+        response = requests.post(
+            aws_api_endpoint,
+            json=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {current_user.id}"  # Or proper API key
+            },
+            timeout=30
+        )
+        
+        if response.status_code != 200:
+            logger.error(f"❌ AWS API call failed: {response.status_code} {response.text}")
+            raise HTTPException(status_code=500, detail="AWS API call failed")
+        
+        result = response.json()
+        
+        # Increment user's video usage
+        current_user.videos_used += 1
+        db.commit()
+        
+        logger.info(f"✅ AWS HTTP job submitted: {result.get('job_id')}")
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ AWS HTTP video generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AWS HTTP video generation failed: {str(e)}")

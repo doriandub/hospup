@@ -17,20 +17,20 @@ interface VideoSlot {
   }
 }
 
-// Coordonnées normalisées comme CapCut (0-100%)
+// Coordonnées en pixels absolus pour correspondre avec MediaConvert (0-1080px x 0-1920px)
 interface TextOverlay {
   id: string
   content: string
   start_time: number
   end_time: number
-  position: { 
-    x: number // Pourcentage 0-100
-    y: number // Pourcentage 0-100
-    anchor: string 
+  position: {
+    x: number // Position horizontale en pixels (0-1080)
+    y: number // Position verticale en pixels (0-1920)
+    anchor: string
   }
   style: {
     font_family: string
-    font_size: number // Pourcentage de la hauteur vidéo
+    font_size: number // Taille en pixels absolus (basé sur vidéo 1920px de haut)
     color: string
     bold: boolean
     italic: boolean
@@ -155,10 +155,11 @@ export function CanvasVideoEditor({
     // Rendu des textes (coordonnées normalisées)
     const visibleTexts = getVisibleTexts(currentTime)
     visibleTexts.forEach(text => {
-      // Conversion pourcentages → pixels canvas
-      const x = (text.position.x / 100) * CANVAS_WIDTH
-      const y = (text.position.y / 100) * CANVAS_HEIGHT
-      const fontSize = (text.style.font_size / 100) * CANVAS_HEIGHT
+      // Conversion pixels vidéo (1080x1920) → pixels canvas (scaling proportionnel)
+      const x = (text.position.x / 1080) * CANVAS_WIDTH
+      const y = (text.position.y / 1920) * CANVAS_HEIGHT
+      // Convert video pixels (1920px height) to canvas pixels proportionally
+      const fontSize = (text.style.font_size / 1920) * CANVAS_HEIGHT
 
       ctx.save()
 
@@ -255,9 +256,10 @@ export function CanvasVideoEditor({
     let clickedText = null
 
     for (const text of visibleTexts) {
-      const textX = (text.position.x / 100) * CANVAS_WIDTH
-      const textY = (text.position.y / 100) * CANVAS_HEIGHT
-      const fontSize = (text.style.font_size / 100) * CANVAS_HEIGHT
+      const textX = (text.position.x / 1080) * CANVAS_WIDTH
+      const textY = (text.position.y / 1920) * CANVAS_HEIGHT
+      // Convert video pixels (1920px height) to canvas pixels proportionally
+      const fontSize = (text.style.font_size / 1920) * CANVAS_HEIGHT
       
       // Zone de clic approximative
       if (Math.abs(x - textX) < 50 && Math.abs(y - textY) < fontSize) {
@@ -282,14 +284,14 @@ export function CanvasVideoEditor({
       content: 'New Text',
       start_time: currentTime,
       end_time: Math.min(currentTime + 3, totalDuration),
-      position: { 
-        x: Math.max(0, Math.min(100, x)), // Pourcentages 0-100
-        y: Math.max(0, Math.min(100, y)), 
-        anchor: 'center' 
+      position: {
+        x: Math.max(0, Math.min(1080, (x / CANVAS_WIDTH) * 1080)), // Pixels 0-1080
+        y: Math.max(0, Math.min(1920, (y / CANVAS_HEIGHT) * 1920)), // Pixels 0-1920
+        anchor: 'center'
       },
       style: {
         font_family: 'Arial',
-        font_size: 0.8, // Taille réduite de 10x
+        font_size: 60, // Taille normale lisible (60px sur vidéo 1920px = ~3%)
         color: '#FFFFFF',
         bold: false,
         italic: false,
@@ -332,12 +334,12 @@ export function CanvasVideoEditor({
 
   const centerHorizontally = useCallback((textId: string) => {
     const text = textOverlays.find(t => t.id === textId)
-    if (text) updateTextPosition(textId, 50, text.position.y) // 50% = centre
+    if (text) updateTextPosition(textId, 540, text.position.y) // 540px = centre horizontal (1080/2)
   }, [updateTextPosition, textOverlays])
 
   const centerVertically = useCallback((textId: string) => {
     const text = textOverlays.find(t => t.id === textId)
-    if (text) updateTextPosition(textId, text.position.x, 50) // 50% = centre
+    if (text) updateTextPosition(textId, text.position.x, 960) // 960px = centre vertical (1920/2)
   }, [updateTextPosition, textOverlays])
 
   const deleteText = useCallback((textId: string) => {

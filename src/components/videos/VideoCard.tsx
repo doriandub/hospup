@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { 
   Play, 
   Download, 
@@ -24,23 +23,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { api } from '@/lib/api'
 
 interface Video {
   id: string
   title: string
   thumbnail_url: string | null
-  video_url: string
+  file_url: string
   duration: number | null
   status: string
   created_at: string
-  property_id: string
+  property_id: string | number
   description?: string
   size?: number
 }
 
 interface Property {
-  id: string
+  id: number
   name: string
   city?: string
   country?: string
@@ -51,16 +49,32 @@ interface VideoCardProps {
   property?: Property
   viewMode?: 'grid' | 'list'
   showProperty?: boolean
+  onDelete?: (videoId: string) => void
+  onEdit?: (video: any) => void
+  onView?: (video: any) => void
 }
 
 export function VideoCard({ 
   video, 
   property, 
   viewMode = 'grid', 
-  showProperty = false 
+  showProperty = false,
+  onDelete,
+  onEdit,
+  onView 
 }: VideoCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
+
+  // Debug logging
+  console.log('🔍 VideoCard received:', {
+    id: video.id,
+    title: video.title,
+    status: video.status,
+    thumbnail_url: video.thumbnail_url,
+    description: video.description,
+    duration: video.duration
+  })
 
   const formatDuration = (seconds: number | null) => {
     if (seconds === null || seconds === undefined) {
@@ -73,21 +87,27 @@ export function VideoCard({
   }
 
   const getAIDescription = (description: string) => {
-    // Only show description if it contains AI Analysis
+    if (!description || description.trim() === '') return null
+    
+    // Handle legacy descriptions with "AI Analysis:" prefix
     const aiAnalysisMatch = description.match(/AI Analysis:\s*(.+)/)
     if (aiAnalysisMatch) {
       return aiAnalysisMatch[1].trim()
     }
     
-    // If description doesn't start with "Uploaded video:" and is not generic, show it
-    if (!description.startsWith('Uploaded video:') && description.trim() !== '') {
-      return description
+    // Skip only generic error messages, show everything else
+    if (description.startsWith('Video uploaded successfully') ||
+        description.includes('AI analysis unavailable') ||
+        description.includes('AI analysis failed') ||
+        description.includes('analysis unavailable') ||
+        description.includes('Unable to') ||
+        description.startsWith('Uploaded video: ')) {
+      return null
     }
     
-    // Don't show generic "Uploaded video: filename" descriptions
-    return null
+    // Show any meaningful description (including those starting with objects/rooms)
+    return description.trim()
   }
-
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -123,51 +143,28 @@ export function VideoCard({
     }
   }
 
-  // Load video URL on component mount (using same method as working properties page)
+  // Load video URL on component mount
   useEffect(() => {
     const loadVideoUrl = async () => {
-      if (!video.video_url) return
+      if (!video.file_url) return
       
       try {
-        // If it's already a full HTTP URL (processed video), use it directly
-        if (video.video_url.startsWith('https://')) {
-          setVideoUrl(video.video_url)
+        // If it's already a full HTTP URL, use it directly
+        if (video.file_url.startsWith('https://')) {
+          setVideoUrl(video.file_url)
           return
         }
         
-        // Otherwise, extract S3 key and get presigned URL
-        const s3Key = video.video_url.replace('s3://hospup-files/', '')
-        const response = await api.get(`/api/v1/upload/download-url/${s3Key}`)
-        
-        if (response.data && response.data.download_url) {
-          setVideoUrl(response.data.download_url)
-        }
+        // For s3:// URLs, we'll need to get a presigned URL from the API
+        // For now, use file_url directly if it's HTTP
+        setVideoUrl(video.file_url)
       } catch (error) {
         console.error('Error getting video URL:', error)
       }
     }
     
     loadVideoUrl()
-  }, [video.video_url])
-
-  const handleDownload = async () => {
-    if (!videoUrl) return
-    
-    try {
-      const response = await fetch(videoUrl)
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${video.title}.mp4`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error('Error downloading video:', error)
-    }
-  }
+  }, [video.file_url])
 
   const openVideoModal = () => {
     if (!videoUrl) {
@@ -175,7 +172,7 @@ export function VideoCard({
       return
     }
     
-    // Create a temporary video element to play the video inline (working method from Properties)
+    // Create a temporary video element to play the video inline
     const tempVideo = document.createElement('video')
     tempVideo.src = videoUrl
     tempVideo.controls = true
@@ -240,13 +237,25 @@ export function VideoCard({
     }
   }
 
+  const handleDelete = () => {
+    if (onDelete && confirm('Are you sure you want to delete this video?')) {
+      onDelete(video.id)
+    }
+  }
+
   // List view content
   const listContent = (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 p-4">
       <div className="flex items-center space-x-4">
         {/* Thumbnail */}
         <div className="flex-shrink-0 w-24 h-16 bg-gray-100 rounded-lg overflow-hidden relative">
-          {videoUrl ? (
+          {video.thumbnail_url ? (
+            <img 
+              src={video.thumbnail_url} 
+              alt={video.title}
+              className="w-full h-full object-cover"
+            />
+          ) : videoUrl ? (
             <video 
               className="w-full h-full object-cover" 
               preload="metadata"
@@ -267,12 +276,6 @@ export function VideoCard({
             >
               <source src={videoUrl} type="video/mp4" />
             </video>
-          ) : video.thumbnail_url ? (
-            <img 
-              src={video.thumbnail_url} 
-              alt={video.title}
-              className="w-full h-full object-cover"
-            />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 relative">
               <div className="text-center">
@@ -311,7 +314,7 @@ export function VideoCard({
             </div>
           )}
 
-          {(video.status?.toLowerCase() === 'ready' || video.status?.toLowerCase() === 'completed') && video.description && getAIDescription(video.description) && (
+          {video.description && getAIDescription(video.description) && (
             <p className="text-sm text-gray-600 mt-1 line-clamp-2">
               {getAIDescription(video.description)}
             </p>
@@ -320,7 +323,7 @@ export function VideoCard({
 
         {/* Actions */}
         <div className="flex items-center space-x-2">
-          {(video.status === 'completed' || video.status === 'uploaded') && video.video_url && (
+          {(video.status === 'completed' || video.status === 'uploaded' || video.status === 'ready') && video.file_url && (
             <>
               <Button
                 variant="outline"
@@ -329,14 +332,6 @@ export function VideoCard({
               >
                 <Eye className="h-4 w-4 mr-2" />
                 View
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownload}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download
               </Button>
             </>
           )}
@@ -354,7 +349,13 @@ export function VideoCard({
     >
       {/* Thumbnail */}
       <div className="aspect-[9/16] bg-gray-100 relative overflow-hidden">
-        {videoUrl ? (
+        {video.thumbnail_url ? (
+          <img 
+            src={video.thumbnail_url} 
+            alt={video.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : videoUrl ? (
           <div className="w-full h-full relative">
             <video 
               className="w-full h-full object-cover" 
@@ -377,12 +378,6 @@ export function VideoCard({
               <source src={videoUrl} type="video/mp4" />
             </video>
           </div>
-        ) : video.thumbnail_url ? (
-          <img 
-            src={video.thumbnail_url} 
-            alt={video.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 relative">
             <div className="text-center">
@@ -395,7 +390,7 @@ export function VideoCard({
         )}
         
         {/* Overlay on hover */}
-        {isHovered && (video.status === 'completed' || video.status === 'uploaded') && video.video_url && (
+        {isHovered && (video.status === 'completed' || video.status === 'uploaded' || video.status === 'ready') && video.file_url && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center space-x-2">
             <Button
               size="sm"
@@ -404,14 +399,6 @@ export function VideoCard({
               className="bg-white text-black hover:bg-gray-100"
             >
               <Play className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleDownload}
-              className="bg-white text-black hover:bg-gray-100"
-            >
-              <Download className="h-4 w-4" />
             </Button>
           </div>
         )}
@@ -445,12 +432,14 @@ export function VideoCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Edit2 className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
+              {onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(video)}>
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete
               </DropdownMenuItem>
@@ -465,8 +454,7 @@ export function VideoCard({
           </div>
         )}
 
-
-        {(video.status?.toLowerCase() === 'ready' || video.status?.toLowerCase() === 'completed') && video.description && getAIDescription(video.description) && (
+        {video.description && getAIDescription(video.description) && (
           <p className="text-xs text-gray-600 mt-2 line-clamp-2">
             {getAIDescription(video.description)}
           </p>

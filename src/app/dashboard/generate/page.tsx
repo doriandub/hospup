@@ -4,13 +4,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useProperties } from '@/hooks/useProperties'
+import { VideoGenerationHeader } from '@/components/video-generation/VideoGenerationHeader'
 import { api } from '@/lib/api'
-import { VideoGenerationNavbar } from '@/components/video-generation/VideoGenerationNavbar'
-import { 
-  Building2,
+import {
   Plus,
-  Loader2,
-  Shuffle
+  Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -47,15 +45,15 @@ export default function GenerateVideoPage() {
       const response = await api.post('/api/v1/viral-matching/smart-match', {
         property_id: selectedProperty,
         user_description: prompt
-      })
+      }) as any
       
-      if (response.data) {
+      if (response && response.id) {
         // Redirect to template preview instead of compose
         const params = new URLSearchParams({
           property: selectedProperty,
           description: prompt
         })
-        router.push(`/dashboard/template-preview/${response.data.id}?${params.toString()}`)
+        router.push(`/dashboard/template-preview/${response.id}?${params.toString()}`)
       } else {
         alert('No template found. Please try a different description.')
       }
@@ -76,10 +74,10 @@ export default function GenerateVideoPage() {
     setLoading(true)
     try {
       // Get all templates and pick a random one
-      const response = await api.get('/api/v1/viral-matching/viral-templates')
+      const response = await api.get('/api/v1/viral-matching/viral-templates') as any[]
       
-      if (response.data && response.data.length > 0) {
-        const randomTemplate = response.data[Math.floor(Math.random() * response.data.length)]
+      if (response && response.length > 0) {
+        const randomTemplate = response[Math.floor(Math.random() * response.length)]
         
         // Redirect to template preview with random template
         const params = new URLSearchParams({
@@ -104,7 +102,9 @@ export default function GenerateVideoPage() {
       <div className="min-h-screen bg-gray-50 font-inter">
         <div className="grid grid-cols-1 gap-3 p-8">
           <div className="text-center py-12">
-            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <div className="w-16 h-16 bg-[#09725c] text-white rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl font-bold">H</span>
+            </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No properties yet</h3>
             <p className="text-gray-600 mb-6">Add your first property to start generating viral videos</p>
             <Link href="/dashboard/properties/new">
@@ -121,10 +121,10 @@ export default function GenerateVideoPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-inter">
-      <VideoGenerationNavbar 
+      <VideoGenerationHeader
         currentStep={1}
         propertyId={selectedProperty}
-        showGenerationButtons={!!selectedProperty && !!prompt.trim()}
+        showGenerationButtons={!!selectedProperty}
         onRandomTemplate={handleRandomTemplate}
         onGenerateTemplate={handleGenerateTemplate}
         isGenerating={loading}
@@ -135,7 +135,9 @@ export default function GenerateVideoPage() {
           
           {/* Property Selection */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>Select Property</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Inter' }}>
+              Select Property
+            </h2>
             <div className="relative">
               <select 
                 value={selectedProperty}
@@ -163,14 +165,16 @@ export default function GenerateVideoPage() {
 
           {/* Video Description */}
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>Describe Your Video</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900" style={{ fontFamily: 'Inter' }}>
+                Describe Your Video
+              </h2>
               <Button
-                variant="outline"
                 onClick={generateRandomPrompt}
-                className="flex items-center hover:bg-gray-50"
+                variant="outline"
+                size="sm"
+                className="border-[#09725c] text-[#09725c] hover:bg-[#09725c]/10"
               >
-                <Shuffle className="w-4 h-4 mr-2" />
                 Random Idea
               </Button>
             </div>
@@ -188,7 +192,7 @@ export default function GenerateVideoPage() {
                 {!selectedProperty ? (
                   "Sélectionnez une propriété pour commencer"
                 ) : !prompt.trim() ? (
-                  "Décrivez votre vidéo pour voir les boutons de génération"
+                  "Décrivez votre vidéo pour activer Generate Template, ou utilisez Random Template"
                 ) : (
                   "Utilisez les boutons dans la barre du haut pour générer"
                 )}
