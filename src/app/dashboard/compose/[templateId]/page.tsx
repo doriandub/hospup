@@ -521,8 +521,8 @@ export default function ComposePage() {
       const sessionKey = `video-generation-${Date.now()}`
       sessionStorage.setItem(sessionKey, JSON.stringify(videoData))
 
-      // Redirect to generation page with just the session key
-      router.push(`/dashboard/video-generation?session=${sessionKey}`)
+      // Redirect to generation page with session key and property ID
+      router.push(`/dashboard/video-generation?session=${sessionKey}&property=${selectedProperty}`)
 
     } catch (error) {
       console.error('Error preparing video generation:', error)

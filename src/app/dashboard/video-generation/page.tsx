@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { PreviewVideoPlayer } from '@/components/preview-video-player'
-import { SimpleVideoCapture } from '@/services/simple-video-capture-mediaconvert'
-import { Download, CheckCircle, Loader2, ArrowLeft, ExternalLink } from 'lucide-react'
+import { Download, CheckCircle, Loader2, ArrowLeft, ExternalLink, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { api } from '@/lib/api'
+
+type GenerationStatus = 'preparing' | 'mediaconvert' | 'ffmpeg' | 'completed' | 'error'
 
 interface VideoData {
   templateSlots: any[]
@@ -18,270 +20,408 @@ export default function VideoGenerationPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [videoData, setVideoData] = useState<VideoData | null>(null)
-  const [generationStatus, setGenerationStatus] = useState<'preparing' | 'generating' | 'uploading' | 'completed' | 'error'>('preparing')
+  const [generationStatus, setGenerationStatus] = useState<GenerationStatus>('preparing')
   const [downloadUrl, setDownloadUrl] = useState<string>('')
   const [error, setError] = useState<string>('')
   const [progress, setProgress] = useState(0)
+  const [jobId, setJobId] = useState<string | null>(null)
+  const [videoId, setVideoId] = useState<string | null>(null)
+  const [estimatedTime, setEstimatedTime] = useState(35)
+  const [elapsedTime, setElapsedTime] = useState(0)
 
   // Load video data from sessionStorage
   useEffect(() => {
     const sessionKey = searchParams.get('session')
-    const legacyData = searchParams.get('data') // Fallback for old URLs
+
+    if (!sessionKey) {
+      setError('Session invalide - données de génération manquantes')
+      setGenerationStatus('error')
+      return
+    }
+
+    const storedData = sessionStorage.getItem(sessionKey)
+    if (!storedData) {
+      setError('Données de génération expirées ou invalides')
+      setGenerationStatus('error')
+      return
+    }
 
     try {
-      let videoData = null
-
-      if (sessionKey) {
-        // New method: Load from sessionStorage
-        const storedData = sessionStorage.getItem(sessionKey)
-        console.log(`🔍 DEBUG sessionStorage for key "${sessionKey}":`, storedData)
-        if (storedData) {
-          videoData = JSON.parse(storedData)
-          console.log('✅ Data loaded from sessionStorage:', videoData)
-          console.log('📊 Data structure:', {
-            templateSlots: videoData?.templateSlots?.length || 'undefined',
-            currentAssignments: videoData?.currentAssignments?.length || 'undefined',
-            contentVideos: videoData?.contentVideos?.length || 'undefined',
-            textOverlays: videoData?.textOverlays?.length || 'undefined'
-          })
-        } else {
-          console.log('❌ No data found in sessionStorage for key:', sessionKey)
-        }
-      } else if (legacyData) {
-        // Legacy method: Load from URL (for old links)
-        videoData = JSON.parse(decodeURIComponent(legacyData))
-        console.log('✅ Data loaded from URL (legacy)')
-      }
-
-      if (videoData) {
-        setVideoData(videoData)
-        // Start generation automatically
-        setTimeout(() => generateVideo(videoData), 1000)
-      } else {
-        setError('Aucune donnée de vidéo trouvée')
-        setGenerationStatus('error')
-      }
-    } catch (error) {
-      console.error('Error loading video data:', error)
-      setError('Erreur lors du chargement des données')
+      const parsedData = JSON.parse(storedData)
+      setVideoData(parsedData)
+      console.log('✅ Video data loaded from session:', parsedData)
+    } catch (err) {
+      setError('Impossible de charger les données de génération')
       setGenerationStatus('error')
+      console.error('❌ Failed to parse video data:', err)
     }
   }, [searchParams])
 
-  const generateVideo = async (data: VideoData) => {
+  // Start video generation once data is loaded
+  useEffect(() => {
+    if (!videoData) return
+    startVideoGeneration()
+  }, [videoData])
+
+  // Elapsed time counter
+  useEffect(() => {
+    if (generationStatus === 'completed' || generationStatus === 'error') return
+
+    const interval = setInterval(() => {
+      setElapsedTime(prev => prev + 1)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [generationStatus])
+
+  const startVideoGeneration = async () => {
+    if (!videoData) return
+
     try {
-      setGenerationStatus('generating')
-      setProgress(20)
+      setGenerationStatus('preparing')
+      setProgress(5)
 
-      // Get preview container - EXACT same selector as PreviewVideoPlayer
-      const previewContainer = document.querySelector('[data-video-preview]') as HTMLElement
-      if (!previewContainer) {
-        throw new Error('Conteneur d\'aperçu introuvable')
-      }
+      // Create custom script from timeline data
+      const customScript = createScriptFromTimeline(
+        videoData.currentAssignments,
+        videoData.textOverlays,
+        videoData.templateSlots,
+        videoData.contentVideos
+      )
 
-      setProgress(40)
+      console.log('🎬 Generated custom script:', customScript)
 
-      // Calculate total duration for video length
-      const totalDuration = data.templateSlots.reduce((total, slot) => total + slot.duration, 0) * 1000
+      // Convert to segments format for Lambda
+      const segments = customScript.clips.map((clip: any) => ({
+        video_url: clip.video_url,
+        duration: clip.duration,
+        start_time: clip.start_time,
+        end_time: clip.end_time
+      }))
 
-      console.log(`🎬 Generating video with MediaConvert...`)
-      const blob = await SimpleVideoCapture.capturePreviewToVideo(previewContainer, totalDuration, data)
+      const textOverlays = customScript.texts.map((text: any) => ({
+        content: text.content,
+        start_time: text.start_time,
+        end_time: text.end_time,
+        position: text.position,
+        style: {
+          color: text.style.color,
+          font_size: text.style.font_size,
+          font_family: text.style.font_family || 'Roboto'
+        }
+      }))
 
-      console.log(`✅ Video captured: ${blob.size} bytes`)
-      setProgress(80)
-      setGenerationStatus('uploading')
+      // Get property ID from URL params or default to 3
+      const propertyId = searchParams.get('property') || '3'
 
-      // Upload to S3 with new service
-      try {
-        const extension = blob.type.includes('mp4') ? 'mp4' : 'webm'
-        const filename = `video-${Date.now()}.${extension}`
-        const s3Url = await SimpleVideoCapture.uploadToS3(blob, filename)
+      setGenerationStatus('mediaconvert')
+      setProgress(10)
 
-        setProgress(100)
-        setDownloadUrl(s3Url)
-        setGenerationStatus('completed')
+      // Call backend API to start video generation
+      const response = await api.post('/api/v1/video-generation/generate', {
+        property_id: propertyId,
+        segments,
+        text_overlays: textOverlays,
+        custom_script: customScript,
+        total_duration: customScript.total_duration
+      })
 
-        console.log('🌟 Video uploaded to AWS S3:', s3Url)
-      } catch (uploadError) {
-        console.error('⚠️ S3 upload failed, using local download:', uploadError)
+      console.log('✅ Video generation started:', response)
 
-        // Fallback to local download
-        const extension = blob.type.includes('mp4') ? 'mp4' : 'webm'
-        SimpleVideoCapture.downloadBlob(blob, `video-${Date.now()}.${extension}`)
+      setJobId(response.job_id)
+      setVideoId(response.video_id)
 
-        const localUrl = URL.createObjectURL(blob)
-        setProgress(100)
-        setDownloadUrl(localUrl)
-        setGenerationStatus('completed')
-      }
+      // Start polling for status
+      pollVideoStatus(response.job_id, response.video_id, propertyId)
 
-    } catch (error: any) {
-      console.error('❌ Video generation error:', error)
-      setError(error.message || 'Erreur lors de la génération')
+    } catch (err: any) {
+      console.error('❌ Failed to start video generation:', err)
+      setError(err.message || 'Erreur lors du démarrage de la génération')
       setGenerationStatus('error')
     }
   }
 
+  const pollVideoStatus = async (jobId: string, videoId: string, propertyId: string) => {
+    const maxAttempts = 120 // 2 minutes max
+    let attempts = 0
+
+    const poll = async () => {
+      try {
+        // Check if video exists in S3
+        const videoUrl = `https://s3.eu-west-1.amazonaws.com/hospup-files/generated-videos/${propertyId}/${videoId}.mp4`
+
+        const response = await fetch(videoUrl, { method: 'HEAD' })
+
+        if (response.ok) {
+          // Video is ready!
+          setDownloadUrl(videoUrl)
+          setGenerationStatus('completed')
+          setProgress(100)
+          return
+        }
+
+        // Update progress based on estimated time
+        const progressPercent = Math.min(95, 10 + (elapsedTime / estimatedTime) * 85)
+        setProgress(progressPercent)
+
+        // Update status based on elapsed time
+        if (elapsedTime < 15) {
+          setGenerationStatus('mediaconvert')
+        } else {
+          setGenerationStatus('ffmpeg')
+        }
+
+        attempts++
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 1000) // Poll every second
+        } else {
+          setError('Timeout - la génération prend plus de temps que prévu')
+          setGenerationStatus('error')
+        }
+      } catch (err) {
+        console.error('Error polling status:', err)
+        attempts++
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 1000)
+        } else {
+          setError('Erreur lors de la vérification du statut')
+          setGenerationStatus('error')
+        }
+      }
+    }
+
+    poll()
+  }
+
+  const createScriptFromTimeline = (
+    assignments: any[],
+    textOverlays: any[],
+    templateSlots: any[],
+    contentVideos: any[]
+  ) => {
+    const clips = assignments
+      .filter(assignment => assignment.videoId)
+      .sort((a, b) => {
+        const slotA = templateSlots.find(slot => slot.id === a.slotId)
+        const slotB = templateSlots.find(slot => slot.id === b.slotId)
+        return (slotA?.order || 0) - (slotB?.order || 0)
+      })
+      .map((assignment, index) => {
+        const slot = templateSlots.find(slot => slot.id === assignment.slotId)
+        const video = contentVideos.find(video => video.id === assignment.videoId)
+
+        const videoDuration = video?.duration || 0
+        const userDuration = videoDuration > 0
+          ? Math.min(Math.max(videoDuration, 1.5), 6)
+          : 2.0
+
+        return {
+          order: index + 1,
+          duration: userDuration,
+          description: slot?.description || `Segment ${index + 1}`,
+          video_url: video?.video_url || '',
+          video_id: video?.id || '',
+          start_time: 0,
+          end_time: userDuration
+        }
+      })
+
+    const texts = textOverlays.map(text => ({
+      content: text.content,
+      start_time: text.start_time,
+      end_time: text.end_time || text.start_time + 3,
+      position: text.position,
+      style: text.style
+    }))
+
+    const realTotalDuration = clips.reduce((sum, clip) => sum + clip.duration, 0)
+
+    return {
+      clips,
+      texts,
+      total_duration: realTotalDuration
+    }
+  }
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
   const getStatusMessage = () => {
     switch (generationStatus) {
-      case 'preparing': return 'Préparation de la génération...'
-      case 'generating': return 'Génération de la vidéo en cours...'
-      case 'uploading': return 'Finalisation de la vidéo...'
-      case 'completed': return 'Vidéo générée avec succès !'
-      case 'error': return 'Erreur lors de la génération'
-      default: return ''
+      case 'preparing':
+        return 'Préparation de la génération...'
+      case 'mediaconvert':
+        return 'Assemblage des clips (MediaConvert GPU)...'
+      case 'ffmpeg':
+        return 'Ajout des textes et finalisation (FFmpeg)...'
+      case 'completed':
+        return 'Vidéo générée avec succès!'
+      case 'error':
+        return 'Erreur lors de la génération'
+      default:
+        return 'En cours...'
     }
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+          <div className="flex items-center justify-center mb-4">
+            <AlertCircle className="w-12 h-12 text-red-500" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">
+            Erreur
+          </h1>
+          <p className="text-gray-600 text-center mb-6">{error}</p>
+          <Button
+            onClick={() => router.back()}
+            className="w-full"
+            variant="outline"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour à l'éditeur
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   if (!videoData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p>Chargement des données...</p>
-        </div>
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => router.back()}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Retour à l'éditeur
-              </Button>
-              <h1 className="text-xl font-semibold">Génération de vidéo</h1>
+      <div className="max-w-5xl mx-auto p-8">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Génération de la vidéo
+            </h1>
+            <p className="text-gray-600">
+              {generationStatus === 'completed'
+                ? 'Votre vidéo est prête!'
+                : `Temps estimé: ~${estimatedTime}s (${formatTime(elapsedTime)} écoulées)`
+              }
+            </p>
+          </div>
+
+          {/* Preview Video */}
+          <div className="mb-8 flex justify-center">
+            <div className="w-[300px] h-[533px] bg-black rounded-xl overflow-hidden shadow-2xl">
+              <PreviewVideoPlayer
+                templateSlots={videoData.templateSlots}
+                currentAssignments={videoData.currentAssignments}
+                contentVideos={videoData.contentVideos}
+                textOverlays={videoData.textOverlays}
+                showDownloadButton={false}
+              />
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Status */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                {getStatusMessage()}
+              </span>
+              <span className="text-sm text-gray-500">
+                {Math.round(progress)}%
+              </span>
+            </div>
 
-          {/* Video Preview */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-medium">Aperçu de la vidéo</h2>
-            <div className="flex justify-center">
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
               <div
-                className="w-[300px] h-[533px] bg-black rounded-xl overflow-hidden shadow-2xl"
-                data-video-preview
+                className={`h-full transition-all duration-500 ${
+                  generationStatus === 'completed'
+                    ? 'bg-green-500'
+                    : generationStatus === 'error'
+                    ? 'bg-red-500'
+                    : 'bg-primary'
+                }`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            {/* Status Icon */}
+            <div className="flex items-center justify-center mt-4">
+              {generationStatus === 'completed' ? (
+                <CheckCircle className="w-12 h-12 text-green-500" />
+              ) : generationStatus === 'error' ? (
+                <AlertCircle className="w-12 h-12 text-red-500" />
+              ) : (
+                <Loader2 className="w-12 h-12 animate-spin text-primary" />
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          {generationStatus === 'completed' && downloadUrl && (
+            <div className="space-y-3">
+              <Button
+                onClick={() => window.open(downloadUrl, '_blank')}
+                className="w-full"
+                size="lg"
               >
-                <PreviewVideoPlayer
-                  templateSlots={videoData.templateSlots}
-                  currentAssignments={videoData.currentAssignments}
-                  contentVideos={videoData.contentVideos}
-                  textOverlays={videoData.textOverlays}
-                  showDownloadButton={false}
-                />
-              </div>
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Voir la vidéo finale
+              </Button>
+
+              <Button
+                onClick={() => {
+                  const a = document.createElement('a')
+                  a.href = downloadUrl
+                  a.download = `video-${videoId}.mp4`
+                  a.click()
+                }}
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Télécharger
+              </Button>
+
+              <Button
+                onClick={() => router.back()}
+                variant="outline"
+                className="w-full"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Créer une nouvelle vidéo
+              </Button>
             </div>
-          </div>
+          )}
 
-          {/* Generation Status & Download */}
-          <div className="space-y-6">
-            <h2 className="text-lg font-medium">Statut de génération</h2>
+          {(generationStatus === 'preparing' || generationStatus === 'mediaconvert' || generationStatus === 'ffmpeg') && (
+            <Button
+              onClick={() => router.back()}
+              variant="outline"
+              className="w-full"
+              disabled={generationStatus !== 'preparing'}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Annuler
+            </Button>
+          )}
 
-            {/* Status Card */}
-            <div className="bg-white rounded-lg p-6 shadow-sm border">
-              <div className="space-y-4">
-
-                {/* Status Icon & Message */}
-                <div className="flex items-center gap-3">
-                  {generationStatus === 'completed' ? (
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                  ) : generationStatus === 'error' ? (
-                    <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
-                      <div className="w-3 h-3 bg-red-600 rounded-full" />
-                    </div>
-                  ) : (
-                    <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-                  )}
-                  <span className="font-medium">{getStatusMessage()}</span>
-                </div>
-
-                {/* Progress Bar */}
-                {generationStatus !== 'completed' && generationStatus !== 'error' && (
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                )}
-
-                {/* Error Message */}
-                {error && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-800 text-sm">{error}</p>
-                  </div>
-                )}
-
-                {/* Download Section */}
-                {generationStatus === 'completed' && downloadUrl && (
-                  <div className="space-y-3 pt-4 border-t">
-                    <h3 className="font-medium text-gray-900">Votre vidéo est prête !</h3>
-
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      {/* Download Button */}
-                      <Button
-                        onClick={() => {
-                          const a = document.createElement('a')
-                          a.href = downloadUrl
-                          a.download = `video-${Date.now()}.webm`
-                          document.body.appendChild(a)
-                          a.click()
-                          document.body.removeChild(a)
-                        }}
-                        className="flex items-center gap-2 flex-1"
-                      >
-                        <Download className="w-4 h-4" />
-                        Télécharger la vidéo
-                      </Button>
-
-                      {/* Preview Button */}
-                      <Button
-                        variant="outline"
-                        onClick={() => window.open(downloadUrl, '_blank')}
-                        className="flex items-center gap-2"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        Voir la vidéo
-                      </Button>
-                    </div>
-
-                    {/* Local File Info */}
-                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                      <p className="text-xs text-green-600 mb-1">✅ Vidéo générée localement :</p>
-                      <p className="text-sm text-green-800">Format: WebM 30 FPS • Qualité: HD • Prêt au téléchargement</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+          {/* Debug Info */}
+          {jobId && (
+            <div className="mt-4 p-3 bg-gray-50 rounded text-xs text-gray-600">
+              <p><strong>Job ID:</strong> {jobId}</p>
+              <p><strong>Video ID:</strong> {videoId}</p>
             </div>
-
-            {/* Generation Info */}
-            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-              <h3 className="font-medium text-green-900 mb-2">⚡ Génération Instantanée</h3>
-              <ul className="text-sm text-green-800 space-y-1">
-                <li>• <strong>Génération en 3 secondes maximum</strong> (quelle que soit la durée)</li>
-                <li>• <strong>Qualité parfaite 30 FPS</strong> - identique à l'aperçu</li>
-                <li>• <strong>Tous les effets de texte</strong> préservés (ombres, bordures, etc.)</li>
-                <li>• <strong>Téléchargement local direct</strong> - prêt immédiatement</li>
-                <li>• <strong>Format WebM HD</strong> - compatible tous navigateurs</li>
-              </ul>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
